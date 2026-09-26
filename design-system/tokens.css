@@ -1,0 +1,124 @@
+/*
+ * Workspace design tokens (v0.2, 2026-09-27; working name)
+ * Source of truth for colors, type, spacing, radius, elevation and motion.
+ * Components use the semantic tokens only. Never raw hex in components.
+ * All text pairings verified WCAG AA (see MASTER.md for ratios).
+ */
+
+:root {
+  /* ---- Neutrals (one cool-gray family, light) ---- */
+  --bg: #F7F7F9;
+  --surface: #FFFFFF;
+  --surface-2: #F0F0F4;          /* table header, hover row, sidebar */
+  --border: #DEDEE6;             /* dividers, card edges (decorative) */
+  --input-border: #8B8A9B;       /* form controls, 3.38:1 on surface */
+  --text: #17161F;
+  --text-muted: #5B5A6B;         /* 6.7:1 on surface */
+
+  /* ---- Brand: Ink (the only accent) ---- */
+  --primary: #3E36B0;
+  --on-primary: #FFFFFF;
+  --primary-soft: #ECEBFA;       /* selected nav, selected row */
+  --ring: #3E36B0;
+
+  /* ---- Order status semantics (never used as decoration) ---- */
+  --status-new: #5B5A6B;        --status-new-soft: #F0F0F4;
+  --status-transit: #1C62A0;    --status-transit-soft: #E6F0FA;   /* assigned, picked up */
+  --status-done: #15703F;       --status-done-soft: #E6F4EC;      /* delivered, cash matched */
+  --status-warn: #8F5200;       --status-warn-soft: #FFF1DB;      /* late, cash variance */
+  --status-fail: #B42A23;       --status-fail-soft: #FCEAE8;      /* failed, cancelled */
+  --note-soft: #FBF6E3;          /* internal notes, handoff notes: team-only */
+  --note-border: #C9B46A;
+  --destructive: #B42A23;
+  --on-destructive: #FFFFFF;
+
+  /* ---- Typography ---- */
+  --font-sans: "IBM Plex Sans", "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --font-arabic: "IBM Plex Sans Arabic", "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;   /* money, order IDs, times */
+
+  --text-xs: 0.75rem;   /* 12, captions and table meta only */
+  --text-sm: 0.8125rem; /* 13, dense table body */
+  --text-base: 0.9375rem; /* 15, dashboard body */
+  --text-md: 1rem;      /* 16, forms, rider body */
+  --text-lg: 1.125rem;  /* 18, section titles, rider buttons */
+  --text-xl: 1.375rem;  /* 22, page titles */
+  --text-2xl: 1.75rem;  /* 28, KPI figures */
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-arabic: 1.7;  /* Arabic needs taller lines */
+
+  /* ---- Spacing (4px base, dense) ---- */
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px;
+
+  /* ---- Radius (documented rule) ---- */
+  --radius-control: 8px;   /* buttons, inputs, selects */
+  --radius-panel: 12px;    /* cards, dialogs, sheets */
+  --radius-pill: 999px;    /* status badges only */
+
+  /* ---- Elevation (tinted to ink, never pure black) ---- */
+  --shadow-1: 0 1px 2px rgb(23 22 31 / 0.06), 0 1px 1px rgb(23 22 31 / 0.04);
+  --shadow-2: 0 8px 24px rgb(23 22 31 / 0.10), 0 2px 6px rgb(23 22 31 / 0.06);
+
+  /* ---- Motion ---- */
+  --dur-fast: 120ms;    /* hover, press */
+  --dur-base: 200ms;    /* panels, toasts */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* ---- Touch ---- */
+  --tap-min: 44px;       /* dashboard */
+  --tap-rider: 56px;     /* rider page primary actions */
+}
+
+/* Dark: explicit opt-in or system preference */
+:root[data-theme="dark"] {
+  --bg: #111116;
+  --surface: #19191F;
+  --surface-2: #22222A;
+  --border: #2E2E38;
+  --input-border: #6E6D7E;
+  --text: #EDEDF2;
+  --text-muted: #A3A2B3;
+  --primary: #9D96F5;
+  --on-primary: #111116;
+  --primary-soft: #26234A;
+  --ring: #9D96F5;
+  --status-new: #A3A2B3;        --status-new-soft: #22222A;
+  --status-transit: #6CB2F0;    --status-transit-soft: #12263A;
+  --status-done: #4CC98A;       --status-done-soft: #12301F;
+  --status-warn: #F2B24C;       --status-warn-soft: #352610;
+  --status-fail: #FF8A80;       --status-fail-soft: #3A1615;
+  --note-soft: #2A2515;
+  --note-border: #6B5A2A;
+  --destructive: #FF8A80;
+  --on-destructive: #111116;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-2: 0 8px 24px rgb(0 0 0 / 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111116; --surface: #19191F; --surface-2: #22222A; --border: #2E2E38;
+    --input-border: #6E6D7E; --text: #EDEDF2; --text-muted: #A3A2B3;
+    --primary: #9D96F5; --on-primary: #111116; --primary-soft: #26234A; --ring: #9D96F5;
+    --status-new: #A3A2B3; --status-new-soft: #22222A;
+    --status-transit: #6CB2F0; --status-transit-soft: #12263A;
+    --status-done: #4CC98A; --status-done-soft: #12301F;
+    --status-warn: #F2B24C; --status-warn-soft: #352610;
+    --status-fail: #FF8A80; --status-fail-soft: #3A1615;
+    --note-soft: #2A2515; --note-border: #6B5A2A;
+    --destructive: #FF8A80; --on-destructive: #111116;
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4); --shadow-2: 0 8px 24px rgb(0 0 0 / 0.5);
+  }
+}
+
+/* Arabic and other RTL locales */
+:lang(ar) { font-family: var(--font-arabic); line-height: var(--leading-arabic); }
+
+/* Money and IDs always use tabular figures so columns align */
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-fast: 0ms; --dur-base: 0ms; }
+}
