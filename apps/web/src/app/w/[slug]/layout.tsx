@@ -13,6 +13,8 @@ export default async function WorkspaceLayout(props: LayoutProps<"/w/[slug]">) {
         <nav className="flex gap-4" aria-label="Workspace">
           <Link className="font-semibold" href={`/w/${slug}`}>{workspace.name}</Link>
           <Link className="underline" href={`/w/${slug}/members`}>Team</Link>
+          <Link className="underline" href={`/w/${slug}/teams`}>Teams</Link>
+          {role?.is_owner && <Link className="underline" href={`/w/${slug}/roles`}>Roles</Link>}
         </nav>
         <div className="flex items-center gap-3 text-sm">
           <span>{me.display_name}, {role?.name}</span>

@@ -12,7 +12,11 @@ await db.exec(`
   create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
   create schema extensions; create extension pgcrypto schema extensions; create extension pgtap;
   create schema auth;
-  create table auth.users (id uuid primary key, email text);
+  create table auth.users (instance_id uuid, id uuid primary key, aud text, role text, email text, encrypted_password text,
+    email_confirmed_at timestamptz, raw_app_meta_data jsonb, raw_user_meta_data jsonb, created_at timestamptz, updated_at timestamptz,
+    confirmation_token text, recovery_token text, email_change text, email_change_token_new text);
+  create table auth.identities (id uuid primary key, user_id uuid references auth.users, provider_id text, provider text,
+    identity_data jsonb, last_sign_in_at timestamptz, created_at timestamptz, updated_at timestamptz);
   create function auth.jwt() returns jsonb language sql stable as $$ select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb $$;
   create function auth.uid() returns uuid language sql stable as $$ select nullif(auth.jwt() ->> 'sub', '')::uuid $$;
   grant usage on schema auth, extensions, public to anon, authenticated;
@@ -26,6 +30,8 @@ for (const f of fs.readdirSync(repo + '/migrations').sort()) {
   await db.exec(fs.readFileSync(`${repo}/migrations/${f}`, 'utf8'));
   console.log('migration ok:', f);
 }
+await db.exec(fs.readFileSync(`${repo}/seed.sql`, 'utf8'));
+console.log('seed ok');
 for (const f of fs.readdirSync(repo + '/tests').sort()) {
   const sql = fs.readFileSync(`${repo}/tests/${f}`, 'utf8');
   try {

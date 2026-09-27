@@ -57,3 +57,13 @@ export async function removeMember(form: FormData) {
   if (error) back(slug, error.message.includes("at least one owner") ? "A workspace must keep at least one owner." : "Only the owner can remove members.");
   redirect(`/w/${slug}/members`);
 }
+
+export async function changeRole(form: FormData) {
+  const slug = String(form.get("slug"));
+  const { supabase } = await loadWorkspace(slug);
+  const memberId = z.uuid().parse(form.get("memberId"));
+  const roleId = z.uuid().parse(form.get("roleId"));
+  const { error } = await supabase.from("members").update({ role_id: roleId }).eq("id", memberId);
+  if (error) back(slug, error.message.includes("at least one owner") ? "A workspace must keep at least one owner." : "Only the owner can change roles.");
+  redirect(`/w/${slug}/members`);
+}

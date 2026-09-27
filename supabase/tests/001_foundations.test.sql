@@ -30,17 +30,17 @@ select ok(not exists (
 -- 2. Owner creates a workspace
 reset role;
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'khalid@qamar.test');
-select lives_ok($$ select public.create_workspace('Qamar Electronics', 'qamar', 'Khalid') $$, 'owner creates a workspace');
+select lives_ok($$ select public.create_workspace('Qamar Electronics', 'qamar-test', 'Khalid') $$, 'owner creates a workspace');
 select is((select count(*)::int from public.roles), 6, 'workspace gets six role templates');
 select is((select count(*)::int from public.teams where is_default), 1, 'workspace gets a default team');
-select ok(public.has_permission((select id from public.workspaces where slug = 'qamar'), 'audit.read'), 'owner can read the audit log');
+select ok(public.has_permission((select id from public.workspaces where slug = 'qamar-test'), 'audit.read'), 'owner can read the audit log');
 select ok((select count(*) from public.audit_log) > 0, 'setup was written to the audit log');
 
 -- Owner invites Sara (sales manager) and Omar (agent)
 create temp table tokens (who text, token text) on commit drop;
 grant all on tokens to authenticated;
-insert into tokens select 'sara', public.create_invite((select id from public.workspaces where slug = 'qamar'), 'Sara@Qamar.test', (select id from public.roles where key = 'sales_manager'));
-insert into tokens select 'omar', public.create_invite((select id from public.workspaces where slug = 'qamar'), 'omar@qamar.test', (select id from public.roles where key = 'agent'));
+insert into tokens select 'sara', public.create_invite((select id from public.workspaces where slug = 'qamar-test'), 'Sara@Qamar.test', (select id from public.roles where key = 'sales_manager'));
+insert into tokens select 'omar', public.create_invite((select id from public.workspaces where slug = 'qamar-test'), 'omar@qamar.test', (select id from public.roles where key = 'agent'));
 
 -- 3. Invites
 reset role;
@@ -57,13 +57,13 @@ select pg_temp.act_as('00000000-0000-0000-0000-00000000000c', 'omar@qamar.test')
 select lives_ok($$ select public.accept_invite((select token from tokens where who = 'omar'), 'Omar') $$, 'Omar accepts his invite');
 
 -- 4. What an agent can and cannot do
-select is(public.permission_scope((select id from public.workspaces where slug = 'qamar'), 'deals.values')::text, 'own', 'Omar (agent) sees only his own deal values');
+select is(public.permission_scope((select id from public.workspaces where slug = 'qamar-test'), 'deals.values')::text, 'own', 'Omar (agent) sees only his own deal values');
 select is((select count(*)::int from public.audit_log), 0, 'agents cannot read the audit log');
 select is((select count(*)::int from public.members), 3, 'agents see their colleagues');
 select throws_ok($$ update public.members set role_id = (select id from public.roles where key = 'owner') where user_id = auth.uid() $$,
   '42501', null, 'an agent cannot promote himself');
 select lives_ok($$ update public.members set display_name = 'Omar K.' where user_id = auth.uid() $$, 'an agent can edit his own name');
-select throws_ok($$ select public.create_invite((select id from public.workspaces where slug = 'qamar'), 'x@qamar.test', (select id from public.roles where key = 'agent')) $$,
+select throws_ok($$ select public.create_invite((select id from public.workspaces where slug = 'qamar-test'), 'x@qamar.test', (select id from public.roles where key = 'agent')) $$,
   '42501', null, 'an agent cannot invite members');
 
 -- 5. Isolation between workspaces
@@ -78,17 +78,17 @@ select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'khalid@qamar.test
 select throws_ok($$ update public.members set role_id = (select id from public.roles where key = 'agent') where user_id = auth.uid() $$,
   '42501', null, 'the last owner cannot be demoted');
 
-select lives_ok($$ insert into public.roles (workspace_id, key, name) values ((select id from public.workspaces where slug = 'qamar'), 'branch_lead', 'Branch lead') $$,
+select lives_ok($$ insert into public.roles (workspace_id, key, name) values ((select id from public.workspaces where slug = 'qamar-test'), 'branch_lead', 'Branch lead') $$,
   'the owner can create a custom role');
 select throws_ok($$ insert into public.role_permissions (workspace_id, role_id, permission, scope)
-  values ((select id from public.workspaces where slug = 'qamar'), (select id from public.roles where key = 'branch_lead'), 'contacts.erase', 'all') $$,
+  values ((select id from public.workspaces where slug = 'qamar-test'), (select id from public.roles where key = 'branch_lead'), 'contacts.erase', 'all') $$,
   '42501', null, 'owner-only permissions cannot be given to a custom role');
 select throws_ok($$ delete from public.audit_log $$, '42501', null, 'the audit log cannot be deleted');
 
 -- 7. Removing and re-inviting
 select lives_ok($$ update public.members set status = 'removed', removed_at = now() where user_id = '00000000-0000-0000-0000-00000000000c' $$, 'the owner removes Omar');
-insert into tokens select 'omar2', public.create_invite((select id from public.workspaces where slug = 'qamar'), 'omar@qamar.test', (select id from public.roles where key = 'viewer'));
-insert into tokens select 'sara2', public.create_invite((select id from public.workspaces where slug = 'qamar'), 'sara@qamar.test', (select id from public.roles where key = 'viewer'));
+insert into tokens select 'omar2', public.create_invite((select id from public.workspaces where slug = 'qamar-test'), 'omar@qamar.test', (select id from public.roles where key = 'viewer'));
+insert into tokens select 'sara2', public.create_invite((select id from public.workspaces where slug = 'qamar-test'), 'sara@qamar.test', (select id from public.roles where key = 'viewer'));
 reset role;
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c', 'omar@qamar.test');
 select lives_ok($$ select public.accept_invite((select token from tokens where who = 'omar2'), 'Omar') $$, 'a removed member can be invited back');

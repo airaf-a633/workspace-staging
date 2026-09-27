@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { Field, Notice, Page, Submit } from "@/components/plain";
 import { can, loadWorkspace } from "@/lib/workspace";
-import { inviteMember, removeMember, revokeInvite } from "./actions";
+import { changeRole, inviteMember, removeMember, revokeInvite } from "./actions";
 
 export default async function Members(props: PageProps<"/w/[slug]/members">) {
   const { slug } = await props.params;
@@ -10,7 +10,7 @@ export default async function Members(props: PageProps<"/w/[slug]/members">) {
   const isManager = await can(workspace.id, "members.manage");
 
   const [{ data: members }, { data: roles }, { data: teams }, { data: invites }] = await Promise.all([
-    supabase.from("members").select("id, display_name, status, roles(name)").eq("workspace_id", workspace.id).eq("status", "active").order("display_name"),
+    supabase.from("members").select("id, display_name, status, role_id, roles(name)").eq("workspace_id", workspace.id).eq("status", "active").order("display_name"),
     supabase.from("roles").select("id, name, key").eq("workspace_id", workspace.id).order("name"),
     supabase.from("teams").select("id, name").eq("workspace_id", workspace.id).order("name"),
     isManager
@@ -39,6 +39,19 @@ export default async function Members(props: PageProps<"/w/[slug]/members">) {
               <span>
                 {m.display_name} <span className="text-sm text-slate-600">{roleName(m.roles)}</span>
               </span>
+              {isManager && m.id !== me.id && (
+                <form action={changeRole} className="flex items-center gap-2">
+                  <input type="hidden" name="slug" value={slug} />
+                  <input type="hidden" name="memberId" value={m.id} />
+                  <label className="sr-only" htmlFor={`role-${m.id}`}>Role for {m.display_name}</label>
+                  <select id={`role-${m.id}`} name="roleId" defaultValue={m.role_id} className="rounded border border-slate-500 px-2 py-1 text-sm">
+                    {roles?.map((r) => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                  <button type="submit" className="text-sm underline">Change role</button>
+                </form>
+              )}
               {isManager && m.id !== me.id && (
                 <form action={removeMember}>
                   <input type="hidden" name="slug" value={slug} />
