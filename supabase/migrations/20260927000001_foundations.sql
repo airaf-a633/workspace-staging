@@ -318,6 +318,7 @@ begin
   if (new.role_id is distinct from old.role_id or new.status is distinct from old.status
       or new.user_id is distinct from old.user_id or new.workspace_id is distinct from old.workspace_id)
      and auth.uid() is not null
+     and coalesce(current_setting('app.accepting_invite', true), 'off') <> 'on'
      and not public.has_permission(old.workspace_id, 'members.manage') then
     raise exception 'Only the owner can change roles or remove members' using errcode = '42501';
   end if;
@@ -452,16 +453,31 @@ begin
     raise exception 'This invite was sent to a different email address' using errcode = '42501';
   end if;
 
+  -- Lets the access guard allow this one role/status change made on the invite's authority.
+  perform set_config('app.accepting_invite', 'on', true);
+
+  -- A removed member who is invited again is reactivated with the new role.
   insert into public.members (workspace_id, user_id, role_id, display_name)
   values (inv.workspace_id, auth.uid(), inv.role_id, p_display_name)
+  on conflict (workspace_id, user_id) do update
+    set role_id = excluded.role_id, display_name = excluded.display_name, status = 'active', removed_at = null
+    where public.members.status = 'removed'
   returning id into new_member;
 
+  perform set_config('app.accepting_invite', 'off', true);
+
+  if new_member is null then
+    raise exception 'You are already a member of this workspace' using errcode = '23505';
+  end if;
+
   foreach t in array inv.team_ids loop
-    insert into public.team_members (workspace_id, team_id, member_id) values (inv.workspace_id, t, new_member);
+    insert into public.team_members (workspace_id, team_id, member_id) values (inv.workspace_id, t, new_member)
+    on conflict do nothing;
   end loop;
   if cardinality(inv.team_ids) = 0 then
     insert into public.team_members (workspace_id, team_id, member_id)
-    select inv.workspace_id, tm.id, new_member from public.teams tm where tm.workspace_id = inv.workspace_id and tm.is_default;
+    select inv.workspace_id, tm.id, new_member from public.teams tm where tm.workspace_id = inv.workspace_id and tm.is_default
+    on conflict do nothing;
   end if;
 
   update public.invites set accepted_at = now() where id = inv.id;

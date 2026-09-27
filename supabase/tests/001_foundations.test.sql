@@ -1,6 +1,6 @@
 -- M1 foundations: isolation, the approved permission table, and the guards.
 begin;
-select plan(28);
+select plan(31);
 
 -- Test users (created as the database owner, before switching to app roles)
 insert into auth.users (id, email) values
@@ -84,6 +84,17 @@ select throws_ok($$ insert into public.role_permissions (workspace_id, role_id, 
   values ((select id from public.workspaces where slug = 'qamar'), (select id from public.roles where key = 'branch_lead'), 'contacts.erase', 'all') $$,
   '42501', null, 'owner-only permissions cannot be given to a custom role');
 select throws_ok($$ delete from public.audit_log $$, '42501', null, 'the audit log cannot be deleted');
+
+-- 7. Removing and re-inviting
+select lives_ok($$ update public.members set status = 'removed', removed_at = now() where user_id = '00000000-0000-0000-0000-00000000000c' $$, 'the owner removes Omar');
+insert into tokens select 'omar2', public.create_invite((select id from public.workspaces where slug = 'qamar'), 'omar@qamar.test', (select id from public.roles where key = 'viewer'));
+insert into tokens select 'sara2', public.create_invite((select id from public.workspaces where slug = 'qamar'), 'sara@qamar.test', (select id from public.roles where key = 'viewer'));
+reset role;
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000c', 'omar@qamar.test');
+select lives_ok($$ select public.accept_invite((select token from tokens where who = 'omar2'), 'Omar') $$, 'a removed member can be invited back');
+reset role;
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b', 'sara@qamar.test');
+select throws_ok($$ select public.accept_invite((select token from tokens where who = 'sara2'), 'Sara') $$, '23505', null, 'an active member cannot accept a second invite');
 
 select * from finish();
 rollback;
