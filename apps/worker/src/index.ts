@@ -1,5 +1,8 @@
-// Queue consumer entry point. Phase 2 adds: webhook processing, outbound sends, media download.
-import { businessDate } from "@orderdesk/domain";
+// Queue consumer entry point. M2 adds: webhook processing, outbound sends, media download.
+import { businessDate } from "@app/domain";
+import { loadEnv } from "./env";
+
+const env = loadEnv();
 
 const shutdown = () => {
   console.log("worker stopping");
@@ -8,4 +11,4 @@ const shutdown = () => {
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
 
-console.log(`worker started, business date ${businessDate(new Date())}`);
+console.log(`worker started against ${new URL(env.SUPABASE_URL).host}, business date ${businessDate(new Date())}`);

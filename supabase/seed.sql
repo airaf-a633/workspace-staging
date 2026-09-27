@@ -1,0 +1,1 @@
+-- Local development seed data. Filled in M1 (two test workspaces, every role).
