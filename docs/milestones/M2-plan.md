@@ -31,7 +31,7 @@ _Drafted 2026-09-27. Starts only after M1 is approved. Estimate: 3–4 weeks ful
 
 | Step | Builds | You can see |
 |---|---|---|
-| 2.1 Pipeline | `webhook_events` table; `/api/webhooks/whatsapp` (verify token handshake, signature check, store, queue with pgmq, return 200); worker loop with retries and dead-letter; replay tool | Test webhooks from Meta's dashboard land, and replaying one changes nothing |
+| 2.1 Pipeline ✅ | `webhook_events` table; `/api/webhooks/whatsapp` (verify token handshake, signature check, store, queue, return 200); worker loop with retries and dead-letter; replay tool. **Changed:** a small Postgres job table (`jobs`, claimed with SKIP LOCKED) instead of pgmq, so the same queue runs in all three test environments. | Test webhooks from Meta's dashboard land, and replaying one changes nothing |
 | 2.2 Numbers | `whatsapp_accounts` (WABA, phone number ID, display number, team, status, quality, limit; access token in Vault); connect with the **test number**; account and quality webhooks | The Settings page shows the number connected, its status and quality |
 | 2.3 Receive | Contacts created from WhatsApp IDs; conversations; messages of every type; media downloaded to private storage (signed links); ordering by Meta timestamp; realtime updates | A message sent from your phone to the test number appears live |
 | 2.4 Send | Outbound queue; text, media, location, reactions; 20 per second limit per number; status updates moving only forward; failed-send reasons in plain words; 24-hour window rule; typing indicator; read receipts from the holder | Replying from the inbox reaches your phone with ticks updating |

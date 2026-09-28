@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+/** Treat `NAME=` (blank) in .env as not set, so optional values don't fail validation. */
+function withoutBlanks(env: Record<string, string | undefined>) {
+  return Object.fromEntries(Object.entries(env).filter(([, v]) => v !== undefined && v.trim() !== ""));
+}
+
 /**
  * Environment variables, validated once at startup.
  * Server-only values must never be imported into client components.
@@ -20,7 +25,7 @@ let cached: ServerEnv | undefined;
 
 export function serverEnv(): ServerEnv {
   if (cached) return cached;
-  const parsed = serverSchema.safeParse(process.env);
+  const parsed = serverSchema.safeParse(withoutBlanks(process.env));
   if (!parsed.success) {
     const missing = parsed.error.issues.map((i) => i.path.join(".")).join(", ");
     throw new Error(`Missing or invalid environment variables: ${missing}. Copy .env.example to .env and fill them in.`);

@@ -11,6 +11,9 @@
   },
   "dependencies": {
     "@app/domain": "workspace:*",
+    "@app/whatsapp": "workspace:*",
+    "@supabase/supabase-js": "^2.117.2",
+    "dotenv": "^16.6.1",
     "zod": "^4.6.5"
   },
   "devDependencies": {
