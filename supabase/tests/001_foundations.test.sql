@@ -4,9 +4,9 @@ select plan(31);
 
 -- Test users (created as the database owner, before switching to app roles)
 insert into auth.users (id, email) values
-  ('00000000-0000-0000-0000-00000000000a', 'khalid@qamar.test'),
-  ('00000000-0000-0000-0000-00000000000b', 'sara@qamar.test'),
-  ('00000000-0000-0000-0000-00000000000c', 'omar@qamar.test'),
+  ('00000000-0000-0000-0000-00000000000a', 'khalid@unit.test'),
+  ('00000000-0000-0000-0000-00000000000b', 'sara@unit.test'),
+  ('00000000-0000-0000-0000-00000000000c', 'omar@unit.test'),
   ('00000000-0000-0000-0000-00000000000d', 'outsider@other.test');
 
 create function pg_temp.act_as(p_user uuid, p_email text) returns void language plpgsql as $$
@@ -29,7 +29,7 @@ select ok(not exists (
 
 -- 2. Owner creates a workspace
 reset role;
-select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'khalid@qamar.test');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'khalid@unit.test');
 select lives_ok($$ select public.create_workspace('Qamar Electronics', 'qamar-test', 'Khalid') $$, 'owner creates a workspace');
 select is((select count(*)::int from public.roles), 6, 'workspace gets six role templates');
 select is((select count(*)::int from public.teams where is_default), 1, 'workspace gets a default team');
@@ -39,8 +39,8 @@ select ok((select count(*) from public.audit_log) > 0, 'setup was written to the
 -- Owner invites Sara (sales manager) and Omar (agent)
 create temp table tokens (who text, token text) on commit drop;
 grant all on tokens to authenticated;
-insert into tokens select 'sara', public.create_invite((select id from public.workspaces where slug = 'qamar-test'), 'Sara@Qamar.test', (select id from public.roles where key = 'sales_manager'));
-insert into tokens select 'omar', public.create_invite((select id from public.workspaces where slug = 'qamar-test'), 'omar@qamar.test', (select id from public.roles where key = 'agent'));
+insert into tokens select 'sara', public.create_invite((select id from public.workspaces where slug = 'qamar-test'), 'Sara@Unit.test', (select id from public.roles where key = 'sales_manager'));
+insert into tokens select 'omar', public.create_invite((select id from public.workspaces where slug = 'qamar-test'), 'omar@unit.test', (select id from public.roles where key = 'agent'));
 
 -- 3. Invites
 reset role;
@@ -48,12 +48,12 @@ select pg_temp.act_as('00000000-0000-0000-0000-00000000000d', 'outsider@other.te
 select throws_ok($$ select public.accept_invite((select token from tokens where who = 'sara'), 'Mallory') $$, '42501', null, 'an invite cannot be used by a different email');
 
 reset role;
-select pg_temp.act_as('00000000-0000-0000-0000-00000000000b', 'sara@qamar.test');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b', 'sara@unit.test');
 select lives_ok($$ select public.accept_invite((select token from tokens where who = 'sara'), 'Sara') $$, 'Sara accepts her invite');
 select throws_ok($$ select public.accept_invite((select token from tokens where who = 'sara'), 'Sara') $$, '22023', null, 'an invite works only once');
 
 reset role;
-select pg_temp.act_as('00000000-0000-0000-0000-00000000000c', 'omar@qamar.test');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000c', 'omar@unit.test');
 select lives_ok($$ select public.accept_invite((select token from tokens where who = 'omar'), 'Omar') $$, 'Omar accepts his invite');
 
 -- 4. What an agent can and cannot do
@@ -63,7 +63,7 @@ select is((select count(*)::int from public.members), 3, 'agents see their colle
 select throws_ok($$ update public.members set role_id = (select id from public.roles where key = 'owner') where user_id = auth.uid() $$,
   '42501', null, 'an agent cannot promote himself');
 select lives_ok($$ update public.members set display_name = 'Omar K.' where user_id = auth.uid() $$, 'an agent can edit his own name');
-select throws_ok($$ select public.create_invite((select id from public.workspaces where slug = 'qamar-test'), 'x@qamar.test', (select id from public.roles where key = 'agent')) $$,
+select throws_ok($$ select public.create_invite((select id from public.workspaces where slug = 'qamar-test'), 'x@unit.test', (select id from public.roles where key = 'agent')) $$,
   '42501', null, 'an agent cannot invite members');
 
 -- 5. Isolation between workspaces
@@ -74,7 +74,7 @@ select is((select count(*)::int from public.members), 0, 'an outsider sees no me
 
 -- 6. Guards (as the owner)
 reset role;
-select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'khalid@qamar.test');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'khalid@unit.test');
 select throws_ok($$ update public.members set role_id = (select id from public.roles where key = 'agent') where user_id = auth.uid() $$,
   '42501', null, 'the last owner cannot be demoted');
 
@@ -87,13 +87,13 @@ select throws_ok($$ delete from public.audit_log $$, '42501', null, 'the audit l
 
 -- 7. Removing and re-inviting
 select lives_ok($$ update public.members set status = 'removed', removed_at = now() where user_id = '00000000-0000-0000-0000-00000000000c' $$, 'the owner removes Omar');
-insert into tokens select 'omar2', public.create_invite((select id from public.workspaces where slug = 'qamar-test'), 'omar@qamar.test', (select id from public.roles where key = 'viewer'));
-insert into tokens select 'sara2', public.create_invite((select id from public.workspaces where slug = 'qamar-test'), 'sara@qamar.test', (select id from public.roles where key = 'viewer'));
+insert into tokens select 'omar2', public.create_invite((select id from public.workspaces where slug = 'qamar-test'), 'omar@unit.test', (select id from public.roles where key = 'viewer'));
+insert into tokens select 'sara2', public.create_invite((select id from public.workspaces where slug = 'qamar-test'), 'sara@unit.test', (select id from public.roles where key = 'viewer'));
 reset role;
-select pg_temp.act_as('00000000-0000-0000-0000-00000000000c', 'omar@qamar.test');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000c', 'omar@unit.test');
 select lives_ok($$ select public.accept_invite((select token from tokens where who = 'omar2'), 'Omar') $$, 'a removed member can be invited back');
 reset role;
-select pg_temp.act_as('00000000-0000-0000-0000-00000000000b', 'sara@qamar.test');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b', 'sara@unit.test');
 select throws_ok($$ select public.accept_invite((select token from tokens where who = 'sara2'), 'Sara') $$, '23505', null, 'an active member cannot accept a second invite');
 
 select * from finish();

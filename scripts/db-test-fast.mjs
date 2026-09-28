@@ -12,7 +12,7 @@ await db.exec(`
   create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
   create schema extensions; create extension pgcrypto schema extensions; create extension pgtap;
   create schema auth;
-  create table auth.users (instance_id uuid, id uuid primary key, aud text, role text, email text, encrypted_password text,
+  create table auth.users (instance_id uuid, id uuid primary key, aud text, role text, email text unique, encrypted_password text,
     email_confirmed_at timestamptz, raw_app_meta_data jsonb, raw_user_meta_data jsonb, created_at timestamptz, updated_at timestamptz,
     confirmation_token text, recovery_token text, email_change text, email_change_token_new text);
   create table auth.identities (id uuid primary key, user_id uuid references auth.users, provider_id text, provider text,

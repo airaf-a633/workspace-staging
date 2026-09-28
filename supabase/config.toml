@@ -413,3 +413,18 @@ enabled = true
 # formatted with uppercase keywords, indent 2, max width 180, trailing commas,
 # and column/key alignment. Set to "null" to emit raw, unformatted SQL.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":180,\"commaStyle\":\"trailing\"}"
+
+# Staging (hosted, Frankfurt). Overrides apply only when pushing config to this project.
+[remotes.staging]
+project_id = "nfmqdwceqvaiqukvvndc"
+
+[remotes.staging.auth.email]
+# Off on staging until an SMTP provider is set up: Supabase's built-in email only reaches team members.
+enable_confirmations = false
+# Keep Supabase's safer hosted default rather than the 1s local value.
+max_frequency = "1m0s"
+
+[remotes.staging.auth.mfa.totp]
+# Keep two-factor available on staging (planned for M10).
+enroll_enabled = true
+verify_enabled = true
