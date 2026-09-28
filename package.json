@@ -14,9 +14,14 @@
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
-    "db:test": "supabase test db"
+    "db:test": "supabase test db",
+    "db:test:fast": "node scripts/db-test-fast.mjs",
+    "db:test:staging": "node scripts/db-test-remote.mjs"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "~0.3.16",
+    "dotenv": "^16.6.1",
+    "pg": "^8.23.0",
     "supabase": "^2"
   }
 }

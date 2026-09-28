@@ -24,6 +24,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
+      - run: pnpm db:test:fast
 
   db:
     name: Database migrations and permission tests
