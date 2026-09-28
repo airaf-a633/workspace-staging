@@ -1,5 +1,5 @@
 {
-  "name": "@orderdesk/domain",
+  "name": "@app/domain",
   "version": "0.0.0",
   "private": true,
   "type": "module",

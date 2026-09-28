@@ -1,0 +1,12 @@
+# Fly.io config for the queue worker. Set `app` to the name created with `fly apps create`.
+app = "workspace-app-worker"
+primary_region = "fra"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+
+# No public HTTP service: the worker only pulls from the database queue.
