@@ -1,0 +1,27 @@
+{
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "id": "102290129340398",
+      "changes": [
+        {
+          "field": "messages",
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": { "display_phone_number": "15550783881", "phone_number_id": "106540352242922" },
+            "contacts": [{ "profile": { "name": "Mariam" }, "wa_id": "971501234567" }],
+            "messages": [
+              {
+                "from": "971501234567",
+                "id": "wamid.HBgMOTcxNTAxMjM0NTY3FQIAEhgUM0E3QkY0RjFEOTg2QjU1RDNGNkYA",
+                "timestamp": "1790500000",
+                "type": "text",
+                "text": { "body": "Hi, do you have the ThinkPad E14 in stock?" }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

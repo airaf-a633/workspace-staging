@@ -1,9 +1,11 @@
 import path from "node:path";
-import { loadEnvConfig } from "@next/env";
+import { config } from "dotenv";
 import type { NextConfig } from "next";
 
 // One .env at the repository root serves the web app, the worker and the Supabase CLI.
-loadEnvConfig(path.resolve(__dirname, "../.."));
+// Loaded here, before Next.js starts its workers, so every route sees the same values.
+// (Next's own loadEnvConfig caches the app folder's env and would skip this file.)
+config({ path: path.resolve(__dirname, "../../.env"), quiet: true });
 
 const nextConfig: NextConfig = {
   reactCompiler: true,

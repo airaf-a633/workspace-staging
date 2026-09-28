@@ -16,10 +16,13 @@
     "db:reset": "supabase db reset",
     "db:test": "supabase test db",
     "db:test:fast": "node scripts/db-test-fast.mjs",
-    "db:test:staging": "node scripts/db-test-remote.mjs"
+    "db:test:staging": "node scripts/db-test-remote.mjs",
+    "webhook:replay": "node scripts/replay-webhook.mjs",
+    "worker": "pnpm --filter @app/worker dev"
   },
   "devDependencies": {
     "@electric-sql/pglite": "~0.3.16",
+    "@supabase/supabase-js": "^2.117.2",
     "dotenv": "^16.6.1",
     "pg": "^8.23.0",
     "supabase": "^2"
