@@ -15,10 +15,10 @@ export function PreviewBar({ current, people }: { current: string; people: { key
   }
 
   return (
-    <div className="bg-hero flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-2 text-sm text-white">
+    <div className="bg-hero flex min-h-10 flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-1 text-sm text-white">
       <p className="flex items-center gap-2">
         <Eye size={18} aria-hidden="true" />
-        <span><strong className="font-semibold">Design preview.</strong><span className="hidden sm:inline"> Sample data, nothing is saved.</span></span>
+        <span><strong className="font-semibold">Preview</strong><span className="hidden sm:inline"> · sample data, nothing is saved</span></span>
       </p>
       <div className="flex items-center gap-3">
         <label className="flex items-center gap-2">
@@ -26,7 +26,7 @@ export function PreviewBar({ current, people }: { current: string; people: { key
           <select
             value={current}
             onChange={(e) => switchTo(e.target.value)}
-            className="glass min-h-9 rounded-full px-3 text-sm text-white [&>option]:text-[#0F2537]"
+            className="glass min-h-8 rounded-full px-3 text-sm text-white [&>option]:text-[#0F2537]"
           >
             {people.map((p) => (
               <option key={p.key} value={p.key}>{p.name}, {p.role}</option>

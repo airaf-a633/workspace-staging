@@ -43,21 +43,24 @@ export function AppShell({ base, workspaceName, memberName, roleName, signOut, f
   const mobile = items.filter((i) => i.label !== "Tasks");
   // Work screens with their own panes (the inbox) fill the window instead of sitting in a page column.
   const fullBleed = path.startsWith(`${base}/inbox`);
+  const rail = fullBleed;
   const initial = workspaceName.trim().charAt(0).toUpperCase();
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[256px_1fr]">
+    <div className={`min-h-dvh lg:grid ${rail ? "lg:grid-cols-[64px_1fr]" : "lg:grid-cols-[256px_1fr]"}`}>
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-50 focus:rounded focus:bg-surface focus:p-3">
         Skip to content
       </a>
 
-      {/* Desktop side menu */}
+      {/* Desktop side menu. In the Inbox it shrinks to an icon rail so the conversation gets the room (decided 2026-09-30). */}
       <aside className="hidden border-e border-border bg-surface lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col" aria-label="Main">
-        <div className="flex items-center gap-3 px-5 py-5">
-          <span className="bg-hero grid size-10 shrink-0 place-items-center rounded-full font-serif text-lg text-white" aria-hidden="true">{initial}</span>
-          <p className="title truncate text-lg" title={workspaceName}>{workspaceName}</p>
+        <div className={`flex items-center gap-3 ${rail ? "h-14 justify-center" : "px-5 py-5"}`}>
+          <span className="bg-hero grid size-9 shrink-0 place-items-center rounded-full font-serif text-lg text-white" aria-hidden={!rail} title={rail ? workspaceName : undefined}>
+            {initial}
+          </span>
+          {rail ? <span className="sr-only">{workspaceName}</span> : <p className="title truncate text-lg" title={workspaceName}>{workspaceName}</p>}
         </div>
-        <nav className="grid gap-1 px-3">
+        <nav className={`grid gap-1 ${rail ? "justify-items-center px-2 pt-2" : "px-3"}`}>
           {items.map(({ href, label, Icon, match }) => {
             const active = match(path);
             return (
@@ -65,30 +68,47 @@ export function AppShell({ base, workspaceName, memberName, roleName, signOut, f
                 key={href}
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={`flex min-h-11 items-center gap-3 rounded-full px-4 text-base transition-colors ${
-                  active ? "bg-primary-soft font-semibold text-primary" : "text-text hover:bg-surface-2"
+                title={rail ? label : undefined}
+                className={`flex min-h-11 items-center rounded-full text-base transition-colors ${rail ? "w-11 justify-center" : "gap-3 px-4"} ${
+                  active ? "bg-primary-soft font-semibold text-primary" : "text-muted hover:bg-surface-2 hover:text-text"
                 }`}
               >
                 <Icon size={22} weight={active ? "fill" : "regular"} aria-hidden="true" />
-                {label}
+                <span className={rail ? "sr-only" : ""}>{label}</span>
               </Link>
             );
           })}
         </nav>
-        <div className="mt-auto grid gap-2 border-t border-border p-4">
-          <div className="min-w-0">
-            <p className="truncate font-medium">{memberName}</p>
-            <p className="truncate text-sm text-muted">{roleName}</p>
+        {rail ? (
+          <div className="mt-auto grid justify-items-center gap-2 pb-4">
+            <span className="grid size-9 place-items-center rounded-full bg-primary-soft text-sm font-semibold text-primary" title={`${memberName}, ${roleName}`}>
+              {memberName.trim().charAt(0).toUpperCase()}
+              <span className="sr-only">{memberName}, {roleName}</span>
+            </span>
+            {signOut && (
+              <form action={signOut}>
+                <button type="submit" className="grid size-11 place-items-center rounded-full text-muted hover:bg-surface-2 hover:text-text" aria-label="Sign out" title="Sign out">
+                  <SignOut size={20} aria-hidden="true" />
+                </button>
+              </form>
+            )}
           </div>
-          {footer}
-          {signOut && (
-            <form action={signOut}>
-              <button type="submit" className="flex min-h-11 items-center gap-2 text-sm text-muted hover:text-text">
-                <SignOut size={20} aria-hidden="true" /> Sign out
-              </button>
-            </form>
-          )}
-        </div>
+        ) : (
+          <div className="mt-auto grid gap-2 border-t border-border p-4">
+            <div className="min-w-0">
+              <p className="truncate font-medium">{memberName}</p>
+              <p className="truncate text-sm text-muted">{roleName}</p>
+            </div>
+            {footer}
+            {signOut && (
+              <form action={signOut}>
+                <button type="submit" className="flex min-h-11 items-center gap-2 text-sm text-muted hover:text-text">
+                  <SignOut size={20} aria-hidden="true" /> Sign out
+                </button>
+              </form>
+            )}
+          </div>
+        )}
       </aside>
 
       <div className={`flex flex-col lg:pb-0 ${fullBleed ? "h-dvh pb-[calc(4rem+1px+env(safe-area-inset-bottom))]" : "min-h-dvh pb-20"}`}>

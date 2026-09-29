@@ -7,7 +7,9 @@ const dayParts = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, weekday: "shor
 
 function parts(at: number) {
   const p = Object.fromEntries(dayParts.formatToParts(at).map((x) => [x.type, x.value]));
-  return { key: `${p.year}-${p.month}-${p.day}`, weekday: p.weekday, day: p.day, month: p.month, year: p.year };
+  // Some ICU versions print "Sept"; the decided style is three letters ("Mon 28 Sep").
+  const month = p.month.slice(0, 3);
+  return { key: `${p.year}-${p.month}-${p.day}`, weekday: p.weekday, day: p.day, month, year: p.year };
 }
 
 function dayDiff(at: number, now: number) {
@@ -36,6 +38,16 @@ export function listTime(at: number, now: number) {
 export function messageTime(at: number, now: number) {
   const d = dayDiff(at, now);
   return d === 0 ? time(at) : d === 1 ? `Yesterday ${time(at)}` : `${date(at, now)}, ${time(at)}`;
+}
+
+/** Day separators in a thread: "Today", "Yesterday", "Mon 28 Sep". */
+export function dayLabel(at: number, now: number) {
+  const d = dayDiff(at, now);
+  return d === 0 ? "Today" : d === 1 ? "Yesterday" : date(at, now);
+}
+
+export function sameDay(a: number, b: number) {
+  return parts(a).key === parts(b).key;
 }
 
 export function waitedFor(at: number, now: number) {

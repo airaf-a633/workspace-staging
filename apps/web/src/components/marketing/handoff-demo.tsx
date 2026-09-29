@@ -19,7 +19,8 @@ const START: Msg[] = [
   { kind: "in", text: "Can you do 10% off for 12 units?", time: "09:24" },
 ];
 
-export function HandoffDemo({ full = false }: { full?: boolean }) {
+/** `fixed` locks the height (landing page), so opening the form scrolls inside the card instead of growing it. */
+export function HandoffDemo({ full = false, fixed = false }: { full?: boolean; fixed?: boolean }) {
   const [trail, setTrail] = useState<string[]>(["Hana"]);
   const [msgs, setMsgs] = useState<Msg[]>(START);
   const [open, setOpen] = useState(false);
@@ -44,7 +45,7 @@ export function HandoffDemo({ full = false }: { full?: boolean }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-[var(--radius-panel)] border border-border bg-surface shadow-[var(--shadow-2)]">
+    <div className={`overflow-hidden rounded-[var(--radius-panel)] border border-border bg-surface shadow-[var(--shadow-2)] ${fixed ? "flex h-[34rem] flex-col" : ""}`}>
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="grid">
           <span className="font-semibold">Mariam Al Suwaidi</span>
@@ -65,7 +66,7 @@ export function HandoffDemo({ full = false }: { full?: boolean }) {
       </ol>
 
       {open && (
-        <form onSubmit={handOver} className="grid gap-3 border-b border-border bg-surface-2 px-4 py-4">
+        <form onSubmit={handOver} className="grid shrink-0 gap-3 border-b border-border bg-surface-2 px-4 py-4">
           <label className="grid gap-1 text-sm font-medium">
             Hand over to
             <select value={to} onChange={(e) => setTo(e.target.value)} className="min-h-11 rounded-[var(--radius-control)] border border-input bg-surface px-3 text-base font-normal">
@@ -87,7 +88,7 @@ export function HandoffDemo({ full = false }: { full?: boolean }) {
         </form>
       )}
 
-      <div className={`grid content-start gap-3 bg-bg px-4 py-4 ${full ? "min-h-96" : "min-h-72"}`}>
+      <div className={`grid content-start gap-3 bg-bg px-4 py-4 ${fixed ? "min-h-0 flex-1 overflow-y-auto" : full ? "min-h-96" : "min-h-72"}`}>
         {pinned && (
           <div className="grid gap-1 rounded-[var(--radius-panel)] border border-note-border bg-note-soft p-3 text-sm">
             <span>Handed over by <strong>{pinned.from}</strong> to <strong>{pinned.to}</strong></span>

@@ -1,20 +1,29 @@
 "use client";
 
-import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, ChatsCircle, DotsThree, EnvelopeSimple, Keyboard, MagnifyingGlass, UserList, WhatsappLogo } from "@phosphor-icons/react";
+import { ArrowLeft, CaretDown, ChatsCircle, DotsThree, EnvelopeSimple, MagnifyingGlass, SidebarSimple, X } from "@phosphor-icons/react";
 import { conversationActions, handoffNoteError, replyAccess, windowOpen, type Viewer } from "@app/domain";
 import { buttonClass } from "@/components/ui/button";
 import { Badge } from "@/components/ui/surface";
 import { Composer, type ComposerMode } from "./composer";
 import { CustomerPanel } from "./customer-panel";
-import { listTime, waitedFor } from "./format";
+import { dayLabel, listTime, sameDay, waitedFor } from "./format";
 import { MessageItem, mediaLabel } from "./message";
 import { lastActivity, reducer, stamp, type InboxAction } from "./store";
-import type { Conversation, InboxData, Person } from "./types";
+import type { Conversation, InboxData, Message, Person } from "./types";
 
 type Filter = "mine" | "teams" | "unassigned" | "all" | "spam";
 const REPLY_TARGET_MIN = 30;
+const GROUP_MS = 5 * 60_000;
+
+const VIEWS: [Filter, string][] = [
+  ["mine", "Mine"],
+  ["teams", "My teams"],
+  ["unassigned", "Unassigned"],
+  ["all", "All"],
+  ["spam", "Spam"],
+];
 
 const SHORTCUTS: [string, string][] = [
   ["J / K", "Next / previous chat"],
@@ -32,18 +41,15 @@ function lastReal(c: Conversation) {
   return real[real.length - 1];
 }
 
-function rowStatus(c: Conversation, now: number): { label: string; tone: "new" | "transit" | "done" | "warn" | "fail" } | null {
-  if (c.status === "spam") return null;
-  if (c.imported) return { label: "Imported", tone: "new" };
-  if (c.status === "resolved") return { label: "Resolved", tone: "done" };
+/** Only states that need someone get a label in the list (decided 2026-09-30). */
+function attention(c: Conversation, now: number): { label: string; tone: "warn" | "fail" } | null {
+  if (c.status !== "open") return null;
   const last = lastReal(c);
   if (last?.status === "failed") return { label: "Not delivered", tone: "fail" };
-  if (!c.holderId) {
-    const over = last?.kind === "in" && c.lastCustomerAt !== null && now - c.lastCustomerAt > REPLY_TARGET_MIN * 60_000;
-    return over ? { label: "Over reply target", tone: "warn" } : { label: "Unassigned", tone: "new" };
+  if (!c.holderId && last?.kind === "in" && c.lastCustomerAt !== null && now - c.lastCustomerAt > REPLY_TARGET_MIN * 60_000) {
+    return { label: `Waiting ${waitedFor(c.lastCustomerAt, now)}`, tone: "warn" };
   }
-  if (c.channel === "whatsapp" && !windowOpen(c.lastCustomerAt, now)) return { label: "24h window closed", tone: "warn" };
-  if (last?.kind === "out") return { label: "Waiting on customer", tone: "transit" };
+  if (c.channel === "whatsapp" && c.holderId && !windowOpen(c.lastCustomerAt, now)) return { label: "24h window closed", tone: "warn" };
   return null;
 }
 
@@ -56,24 +62,17 @@ function snippet(c: Conversation, people: Person[], me: string) {
   return body;
 }
 
-function Trail({ ids, people, compact }: { ids: string[]; people: Person[]; compact?: boolean }) {
-  if (ids.length === 0) return null;
+/** Who has held the chat, in order; the last one can reply now. */
+function Trail({ ids, people }: { ids: string[]; people: Person[] }) {
   return (
-    <ol className="flex flex-wrap items-center gap-1 text-sm" aria-label="Handled by, in order">
-      {ids.map((id, i) => {
-        const p = people.find((x) => x.id === id);
-        const current = i === ids.length - 1;
-        return (
-          <li key={`${id}-${i}`} className="flex items-center gap-1">
-            {i > 0 && <span aria-hidden="true" className="text-muted rtl:rotate-180">→</span>}
-            <span className={current ? "rounded-full bg-primary-soft px-2 font-semibold text-primary" : "text-muted"}>
-              {p?.name ?? "Someone"}
-              {!compact && current && p ? <span className="font-normal">, {p.role}</span> : null}
-            </span>
-          </li>
-        );
-      })}
-    </ol>
+    <span className="inline-flex min-w-0 items-center gap-1" aria-label="Handled by, in order">
+      {ids.map((id, i) => (
+        <Fragment key={`${id}-${i}`}>
+          {i > 0 && <span aria-hidden="true" className="rtl:rotate-180">→</span>}
+          <span className={i === ids.length - 1 ? "font-medium text-primary" : ""}>{people.find((x) => x.id === id)?.name ?? "Someone"}</span>
+        </Fragment>
+      ))}
+    </span>
   );
 }
 
@@ -88,17 +87,21 @@ export function Inbox({ data }: { data: InboxData }) {
   const [filter, setFilter] = useState<Filter>("mine");
   const [showResolved, setShowResolved] = useState(false);
   const [query, setQuery] = useState("");
+  const [searching, setSearching] = useState(false);
   const [mode, setMode] = useState<ComposerMode>("reply");
   const [handing, setHanding] = useState(false);
   const [confirmSpam, setConfirmSpam] = useState(false);
+  // The customer panel stays open or closed across chats until the person changes it.
   const [panelOpen, setPanelOpen] = useState(false);
   const [help, setHelp] = useState(false);
+  const [sampleNote, setSampleNote] = useState(true);
 
   const searchRef = useRef<HTMLInputElement>(null);
   const replyRef = useRef<HTMLTextAreaElement>(null);
   const noteRef = useRef<HTMLTextAreaElement>(null);
 
   const canSeeAll = viewer.scopes["conversations.view"] === "all";
+  const views = VIEWS.filter(([f]) => f !== "all" || canSeeAll);
   const visible = conversations.filter((c) => replyAccess(viewer, c) !== "hidden");
   const byRecent = (a: Conversation, b: Conversation) => lastActivity(b) - lastActivity(a);
   const isMine = (c: Conversation) => c.holderId === me || c.collaboratorIds.includes(me);
@@ -141,7 +144,6 @@ export function Inbox({ data }: { data: InboxData }) {
   function select(id: string | null) {
     setHanding(false);
     setConfirmSpam(false);
-    setPanelOpen(false);
     setMode("reply");
     if (id) dispatch({ type: "open", id });
     // Native history keeps the chat in the URL (shareable, Back returns to the list) without a server round trip.
@@ -153,16 +155,22 @@ export function Inbox({ data }: { data: InboxData }) {
     dispatch({ type: selected.status === "resolved" ? "reopen" : "resolve", id: selected.id, by: me, at: stamp() });
   }
 
+  function openSearch() {
+    setSearching(true);
+    requestAnimationFrame(() => searchRef.current?.focus());
+  }
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const t = e.target as HTMLElement;
       const typing = t.closest("input, textarea, select, [contenteditable=true]");
       if (e.key === "Escape") {
-        setHanding(false);
-        setConfirmSpam(false);
-        setPanelOpen(false);
-        setHelp(false);
-        if (typing) (t as HTMLElement).blur();
+        if (handing || confirmSpam || help) {
+          setHanding(false);
+          setConfirmSpam(false);
+          setHelp(false);
+        } else setPanelOpen(false);
+        if (typing) t.blur();
         return;
       }
       if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -194,7 +202,7 @@ export function Inbox({ data }: { data: InboxData }) {
           toggleResolve();
           break;
         case "/":
-          searchRef.current?.focus();
+          openSearch();
           break;
         case "?":
           setHelp((h) => !h);
@@ -208,199 +216,202 @@ export function Inbox({ data }: { data: InboxData }) {
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  const chip = (f: Filter, label: string) => (
-    <button
-      key={f}
-      type="button"
-      aria-pressed={filter === f}
-      onClick={() => setFilter(f)}
-      className={`flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm ${
-        filter === f ? "border-primary bg-primary-soft font-semibold text-primary" : "border-border text-text hover:bg-surface-2"
-      }`}
-    >
-      {label}
-      <span className="num text-muted">{openCount(f)}</span>
-    </button>
-  );
-
-  const hasSamplePeople = people.some((p) => p.sample);
+  const currentLabel = views.find(([f]) => f === filter)?.[1] ?? "Mine";
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <p role="note" className="border-b border-border bg-surface-2 px-4 py-2 text-sm">
-        <strong className="font-semibold">Sample chats.</strong>{" "}
-        <span className="hidden sm:inline">This is how your inbox works once WhatsApp is connected. </span>
-        Nothing is sent to anyone, and changes reset when you reload.
-        {hasSamplePeople && <span className="hidden md:inline"> Some teammates here are samples too.</span>}
-      </p>
-
-      <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[300px_minmax(0,1fr)] 2xl:grid-cols-[320px_minmax(0,1fr)_340px]">
-        {/* Conversation list */}
-        <section aria-label="Conversations" className={`${selected ? "hidden md:flex" : "flex"} min-h-0 flex-col border-e border-border bg-surface`}>
-          <div className="grid gap-3 border-b border-border p-3">
-            <div className="flex items-center justify-between gap-2">
-              <h1 className="title text-2xl">Inbox</h1>
-              <button type="button" onClick={() => setHelp((h) => !h)} className={buttonClass("ghost", "sm", "hidden md:inline-flex")} aria-expanded={help} title="Keyboard shortcuts (?)">
-                <Keyboard size={20} aria-hidden="true" />
-                <span className="sr-only">Keyboard shortcuts</span>
-              </button>
-            </div>
-            <label className="relative block">
-              <span className="sr-only">Search conversations</span>
-              <MagnifyingGlass size={20} className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true" />
-              <input
-                ref={searchRef}
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search chats"
-                title="Search by name, number or message (/)"
-                className="min-h-11 w-full rounded-[var(--radius-control)] border border-input bg-surface ps-10 pe-3 text-base placeholder:text-muted"
-              />
-            </label>
-            <div className="-mx-3 flex gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none]" role="group" aria-label="Filter">
-              {chip("mine", "Mine")}
-              {chip("teams", "My teams")}
-              {chip("unassigned", "Unassigned")}
-              {canSeeAll && chip("all", "All")}
-              {chip("spam", "Spam")}
-            </div>
+    <div className={`grid h-full min-h-0 grid-cols-1 md:grid-cols-[320px_minmax(0,1fr)] ${selected && panelOpen ? "xl:grid-cols-[320px_minmax(0,1fr)_320px]" : ""}`}>
+      {/* Conversation list */}
+      <section aria-label="Conversations" className={`${selected ? "hidden md:flex" : "flex"} relative min-h-0 flex-col border-e border-border bg-surface`}>
+        <h1 className="sr-only">Inbox</h1>
+        <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border ps-4 pe-2">
+          <label className="relative flex min-w-0 items-center">
+            <span className="sr-only">View</span>
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value as Filter)}
+              className="title min-h-11 max-w-full cursor-pointer appearance-none truncate bg-transparent pe-6 text-xl focus-visible:outline-offset-4"
+            >
+              {views.map(([f, label]) => (
+                <option key={f} value={f}>{label} ({openCount(f)})</option>
+              ))}
+            </select>
+            <CaretDown size={16} className="pointer-events-none absolute end-0 text-muted" aria-hidden="true" />
+            <span className="sr-only">Showing {currentLabel}</span>
+          </label>
+          <div className="ms-auto flex items-center gap-1">
             {filter !== "spam" && (
-              <div className="flex gap-4 text-sm" role="group" aria-label="Status">
+              <div role="group" aria-label="Status" className="inline-flex rounded-full bg-surface-2 p-0.5 text-sm">
                 {[false, true].map((r) => (
                   <button
                     key={String(r)}
                     type="button"
                     aria-pressed={showResolved === r}
                     onClick={() => setShowResolved(r)}
-                    className={`min-h-9 border-b-2 ${showResolved === r ? "border-primary font-semibold text-primary" : "border-transparent text-muted hover:text-text"}`}
+                    className={`min-h-8 rounded-full px-3 font-medium transition-colors ${showResolved === r ? "bg-surface text-text shadow-[var(--shadow-1)]" : "text-muted hover:text-text"}`}
                   >
                     {r ? "Resolved" : "Open"}
                   </button>
                 ))}
               </div>
             )}
+            <button
+              type="button"
+              onClick={() => (searching ? (setSearching(false), setQuery("")) : openSearch())}
+              aria-expanded={searching}
+              aria-label={searching ? "Close search" : "Search chats"}
+              title="Search by name, number or message (/)"
+              className={buttonClass("ghost", "sm", "!px-2.5 text-text")}
+            >
+              {searching ? <X size={20} aria-hidden="true" /> : <MagnifyingGlass size={20} aria-hidden="true" />}
+            </button>
           </div>
+        </div>
 
-          {help && (
-            <div className="border-b border-border bg-surface-2 p-3">
-              <p className="mb-2 text-sm font-semibold">Keyboard shortcuts</p>
-              <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
-                {SHORTCUTS.map(([k, d]) => (
-                  <div key={k} className="contents">
-                    <dt><kbd className="num rounded border border-border bg-surface px-1.5">{k}</kbd></dt>
-                    <dd>{d}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          )}
-
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            {ordered.length === 0 ? (
-              <p className="p-6 text-center text-muted">
-                {query ? "No chats match your search." : filter === "mine" ? "Nothing needs you right now." : filter === "spam" ? "No spam. Nice." : "No chats here."}
-              </p>
-            ) : (
-              groups.map(([title, g]) =>
-                g.length === 0 ? null : (
-                  <div key={title ?? "all"}>
-                    {title && <h2 className="sticky top-0 z-[1] bg-surface-2 px-3 py-1.5 text-sm font-medium text-muted">{title}</h2>}
-                    <ul>
-                      {g.map((c) => {
-                        const st = rowStatus(c, now);
-                        const on = c.id === selectedId;
-                        const waiting = !c.holderId && c.status === "open" && c.lastCustomerAt ? waitedFor(c.lastCustomerAt, now) : null;
-                        return (
-                          <li key={c.id}>
-                            <button
-                              type="button"
-                              onClick={() => select(c.id)}
-                              aria-current={on ? "true" : undefined}
-                              className={`grid w-full gap-1 border-b border-border px-3 py-3 text-start ${on ? "bg-primary-soft" : "hover:bg-surface-2"}`}
-                            >
-                              <span className="flex items-baseline justify-between gap-2">
-                                <span className={`truncate ${c.unread ? "font-semibold" : "font-medium"}`}><bdi>{c.contact.name}</bdi></span>
-                                <span className="num shrink-0 text-sm text-muted">{listTime(lastActivity(c), now)}</span>
-                              </span>
-                              <span className="flex items-center justify-between gap-2">
-                                <span className="truncate text-sm text-muted" dir="auto">{snippet(c, people, me)}</span>
-                                {c.unread > 0 && (
-                                  <span className="num shrink-0 rounded-full bg-primary px-2 text-sm text-on-primary" aria-label={`${c.unread} unread`}>{c.unread}</span>
-                                )}
-                              </span>
-                              <span className="flex flex-wrap items-center gap-2">
-                                {c.channel === "email" ? (
-                                  <EnvelopeSimple size={18} className="text-muted" aria-label="Email" />
-                                ) : (
-                                  <WhatsappLogo size={18} className="text-muted" aria-label="WhatsApp" />
-                                )}
-                                {st && <Badge tone={st.tone}>{st.label}</Badge>}
-                                {waiting && <span className="text-sm text-muted">waiting {waiting}</span>}
-                                <Trail ids={c.trail} people={people} compact />
-                              </span>
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                ),
-              )
-            )}
-          </div>
-        </section>
-
-        {/* Thread */}
-        <section aria-label="Conversation" className={`${selected ? "flex" : "hidden md:flex"} min-h-0 min-w-0 flex-col bg-bg`}>
-          {!selected || !actions ? (
-            <div className="grid flex-1 place-content-center justify-items-center gap-3 p-8 text-center text-muted">
-              <ChatsCircle size={48} aria-hidden="true" />
-              <p>Choose a chat to read it.</p>
-              <p className="hidden text-sm md:block">Tip: press <kbd className="num rounded border border-border bg-surface px-1.5">J</kbd> to open the first one.</p>
-            </div>
-          ) : (
-            <Thread
-              key={selected.id}
-              c={selected}
-              actions={actions}
-              people={people}
-              teams={data.teams}
-              viewer={viewer}
-              now={now}
-              mode={mode}
-              setMode={setMode}
-              handing={handing}
-              setHanding={setHanding}
-              confirmSpam={confirmSpam}
-              setConfirmSpam={setConfirmSpam}
-              onBack={() => select(null)}
-              onDetails={() => setPanelOpen(true)}
-              onToggleResolve={toggleResolve}
-              replyRef={replyRef}
-              noteRef={noteRef}
-              dispatch={dispatch}
+        {searching && (
+          <div className="border-b border-border p-2">
+            <label className="sr-only" htmlFor="inbox-search">Search conversations</label>
+            <input
+              id="inbox-search"
+              ref={searchRef}
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Name, number or message"
+              className="min-h-10 w-full rounded-full border border-input bg-surface px-4 text-sm placeholder:text-muted"
             />
-          )}
-        </section>
-
-        {/* Customer panel: a column on wide screens, a sheet on smaller ones */}
-        {selected && (
-          <>
-            <aside aria-label="Customer" className="hidden min-h-0 overflow-y-auto border-s border-border bg-surface 2xl:block">
-              <CustomerPanel c={selected} people={people} teams={teams} viewer={viewer} now={now} dispatch={dispatch} />
-            </aside>
-            {panelOpen && (
-              <div className="fixed inset-0 z-40 2xl:hidden">
-                <button type="button" aria-label="Close customer details" onClick={() => setPanelOpen(false)} className="absolute inset-0 bg-black/40" />
-                <aside aria-label="Customer" className="absolute inset-y-0 end-0 w-full max-w-sm overflow-y-auto bg-surface shadow-[var(--shadow-2)]">
-                  <CustomerPanel c={selected} people={people} teams={teams} viewer={viewer} now={now} dispatch={dispatch} onClose={() => setPanelOpen(false)} />
-                </aside>
-              </div>
-            )}
-          </>
+          </div>
         )}
-      </div>
+
+        {help && (
+          <div className="absolute inset-x-2 top-16 z-10 rounded-[var(--radius-panel)] border border-border bg-surface p-4 shadow-[var(--shadow-2)]">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-sm font-semibold">Keyboard shortcuts</p>
+              <button type="button" onClick={() => setHelp(false)} className={buttonClass("ghost", "sm", "!px-2")} aria-label="Close shortcuts"><X size={18} aria-hidden="true" /></button>
+            </div>
+            <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-sm">
+              {SHORTCUTS.map(([k, d]) => (
+                <div key={k} className="contents">
+                  <dt><kbd className="rounded border border-border bg-surface-2 px-1.5 text-xs">{k}</kbd></dt>
+                  <dd className="text-muted">{d}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        )}
+
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+          {ordered.length === 0 ? (
+            <p className="p-8 text-center text-muted">
+              {query ? "No chats match your search." : filter === "mine" ? "Nothing needs you right now." : filter === "spam" ? "No spam." : "No chats here."}
+            </p>
+          ) : (
+            groups.map(([title, g]) =>
+              g.length === 0 ? null : (
+                <div key={title ?? "all"}>
+                  {title && <h2 className="px-4 pb-1 pt-4 text-xs font-medium uppercase tracking-wide text-muted">{title}</h2>}
+                  <ul className="px-2 pb-1">
+                    {g.map((c) => {
+                      const flag = attention(c, now);
+                      const on = c.id === selectedId;
+                      return (
+                        <li key={c.id}>
+                          <button
+                            type="button"
+                            onClick={() => select(c.id)}
+                            aria-current={on ? "true" : undefined}
+                            className={`grid w-full min-w-0 grid-cols-[minmax(0,1fr)] gap-0.5 rounded-[var(--radius-control)] px-3 py-2.5 text-start transition-colors ${on ? "bg-primary-soft" : "hover:bg-surface-2"}`}
+                          >
+                            <span className="flex items-baseline justify-between gap-3">
+                              <span className={`flex min-w-0 items-center gap-1.5 ${c.unread ? "font-semibold" : "font-medium"}`}>
+                                {c.channel === "email" && <EnvelopeSimple size={16} className="shrink-0 text-muted" aria-label="Email" />}
+                                <bdi className="truncate">{c.contact.name}</bdi>
+                              </span>
+                              <span className={`shrink-0 text-xs tabular-nums ${c.unread ? "font-semibold text-primary" : "text-muted"}`}>{listTime(lastActivity(c), now)}</span>
+                            </span>
+                            <span className="flex items-center justify-between gap-3">
+                              <span className="truncate text-sm text-muted" dir="auto">{snippet(c, people, me)}</span>
+                              <span className="flex shrink-0 items-center gap-2">
+                                {flag && (
+                                  <span className={`inline-flex items-center gap-1 text-xs font-medium ${flag.tone === "fail" ? "text-fail" : "text-warn"}`}>
+                                    <span aria-hidden="true" className={`size-1.5 rounded-full ${flag.tone === "fail" ? "bg-fail" : "bg-warn"}`} />
+                                    {flag.label}
+                                  </span>
+                                )}
+                                {c.unread > 0 && (
+                                  <span className="min-w-5 rounded-full bg-primary px-1.5 text-center text-xs font-semibold leading-5 text-on-primary" aria-label={`${c.unread} unread`}>{c.unread}</span>
+                                )}
+                              </span>
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ),
+            )
+          )}
+        </div>
+
+        {sampleNote && (
+          <p className="flex items-center justify-between gap-2 border-t border-border px-4 py-2 text-xs text-muted">
+            <span>Sample chats. Nothing is sent; changes reset on reload.</span>
+            <button type="button" onClick={() => setSampleNote(false)} className="min-h-8 shrink-0 font-medium text-primary hover:underline">Dismiss</button>
+          </p>
+        )}
+      </section>
+
+      {/* Thread */}
+      <section aria-label="Conversation" className={`${selected ? "flex" : "hidden md:flex"} min-h-0 min-w-0 flex-col bg-bg`}>
+        {!selected || !actions ? (
+          <div className="grid flex-1 place-content-center justify-items-center gap-3 p-8 text-center text-muted">
+            <ChatsCircle size={44} weight="light" aria-hidden="true" />
+            <p>Choose a chat to read it.</p>
+            <p className="hidden text-sm md:block">
+              Press <kbd className="rounded border border-border bg-surface px-1.5 text-xs">J</kbd> to open the first one, or{" "}
+              <kbd className="rounded border border-border bg-surface px-1.5 text-xs">?</kbd> for shortcuts.
+            </p>
+          </div>
+        ) : (
+          <Thread
+            key={selected.id}
+            c={selected}
+            actions={actions}
+            people={people}
+            teams={data.teams}
+            viewer={viewer}
+            now={now}
+            mode={mode}
+            setMode={setMode}
+            handing={handing}
+            setHanding={setHanding}
+            confirmSpam={confirmSpam}
+            setConfirmSpam={setConfirmSpam}
+            panelOpen={panelOpen}
+            onBack={() => select(null)}
+            onTogglePanel={() => setPanelOpen((o) => !o)}
+            onToggleResolve={toggleResolve}
+            replyRef={replyRef}
+            noteRef={noteRef}
+            dispatch={dispatch}
+          />
+        )}
+      </section>
+
+      {/* Customer panel: closed by default; a column from 1280px, a sheet below that. */}
+      {selected && panelOpen && (
+        <>
+          <aside aria-label="Customer" className="hidden min-h-0 overflow-y-auto border-s border-border bg-surface xl:block">
+            <CustomerPanel c={selected} people={people} teams={teams} viewer={viewer} now={now} dispatch={dispatch} onClose={() => setPanelOpen(false)} />
+          </aside>
+          <div className="fixed inset-0 z-40 xl:hidden">
+            <button type="button" aria-label="Close customer details" onClick={() => setPanelOpen(false)} className="absolute inset-0 bg-black/40" />
+            <aside aria-label="Customer" className="absolute inset-y-0 end-0 w-full max-w-sm overflow-y-auto bg-surface shadow-[var(--shadow-2)]">
+              <CustomerPanel c={selected} people={people} teams={teams} viewer={viewer} now={now} dispatch={dispatch} onClose={() => setPanelOpen(false)} />
+            </aside>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -418,23 +429,29 @@ interface ThreadProps {
   setHanding: (v: boolean) => void;
   confirmSpam: boolean;
   setConfirmSpam: (v: boolean) => void;
+  panelOpen: boolean;
   onBack: () => void;
-  onDetails: () => void;
+  onTogglePanel: () => void;
   onToggleResolve: () => void;
   replyRef: React.RefObject<HTMLTextAreaElement | null>;
   noteRef: React.RefObject<HTMLTextAreaElement | null>;
   dispatch: (a: InboxAction) => void;
 }
 
+/** Two messages belong to one run when the same sender wrote them within 5 minutes on the same day. */
+function sameRun(a: Message | undefined, b: Message | undefined) {
+  if (!a || !b || a.kind === "event" || b.kind === "event" || a.kind !== b.kind) return false;
+  return (a.kind === "in" || a.authorId === b.authorId) && a.source === b.source && Math.abs(b.at - a.at) <= GROUP_MS && sameDay(a.at, b.at);
+}
+
 function Thread(p: ThreadProps) {
   const { c, actions, people, teams, viewer, now, dispatch } = p;
   const me = viewer.memberId;
-  const holder = people.find((x) => x.id === c.holderId);
-  const followers = c.trail.slice(0, -1).filter((id, i, a) => id !== c.holderId && a.indexOf(id) === i);
   const team = teams.find((t) => t.id === c.teamId);
   const pinned = c.handoffs[c.handoffs.length - 1];
   const endRef = useRef<HTMLDivElement>(null);
   const count = c.messages.length;
+  const first = c.contact.name.split(" ")[0];
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
@@ -442,80 +459,76 @@ function Thread(p: ThreadProps) {
 
   return (
     <>
-      <header className="grid gap-2 border-b border-border bg-surface px-4 py-3">
-        <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
-          <div className="flex min-w-0 flex-1 basis-56 items-start gap-2">
-            <button type="button" onClick={p.onBack} className={buttonClass("ghost", "sm", "-ms-2 md:hidden")} aria-label="Back to chats">
-              <ArrowLeft size={20} className="rtl:rotate-180" aria-hidden="true" />
-            </button>
-            <div className="min-w-0">
-              <h2 className="flex flex-wrap items-center gap-2 text-lg font-semibold">
-                <bdi className="truncate">{c.contact.name}</bdi>
-                <span className="inline-flex items-center gap-1 text-sm font-normal text-muted">
-                  {c.channel === "email" ? <EnvelopeSimple size={16} aria-hidden="true" /> : <WhatsappLogo size={16} aria-hidden="true" />}
-                  {c.channel === "email" ? "Outlook" : "WhatsApp"}
-                </span>
-                {c.imported && <Badge>Imported</Badge>}
-                {c.status === "resolved" && <Badge tone="done">Resolved</Badge>}
-                {c.status === "spam" && <Badge tone="fail">Spam</Badge>}
-              </h2>
-              <p className="text-sm text-muted">
-                {c.imported
-                  ? "Imported from the phone when the number was connected. No notifications or reply targets."
-                  : holder
-                    ? <>Handled by <strong className="font-semibold text-text">{holder.name}</strong>, {holder.role}{team ? ` · ${team.name}` : ""}</>
-                    : <>Unassigned{team ? ` · ${team.name}` : ""}</>}
-                {followers.length > 0 && <> · Following: {followers.map((id) => people.find((x) => x.id === id)?.name).join(", ")}</>}
-              </p>
-            </div>
-          </div>
-
-          <div className="ms-auto flex shrink-0 items-center gap-1">
-            <button type="button" onClick={p.onDetails} className={buttonClass("ghost", "sm", "2xl:hidden")} title="Customer details" aria-label="Customer details">
-              <UserList size={20} aria-hidden="true" />
-              <span className="hidden sm:inline">Details</span>
-            </button>
-            {actions.canHandOver && c.status !== "spam" && (
-              <button type="button" onClick={() => p.setHanding(!p.handing)} aria-expanded={p.handing} className={buttonClass("secondary", "sm")} title="Hand over (H)">
-                Hand over
-              </button>
-            )}
-            {actions.canResolve && c.status !== "spam" && (
-              <button type="button" onClick={p.onToggleResolve} className={buttonClass("secondary", "sm", "hidden sm:inline-flex")} title={`${c.status === "resolved" ? "Reopen" : "Resolve"} (E)`}>
-                {c.status === "resolved" ? "Reopen" : "Resolve"}
-              </button>
-            )}
-            {(actions.canMarkSpam || actions.canResolve) && (
-              <details className="relative">
-                <summary className={buttonClass("ghost", "sm", "list-none [&::-webkit-details-marker]:hidden")} aria-label="More actions">
-                  <DotsThree size={22} weight="bold" aria-hidden="true" />
-                </summary>
-                <div className="absolute end-0 top-full z-20 mt-1 grid min-w-48 rounded-[var(--radius-control)] border border-border bg-surface p-1 shadow-[var(--shadow-2)]">
-                  {actions.canResolve && c.status !== "spam" && (
-                    <button type="button" onClick={p.onToggleResolve} className="min-h-11 rounded px-3 text-start hover:bg-surface-2 sm:hidden">
-                      {c.status === "resolved" ? "Reopen" : "Resolve"}
-                    </button>
-                  )}
-                  {actions.canMarkSpam &&
-                    (c.status === "spam" ? (
-                      <button type="button" onClick={() => dispatch({ type: "notSpam", id: c.id, by: me, at: stamp() })} className="min-h-11 rounded px-3 text-start hover:bg-surface-2">
-                        Not spam
-                      </button>
-                    ) : (
-                      <button type="button" onClick={() => p.setConfirmSpam(true)} className="min-h-11 rounded px-3 text-start text-fail hover:bg-surface-2">
-                        Mark as spam…
-                      </button>
-                    ))}
-                </div>
-              </details>
-            )}
+      <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-surface ps-2 pe-2 md:ps-5">
+        <div className="flex min-w-0 items-center gap-1">
+          <button type="button" onClick={p.onBack} className={buttonClass("ghost", "sm", "!px-2 md:hidden")} aria-label="Back to chats">
+            <ArrowLeft size={20} className="rtl:rotate-180" aria-hidden="true" />
+          </button>
+          <div className="grid min-w-0 leading-tight">
+            <h2 className="flex min-w-0 items-center gap-2 font-semibold">
+              <bdi className="truncate">{c.contact.name}</bdi>
+              {c.channel === "email" && <span className="shrink-0 text-xs font-normal text-muted">Outlook</span>}
+              {c.imported && <Badge>Imported</Badge>}
+              {c.status === "resolved" && <Badge tone="done">Resolved</Badge>}
+              {c.status === "spam" && <Badge tone="fail">Spam</Badge>}
+            </h2>
+            <p className="flex min-w-0 items-center gap-1 truncate text-xs text-muted">
+              {c.trail.length > 0 ? <Trail ids={c.trail} people={people} /> : <span>{c.imported ? "Imported from the phone" : "Unassigned"}</span>}
+              {team && <span className="truncate">· {team.name}</span>}
+            </p>
           </div>
         </div>
-        {c.trail.length > 1 && <Trail ids={c.trail} people={people} />}
+
+        <div className="flex shrink-0 items-center gap-1">
+          {actions.canHandOver && c.status !== "spam" && (
+            <button type="button" onClick={() => p.setHanding(!p.handing)} aria-expanded={p.handing} className={buttonClass("secondary", "sm")} title="Hand over (H)">
+              Hand over
+            </button>
+          )}
+          {actions.canResolve && c.status !== "spam" && (
+            <button type="button" onClick={p.onToggleResolve} className={buttonClass("ghost", "sm", "hidden lg:inline-flex")} title={`${c.status === "resolved" ? "Reopen" : "Resolve"} (E)`}>
+              {c.status === "resolved" ? "Reopen" : "Resolve"}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={p.onTogglePanel}
+            aria-pressed={p.panelOpen}
+            className={buttonClass("ghost", "sm", `!px-2.5 ${p.panelOpen ? "bg-primary-soft" : ""}`)}
+            title="Customer details"
+            aria-label="Customer details"
+          >
+            <SidebarSimple size={20} className="rotate-180 rtl:rotate-0" aria-hidden="true" />
+          </button>
+          {(actions.canMarkSpam || actions.canResolve) && (
+            <details className="relative">
+              <summary className={buttonClass("ghost", "sm", "!px-2 list-none [&::-webkit-details-marker]:hidden")} aria-label="More actions">
+                <DotsThree size={22} weight="bold" aria-hidden="true" />
+              </summary>
+              <div className="absolute end-0 top-full z-20 mt-1 grid min-w-48 rounded-[var(--radius-control)] border border-border bg-surface p-1 shadow-[var(--shadow-2)]">
+                {actions.canResolve && c.status !== "spam" && (
+                  <button type="button" onClick={p.onToggleResolve} className="min-h-11 rounded px-3 text-start hover:bg-surface-2 lg:hidden">
+                    {c.status === "resolved" ? "Reopen" : "Resolve"}
+                  </button>
+                )}
+                {actions.canMarkSpam &&
+                  (c.status === "spam" ? (
+                    <button type="button" onClick={() => dispatch({ type: "notSpam", id: c.id, by: me, at: stamp() })} className="min-h-11 rounded px-3 text-start hover:bg-surface-2">
+                      Not spam
+                    </button>
+                  ) : (
+                    <button type="button" onClick={() => p.setConfirmSpam(true)} className="min-h-11 rounded px-3 text-start text-fail hover:bg-surface-2">
+                      Mark as spam…
+                    </button>
+                  ))}
+              </div>
+            </details>
+          )}
+        </div>
       </header>
 
       {p.confirmSpam && (
-        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-fail-soft px-4 py-3">
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-fail-soft px-5 py-3">
           <p className="text-sm">
             Mark <bdi className="font-semibold">{c.contact.name}</bdi> as spam? The chat is hidden, and future messages from this number go to Spam.
           </p>
@@ -536,21 +549,36 @@ function Thread(p: ThreadProps) {
       )}
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="grid content-start gap-4 px-4 py-5">
+        <div className="mx-auto grid w-full max-w-3xl content-start px-4 py-6 md:px-6">
           {pinned && (
-            <div className="grid gap-1 rounded-[var(--radius-panel)] border border-primary bg-surface p-3">
-              <p className="text-sm font-medium text-primary">
-                Handoff note from {people.find((x) => x.id === pinned.fromId)?.name ?? "Someone"}
+            <div className="mb-6 grid gap-1 rounded-[var(--radius-panel)] bg-surface p-4 shadow-[var(--shadow-1)]">
+              <p className="text-xs font-medium uppercase tracking-wide text-primary">
+                Handoff note · {people.find((x) => x.id === pinned.fromId)?.name ?? "Someone"}
               </p>
               <p dir="auto">{pinned.note}</p>
             </div>
           )}
-          {c.messages.map((m, i) => (
-            <div key={m.id} id={i === c.messages.length - 1 ? `last-${c.id}` : undefined} className="grid">
-              <MessageItem m={m} people={people} now={now} customer={c.contact.name.split(" ")[0]} />
-            </div>
-          ))}
-          <div ref={endRef} />
+          {c.messages.map((m, i) => {
+            const prev = c.messages[i - 1];
+            const next = c.messages[i + 1];
+            const newDay = !prev || !sameDay(prev.at, m.at);
+            const joined = !newDay && sameRun(prev, m);
+            return (
+              <Fragment key={m.id}>
+                {newDay && (
+                  <div className="my-4 flex items-center gap-3 text-xs font-medium text-muted" role="separator" aria-label={dayLabel(m.at, now)}>
+                    <span className="h-px flex-1 bg-border" />
+                    {dayLabel(m.at, now)}
+                    <span className="h-px flex-1 bg-border" />
+                  </div>
+                )}
+                <div id={i === c.messages.length - 1 ? `last-${c.id}` : undefined} className={`grid ${newDay ? "" : joined ? "mt-1" : "mt-4"}`}>
+                  <MessageItem m={m} people={people} customer={first} first={!joined} last={!sameRun(m, next) || (!!next && !sameDay(m.at, next.at))} />
+                </div>
+              </Fragment>
+            );
+          })}
+          <div ref={endRef} className="h-2" />
         </div>
       </div>
 
@@ -606,60 +634,62 @@ function HandoverPanel({
   const field = "w-full rounded-[var(--radius-control)] border border-input bg-surface px-3 text-base";
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        submit();
-      }}
-      className="grid gap-3 border-t border-border bg-surface px-4 py-3"
-      aria-label="Hand over this chat"
-    >
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,14rem)_1fr]">
-        <div className="grid content-start gap-1">
-          <label htmlFor={`ho-to-${c.id}`} className="text-sm font-medium">Hand over to</label>
-          <select
-            id={`ho-to-${c.id}`}
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            aria-invalid={tried && !!toError}
-            aria-describedby={tried && toError ? `ho-to-err-${c.id}` : undefined}
-            className={`${field} min-h-11`}
-          >
-            <option value="">Choose a person or team</option>
-            {targets.length > 0 && (
-              <optgroup label="People">
-                {targets.map((x) => (
-                  <option key={x.id} value={`p:${x.id}`}>{x.id === me ? `${x.name} (you)` : `${x.name}, ${x.role}`}</option>
-                ))}
+    <div className="px-3 md:px-6">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          submit();
+        }}
+        className="mx-auto grid w-full max-w-3xl gap-3 rounded-[var(--radius-panel)] border border-border bg-surface p-4 shadow-[var(--shadow-2)]"
+        aria-label="Hand over this chat"
+      >
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,14rem)_1fr]">
+          <div className="grid content-start gap-1">
+            <label htmlFor={`ho-to-${c.id}`} className="text-sm font-medium">Hand over to</label>
+            <select
+              id={`ho-to-${c.id}`}
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              aria-invalid={tried && !!toError}
+              aria-describedby={tried && toError ? `ho-to-err-${c.id}` : undefined}
+              className={`${field} min-h-11`}
+            >
+              <option value="">Choose a person or team</option>
+              {targets.length > 0 && (
+                <optgroup label="People">
+                  {targets.map((x) => (
+                    <option key={x.id} value={`p:${x.id}`}>{x.id === me ? `${x.name} (you)` : `${x.name}, ${x.role}`}</option>
+                  ))}
+                </optgroup>
+              )}
+              <optgroup label="Teams (first to claim takes over)">
+                {teams.map((t) => <option key={t.id} value={`t:${t.id}`}>{t.name}</option>)}
               </optgroup>
-            )}
-            <optgroup label="Teams (first to claim takes over)">
-              {teams.map((t) => <option key={t.id} value={`t:${t.id}`}>{t.name}</option>)}
-            </optgroup>
-          </select>
-          {tried && toError && <p id={`ho-to-err-${c.id}`} role="alert" className="text-sm text-fail">{toError}</p>}
+            </select>
+            {tried && toError && <p id={`ho-to-err-${c.id}`} role="alert" className="text-sm text-fail">{toError}</p>}
+          </div>
+          <div className="grid content-start gap-1">
+            <label htmlFor={`ho-note-${c.id}`} className="text-sm font-medium">Why are you handing this over?</label>
+            <textarea
+              id={`ho-note-${c.id}`}
+              rows={2}
+              autoFocus
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              aria-invalid={tried && !!noteError}
+              aria-describedby={`ho-note-help-${c.id}`}
+              className={`${field} resize-y py-2`}
+            />
+            <p id={`ho-note-help-${c.id}`} role={tried && noteError ? "alert" : undefined} className={`text-sm ${tried && noteError ? "text-fail" : "text-muted"}`}>
+              {tried && noteError ? noteError : "Pinned at the top of the chat for the next person. The customer doesn't see it."}
+            </p>
+          </div>
         </div>
-        <div className="grid content-start gap-1">
-          <label htmlFor={`ho-note-${c.id}`} className="text-sm font-medium">Why are you handing this over?</label>
-          <textarea
-            id={`ho-note-${c.id}`}
-            rows={2}
-            autoFocus
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            aria-invalid={tried && !!noteError}
-            aria-describedby={`ho-note-help-${c.id}`}
-            className={`${field} resize-y py-2`}
-          />
-          <p id={`ho-note-help-${c.id}`} role={tried && noteError ? "alert" : undefined} className={`text-sm ${tried && noteError ? "text-fail" : "text-muted"}`}>
-            {tried && noteError ? noteError : "Required. Pinned at the top of the chat for the next person. The customer doesn't see it."}
-          </p>
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onClose} className={buttonClass("ghost", "sm")}>Cancel</button>
+          <button type="submit" className={buttonClass("primary", "sm")}>Hand over</button>
         </div>
-      </div>
-      <div className="flex justify-end gap-2">
-        <button type="button" onClick={onClose} className={buttonClass("ghost")}>Cancel</button>
-        <button type="submit" className={buttonClass("primary")}>Hand over</button>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 }

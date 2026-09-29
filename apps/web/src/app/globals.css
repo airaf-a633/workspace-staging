@@ -51,11 +51,12 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --bg: #0B1A22; --surface: #102530; --surface-2: #16303C; --border: #23404D;
-    --input-border: #6F8894; --text: #E8F1F4; --text-muted: #9DB3BE;
-    --primary: #72C4DE; --on-primary: #0B1A22; --primary-soft: #0E3444; --ring: #72C4DE;
+    /* Neutral charcoal (decided 2026-09-30): Petrol only on actions, selection and focus. */
+    --bg: #111416; --surface: #181C1F; --surface-2: #20252A; --border: #2B3136;
+    --input-border: #6B747C; --text: #E8ECEF; --text-muted: #9AA4AC;
+    --primary: #72C4DE; --on-primary: #0B1A22; --primary-soft: #16343F; --ring: #72C4DE;
     --mint: #0F3A3A; --sky: #122B3D;
-    --status-new: #9DB3BE; --status-new-soft: #16303C;
+    --status-new: #9AA4AC; --status-new-soft: #20252A;
     --status-transit: #8DB4F5; --status-transit-soft: #13223D;
     --status-done: #4CC98A; --status-done-soft: #12301F;
     --status-warn: #F2B24C; --status-warn-soft: #352610;
@@ -71,11 +72,11 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0B1A22; --surface: #102530; --surface-2: #16303C; --border: #23404D;
-  --input-border: #6F8894; --text: #E8F1F4; --text-muted: #9DB3BE;
-  --primary: #72C4DE; --on-primary: #0B1A22; --primary-soft: #0E3444; --ring: #72C4DE;
+  --bg: #111416; --surface: #181C1F; --surface-2: #20252A; --border: #2B3136;
+  --input-border: #6B747C; --text: #E8ECEF; --text-muted: #9AA4AC;
+  --primary: #72C4DE; --on-primary: #0B1A22; --primary-soft: #16343F; --ring: #72C4DE;
   --mint: #0F3A3A; --sky: #122B3D;
-  --status-new: #9DB3BE; --status-new-soft: #16303C;
+  --status-new: #9AA4AC; --status-new-soft: #20252A;
   --status-transit: #8DB4F5; --status-transit-soft: #13223D;
   --status-done: #4CC98A; --status-done-soft: #12301F;
   --status-warn: #F2B24C; --status-warn-soft: #352610;

@@ -75,8 +75,14 @@ export default function Landing() {
               brief="a shop owner in Dubai replying to customers on her phone, natural light"
               className="aspect-[4/5] rounded-[2rem] sm:aspect-[5/4] lg:aspect-[4/5]"
             />
-            <div className="relative -mt-40 ms-auto w-[92%] text-text shadow-[var(--shadow-float)] sm:-mt-56 lg:absolute lg:-bottom-10 lg:-start-10 lg:mt-0 lg:w-[85%]">
-              <HandoffDemo />
+            {/* One quiet product moment on the photo (decided 2026-09-30); the interactive demo has its own section. */}
+            <div className="glass-light absolute inset-x-4 bottom-4 flex items-start gap-3 rounded-2xl p-4 text-text shadow-[var(--shadow-float)] sm:inset-x-auto sm:end-6 sm:bottom-6 sm:w-80 lg:-start-8 lg:end-auto">
+              <span className="bg-button grid size-10 shrink-0 place-items-center rounded-full text-white"><ArrowsLeftRight size={20} aria-hidden="true" /></span>
+              <span className="grid gap-0.5">
+                <span className="text-sm font-semibold">Hana handed Mariam to Sara</span>
+                <span className="text-sm text-muted">&ldquo;Wants 10% off 12 laptops. Needs your approval.&rdquo;</span>
+                <span className="text-xs text-muted">Note pinned · Mariam sees one business</span>
+              </span>
             </div>
           </div>
         </div>
@@ -92,6 +98,22 @@ export default function Landing() {
             </div>
           ))}
         </dl>
+      </section>
+
+      {/* 2b. Try a handoff: the live demo, at a fixed height so opening the form never moves the page. */}
+      <section className="bg-soft">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-24 lg:grid-cols-[1fr_1.1fr]">
+          <div className="reveal grid gap-5">
+            <h2 className="display text-4xl sm:text-5xl">Hand a customer over without losing the thread</h2>
+            <p className="text-lg text-muted">
+              Hana can&apos;t approve the discount, so she hands Mariam to Sara with a note. Sara sees the whole chat and the reason at the top. Mariam just sees one business answering.
+            </p>
+            <p className="text-muted">Try it: press &ldquo;Hand over&rdquo; and write a short note.</p>
+          </div>
+          <div className="reveal shadow-[var(--shadow-float)]">
+            <HandoffDemo fixed />
+          </div>
+        </div>
       </section>
 
       {/* 3. The problem, as a statement */}

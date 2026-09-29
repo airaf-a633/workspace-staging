@@ -148,7 +148,7 @@ Team, sales, and campaigns with Meta cost. Every report exports to CSV or PDF.
 - **Inbox before Meta approval:** sample chats come from a frontend mock, bound to the workspace's real members, teams and role permissions. Names that don't match a real member become sample teammates, who can't receive handoffs.
 - **Inbox actions before Meta approval:** claim, hand over, notes, resolve, spam and tasks all work, but only for the browser session (reset on reload). Send shows "nothing was sent" until a number or mailbox is connected. A banner says so.
 - **Testing states:** by signing in as each seed user (their real role decides holder, override, claim or follower). There's no "Viewing as" switch.
-- **Inbox layout:** three panes from 1536px (changed 2026-09-30: at 1280–1535px, with the side menu, the thread got too narrow). From 768px it shows list and chat, with customer details in a sheet. Below that, one pane at a time. The open chat is kept in the URL (`?c=`), so Back returns to the list.
+- **Inbox layout:** list and chat from 768px; the customer panel is closed by default and opens as a column from 1280px (the side menu is an icon rail in the Inbox), or as a sheet below that. Below that, one pane at a time. The open chat is kept in the URL (`?c=`), so Back returns to the list.
 - **Customer panel:** contact, handoff history, open deals (value per permission), tasks and orders.
 - **Shortcuts:** J/K, R, N, H, E, / and ?, taught in tooltips. Nothing depends on them.
 - **Handoff:** an inline panel above the reply box, for a person or a team. The note needs 10 or more characters.
@@ -172,6 +172,15 @@ Reference: alliahealth.co. The first pass read as generic, next to the competito
 - **Public site theme:** always light, whatever the device setting (decided 2026-09-30). The app follows the device. Implemented as a `.force-light` scope.
 - **Text font:** Google Sans, from the founder's file (OFL), replaces Geist for text and UI. Geist stays in the stack as the per-letter fallback, because the file only covers Basic Latin and Latin-1.
 - **Design system:** updated to v2 (Petrol, gradients, fonts, pill buttons, new cover) on 2026-09-30, version 9.
+- **Decluttering pass (2026-09-30, after research into Front, Intercom and Linear):**
+  - **Side menu:** in the Inbox it shrinks to a 64px icon rail; other pages keep the labelled menu.
+  - **Customer panel:** closed by default and opened with a "Customer" button. It stays open while you move between chats. It shows only sections that have content; empty ones become small "add" links.
+  - **List header:** one row, with a view menu (Mine, My teams, Unassigned, All, Spam) as the title, an Open/Resolved switch, and search behind an icon. Rows are two lines. Only states that need attention get a badge, and the channel icon appears only for email.
+  - **Headers:** every pane's header is one 56px row, so they line up across panes.
+  - **Thread:** day separators; small times in the text font; softer bubbles with no borders; messages grouped by person (5 minutes); the reply box is a floating card with a Reply/Note switch.
+  - **Dark mode:** near-neutral charcoal surfaces. Petrol only for actions, selection and focus.
+  - **Preview:** one slim bar. The inbox's sample note is a small line you can dismiss.
+  - **Landing hero:** words, photo and one floating handoff chip. The interactive demo moves to its own section, at a fixed height.
 - **/preview:** a public, noindexed area with a made-up Qamar workspace and a "Viewing as" switch. It covers Inbox, Home (manager homes), Settings, and Sign-up with onboarding. It has no database and no login, and the real `/w/` app keeps its guards.
 
 ## Open questions
