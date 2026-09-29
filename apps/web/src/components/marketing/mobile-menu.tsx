@@ -28,14 +28,14 @@ export function MobileMenu() {
         aria-expanded={open}
         aria-controls="site-menu"
         onClick={() => setOpen((o) => !o)}
-        className="flex min-h-11 items-center gap-1 rounded-[var(--radius-control)] px-2 text-sm font-medium text-text hover:bg-surface-2"
+        className="flex min-h-11 items-center gap-1 rounded-full px-3 text-sm font-medium text-text hover:bg-surface-2"
       >
         {open ? <X size={22} aria-hidden="true" /> : <List size={22} aria-hidden="true" />}
-        Menu
+        <span className="sr-only sm:not-sr-only">Menu</span>
       </button>
       {open && (
-        <nav id="site-menu" aria-label="Site" className="absolute inset-x-0 top-16 border-b border-border bg-surface shadow-[var(--shadow-2)]">
-          <ul className="mx-auto grid max-w-6xl px-4 py-2">
+        <nav id="site-menu" aria-label="Site" className="glass-light absolute inset-x-0 top-full mt-2 rounded-3xl shadow-[var(--shadow-2)]">
+          <ul className="grid px-5 py-2">
             {LINKS.map(([href, label]) => (
               <li key={href}>
                 <Link href={href} onClick={() => setOpen(false)} className="flex min-h-12 items-center border-b border-border text-base last:border-0">{label}</Link>

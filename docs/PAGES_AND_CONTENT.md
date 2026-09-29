@@ -80,6 +80,7 @@ Imagery inside the app: **none** except simple Phosphor icons in empty states. T
 - **Search.**
 - **Three panes:** list, thread, customer panel. On phones, one pane at a time.
 - **Every state from the design system:** holder, follower, override, claim, 24-hour window, phone reply, disconnected, imported, failed send.
+- **Built (sample data):** `apps/web/src/components/inbox/`. Access rules are in `packages/domain/src/conversationAccess.ts` (tested), shared with M2.
 
 ### 2.3 Customers
 - **List:** search, saved segments and tags.
@@ -143,6 +144,31 @@ Team, sales, and campaigns with Meta cost. Every report exports to CSV or PDF.
 
 - **Trial:** starts when the first WhatsApp number connects, not at sign-up.
 - **Public site on phones:** a small menu button opens the section links.
+
+- **Inbox before Meta approval:** sample chats come from a frontend mock, bound to the workspace's real members, teams and role permissions. Names that don't match a real member become sample teammates, who can't receive handoffs.
+- **Inbox actions before Meta approval:** claim, hand over, notes, resolve, spam and tasks all work, but only for the browser session (reset on reload). Send shows "nothing was sent" until a number or mailbox is connected. A banner says so.
+- **Testing states:** by signing in as each seed user (their real role decides holder, override, claim or follower). There's no "Viewing as" switch.
+- **Inbox layout:** three panes from 1536px (changed 2026-09-30: at 1280–1535px, with the side menu, the thread got too narrow). From 768px it shows list and chat, with customer details in a sheet. Below that, one pane at a time. The open chat is kept in the URL (`?c=`), so Back returns to the list.
+- **Customer panel:** contact, handoff history, open deals (value per permission), tasks and orders.
+- **Shortcuts:** J/K, R, N, H, E, / and ?, taught in tooltips. Nothing depends on them.
+- **Handoff:** an inline panel above the reply box, for a person or a team. The note needs 10 or more characters.
+
+### Visual direction v2 (2026-09-30)
+Reference: alliahealth.co. The first pass read as generic, next to the competitor wamanager.io.
+- **Where it applies:** the public site gets the full treatment. The app takes the same fonts, colours and finish, but stays calm and scannable for all-day work.
+- **Fonts:**
+  - Fraunces, light (300), for display headings: large and tightly tracked.
+  - Geist for all text and UI.
+  - IBM Plex Sans Arabic for Arabic.
+  - All three are free and loaded through next/font. Allia's PP Museum and PP Neue Montreal are paid, and have no Arabic.
+- **Colour:**
+  - Petrol #0A5670 stays the brand and action colour.
+  - Soft atmospheric gradients from petrol into mint and pale sky.
+  - Navy text instead of near-black.
+- **Shapes:** a floating glass pill nav on the public site, and pill buttons.
+- **Imagery:** the hero pairs a photo of UAE business people with live product pieces, which float on gradients in the sections. The photo source is still open.
+- **Motion:** gentle. Sections fade and rise in once, the hero gradient drifts slowly, and hover eases. All of it is off with reduced motion.
+- **/preview:** a public, noindexed area with a made-up Qamar workspace and a "Viewing as" switch. It covers Inbox, Home (manager homes), Settings, and Sign-up with onboarding. It has no database and no login, and the real `/w/` app keeps its guards.
 
 ## Open questions
 - The product name, which is needed before the public website goes live.

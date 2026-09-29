@@ -8,7 +8,7 @@ export default async function WorkspaceLayout(props: LayoutProps<"/w/[slug]">) {
   const role = Array.isArray(me.roles) ? me.roles[0] : me.roles;
 
   return (
-    <AppShell slug={slug} workspaceName={workspace.name} memberName={me.display_name} roleName={role?.name ?? ""} signOut={signOut}>
+    <AppShell base={`/w/${slug}`} workspaceName={workspace.name} memberName={me.display_name} roleName={role?.name ?? ""} signOut={signOut}>
       {props.children}
     </AppShell>
   );

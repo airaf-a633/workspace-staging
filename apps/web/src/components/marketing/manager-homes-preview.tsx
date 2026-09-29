@@ -35,13 +35,13 @@ export function ManagerHomesPreview() {
       <div role="tablist" aria-label="Manager home" className="flex flex-wrap gap-1 border-b border-border p-2">
         {(Object.keys(HOMES) as Role[]).map((r) => (
           <button key={r} role="tab" type="button" aria-selected={role === r} onClick={() => setRole(r)}
-            className={`min-h-11 rounded-[var(--radius-control)] px-4 text-sm font-medium ${role === r ? "bg-primary-soft text-primary" : "text-muted hover:bg-surface-2"}`}>
+            className={`min-h-11 rounded-full px-4 text-sm font-medium ${role === r ? "bg-primary-soft text-primary" : "text-muted hover:bg-surface-2"}`}>
             {r}
           </button>
         ))}
       </div>
       <div role="tabpanel" className="grid gap-5 p-5">
-        <p className="text-lg font-semibold">Good morning, {home.who}</p>
+        <p className="title text-2xl">Good morning, {home.who}</p>
         <div className="grid gap-2">
           <p className="text-sm font-medium text-muted">Needs you now</p>
           <ul className="grid gap-2">

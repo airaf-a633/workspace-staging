@@ -6,17 +6,21 @@ import type { ReactNode } from "react";
 import { ChatsCircle, CheckSquare, Gear, House, Handshake, SignOut, UsersThree } from "@phosphor-icons/react";
 
 interface Props {
-  slug: string;
+  /** Where the app lives: `/w/<slug>` for real workspaces, `/preview/<person>` for the design preview. */
+  base: string;
   workspaceName: string;
   memberName: string;
   roleName: string;
-  signOut: () => Promise<void>;
+  /** Real workspaces sign out; the preview passes its own footer instead. */
+  signOut?: () => Promise<void>;
+  footer?: ReactNode;
+  /** A bar above every screen (the preview's "Viewing as" switch). */
+  banner?: ReactNode;
   children: ReactNode;
 }
 
 /* Five to six destinations, each with an icon AND a label. Nothing is icon-only. */
-function navItems(slug: string) {
-  const base = `/w/${slug}`;
+function navItems(base: string) {
   return [
     { href: base, label: "Home", Icon: House, match: (p: string) => p === base },
     { href: `${base}/inbox`, label: "Inbox", Icon: ChatsCircle, match: (p: string) => p.startsWith(`${base}/inbox`) },
@@ -32,24 +36,28 @@ function navItems(slug: string) {
   ];
 }
 
-export function AppShell({ slug, workspaceName, memberName, roleName, signOut, children }: Props) {
+export function AppShell({ base, workspaceName, memberName, roleName, signOut, footer, banner, children }: Props) {
   const path = usePathname();
-  const items = navItems(slug);
+  const items = navItems(base);
   // Phones get the five most-used destinations; Tasks is reachable from Home.
   const mobile = items.filter((i) => i.label !== "Tasks");
+  // Work screens with their own panes (the inbox) fill the window instead of sitting in a page column.
+  const fullBleed = path.startsWith(`${base}/inbox`);
+  const initial = workspaceName.trim().charAt(0).toUpperCase();
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[248px_1fr]">
+    <div className="min-h-dvh lg:grid lg:grid-cols-[256px_1fr]">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-50 focus:rounded focus:bg-surface focus:p-3">
         Skip to content
       </a>
 
       {/* Desktop side menu */}
-      <aside className="hidden border-e border-border bg-surface lg:flex lg:flex-col" aria-label="Main">
-        <div className="border-b border-border px-5 py-4">
-          <p className="truncate font-semibold" title={workspaceName}>{workspaceName}</p>
+      <aside className="hidden border-e border-border bg-surface lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col" aria-label="Main">
+        <div className="flex items-center gap-3 px-5 py-5">
+          <span className="bg-hero grid size-10 shrink-0 place-items-center rounded-full font-serif text-lg text-white" aria-hidden="true">{initial}</span>
+          <p className="title truncate text-lg" title={workspaceName}>{workspaceName}</p>
         </div>
-        <nav className="grid gap-1 p-3">
+        <nav className="grid gap-1 px-3">
           {items.map(({ href, label, Icon, match }) => {
             const active = match(path);
             return (
@@ -57,7 +65,7 @@ export function AppShell({ slug, workspaceName, memberName, roleName, signOut, c
                 key={href}
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={`flex min-h-11 items-center gap-3 rounded-[var(--radius-control)] px-3 text-base ${
+                className={`flex min-h-11 items-center gap-3 rounded-full px-4 text-base transition-colors ${
                   active ? "bg-primary-soft font-semibold text-primary" : "text-text hover:bg-surface-2"
                 }`}
               >
@@ -72,22 +80,26 @@ export function AppShell({ slug, workspaceName, memberName, roleName, signOut, c
             <p className="truncate font-medium">{memberName}</p>
             <p className="truncate text-sm text-muted">{roleName}</p>
           </div>
-          <form action={signOut}>
-            <button type="submit" className="flex min-h-11 items-center gap-2 text-sm text-muted hover:text-text">
-              <SignOut size={20} aria-hidden="true" /> Sign out
-            </button>
-          </form>
+          {footer}
+          {signOut && (
+            <form action={signOut}>
+              <button type="submit" className="flex min-h-11 items-center gap-2 text-sm text-muted hover:text-text">
+                <SignOut size={20} aria-hidden="true" /> Sign out
+              </button>
+            </form>
+          )}
         </div>
       </aside>
 
-      <div className="flex min-h-dvh flex-col pb-20 lg:pb-0">
+      <div className={`flex flex-col lg:pb-0 ${fullBleed ? "h-dvh pb-[calc(4rem+1px+env(safe-area-inset-bottom))]" : "min-h-dvh pb-20"}`}>
+        {banner}
         {/* Phone top bar */}
         <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-surface px-4 py-3 lg:hidden">
-          <p className="truncate font-semibold">{workspaceName}</p>
+          <p className="title truncate text-lg">{workspaceName}</p>
           <p className="truncate text-sm text-muted">{memberName}</p>
         </header>
 
-        <main id="main" className="mx-auto grid w-full max-w-5xl content-start gap-6 px-4 py-6 lg:px-8 lg:py-8">
+        <main id="main" className={fullBleed ? "min-h-0 flex-1" : "mx-auto grid w-full max-w-5xl content-start gap-6 px-4 py-6 lg:px-8 lg:py-10"}>
           {children}
         </main>
       </div>

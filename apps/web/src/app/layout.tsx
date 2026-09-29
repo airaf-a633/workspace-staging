@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Mono, IBM_Plex_Sans, IBM_Plex_Sans_Arabic } from "next/font/google";
+import { Fraunces, Geist, Geist_Mono, IBM_Plex_Sans_Arabic } from "next/font/google";
 import "./globals.css";
 
-const plexSans = IBM_Plex_Sans({ variable: "--font-plex-sans", subsets: ["latin"], weight: ["400", "500", "600"], display: "swap" });
-const plexArabic = IBM_Plex_Sans_Arabic({ variable: "--font-plex-arabic", subsets: ["arabic"], weight: ["400", "500", "600"], display: "swap" });
-const plexMono = IBM_Plex_Mono({ variable: "--font-plex-mono", subsets: ["latin"], weight: ["400", "500"], display: "swap" });
+// Visual direction v2 (2026-09-30): Fraunces light for display, Geist for text and UI, Plex Arabic for Arabic.
+const fraunces = Fraunces({ variable: "--font-fraunces", subsets: ["latin"], axes: ["opsz", "SOFT"], display: "swap" });
+const geist = Geist({ variable: "--font-geist", subsets: ["latin"], display: "swap" });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"], display: "swap" });
+const plexArabic = IBM_Plex_Sans_Arabic({ variable: "--font-plex-arabic", subsets: ["arabic"], weight: ["300", "400", "500", "600"], display: "swap" });
 
 export const metadata: Metadata = {
   title: { default: "Workspace", template: "%s · Workspace" },
@@ -13,14 +15,14 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F6F7F8" },
-    { media: "(prefers-color-scheme: dark)", color: "#0F1316" },
+    { media: "(prefers-color-scheme: light)", color: "#F4F8FA" },
+    { media: "(prefers-color-scheme: dark)", color: "#0B1A22" },
   ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" dir="ltr" className={`${plexSans.variable} ${plexArabic.variable} ${plexMono.variable}`}>
+    <html lang="en" dir="ltr" className={`${fraunces.variable} ${geist.variable} ${geistMono.variable} ${plexArabic.variable}`}>
       <body className="min-h-dvh">{children}</body>
     </html>
   );

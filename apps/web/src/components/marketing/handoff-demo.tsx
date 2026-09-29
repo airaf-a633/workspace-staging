@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ArrowRight, Lock } from "@phosphor-icons/react";
+import { buttonClass } from "@/components/ui/button";
 
 /*
  * A real, working miniature of the inbox handoff (sample data, runs in the browser).
@@ -49,7 +50,7 @@ export function HandoffDemo({ full = false }: { full?: boolean }) {
           <span className="font-semibold">Mariam Al Suwaidi</span>
           <span className="text-sm text-muted">WhatsApp · handled by <strong className="text-text">{holder}</strong>, {PEOPLE[holder]}</span>
         </div>
-        <button type="button" onClick={() => setOpen((o) => !o)} className="min-h-11 rounded-[var(--radius-control)] border border-input px-4 font-medium hover:bg-surface-2">
+        <button type="button" onClick={() => setOpen((o) => !o)} className={buttonClass("secondary")}>
           Hand over
         </button>
       </div>
@@ -80,8 +81,8 @@ export function HandoffDemo({ full = false }: { full?: boolean }) {
             {tried ? "Write at least 10 characters so the next person knows what to do." : "Required. The customer never sees it."}
           </p>
           <div className="flex gap-2">
-            <button type="submit" className="min-h-11 rounded-[var(--radius-control)] bg-primary px-4 font-medium text-on-primary">Hand over</button>
-            <button type="button" onClick={() => setOpen(false)} className="min-h-11 rounded-[var(--radius-control)] px-4 font-medium text-primary">Cancel</button>
+            <button type="submit" className={buttonClass("primary")}>Hand over</button>
+            <button type="button" onClick={() => setOpen(false)} className={buttonClass("ghost")}>Cancel</button>
           </div>
         </form>
       )}

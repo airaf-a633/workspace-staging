@@ -4,7 +4,7 @@ import { CheckCircle, Info, WarningCircle } from "@phosphor-icons/react/dist/ssr
 /** A card: only for things people act on as a unit (a team, a member list, a form). */
 export function Card({ title, description, actions, children, className = "" }: { title?: ReactNode; description?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={`grid gap-4 rounded-[var(--radius-panel)] border border-border bg-surface p-5 ${className}`}>
+    <section className={`grid gap-4 rounded-[var(--radius-panel)] border border-border bg-surface p-6 shadow-[var(--shadow-1)] ${className}`}>
       {(title || actions) && (
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="grid gap-1">
@@ -50,7 +50,7 @@ export function PageHeader({ title, description, action }: { title: string; desc
   return (
     <header className="flex flex-wrap items-end justify-between gap-4">
       <div className="grid gap-1">
-        <h1 className="text-2xl font-semibold">{title}</h1>
+        <h1 className="title text-3xl sm:text-4xl">{title}</h1>
         {description && <p className="max-w-2xl text-muted">{description}</p>}
       </div>
       {action}
