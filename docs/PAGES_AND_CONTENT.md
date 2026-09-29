@@ -188,6 +188,19 @@ Reference: alliahealth.co. The first pass read as generic, next to the competito
     - After it connects, Home is the manager home. Unfinished setup shrinks to a small "Setup 3 of 5" link until it's done or dismissed.
   - **Settings:** one page with a side sub-menu (Team members, Teams and branches, Roles, WhatsApp numbers, Account). No hub page and no cards inside cards. Members is a plain list with "Invite" at the top, which opens an inline panel.
   - **Design system:** ConversationRow, Message, Composer and HandoffTrail get the new look. The Inbox and Manager homes demos are rebuilt from them.
+- **Customers and WhatsApp numbers (2026-09-30):**
+  - **Customers list:** a calm table (name and company, last contact with channel, deal stage and value per permission, tags, owner). Segments work as a view menu (All, Businesses, VIP, Open deal, No contact in 30 days), with tag chips and search. On phones the table becomes two-line rows.
+  - **Add a customer:** a short inline form. Name and phone (with country code) are required; email, company and tag are optional. It checks for the same phone (last 9 digits) or email and offers to open that customer instead of creating a duplicate. Import sits beside it (soon).
+  - **Customer page:** details on the side (contact, fields, tags, deals, follow-ups, orders total) and one timeline in the main column, with filter chips. "Open chat" and "New deal" sit at the top; merge and erase (owner, inline PDPL confirm) are in the ⋯ menu. A possible duplicate shows as a banner with "Compare and merge".
+  - **Merge:** both records side by side. Pick values where they differ; timelines, deals, follow-ups, orders and tags combine. There's an inline confirm, the merge is logged, and it isn't undone automatically.
+  - **WhatsApp numbers:** Settings lists each number (status, quality, team, the 14-day warning) with "Connect a number" (N of plan). Each number has its own page:
+    - **Health:** the phone app's last-opened countdown, quality in words, and the daily limit.
+    - **Routing:** the team, and where new chats go.
+    - **Profile:** display name review, about, category, and a preview of what customers see.
+    - **Usage:** counts by category, estimated Meta charges, and whether a card is on file with Meta.
+    - **Disconnect:** at the bottom, behind a confirm, owner only.
+  - **Before Meta approves us:** the numbers page is a get-ready checklist (verify the business, choose the number, card on Meta, teams). This is the real page today.
+  - **Setup chip:** can be hidden for good (this browser for now; per member later). The checklist stays in Settings › Account.
 - **/preview:** a public, noindexed area with a made-up Qamar workspace and a "Viewing as" switch. It covers Inbox, Home (manager homes), Settings, and Sign-up with onboarding. It has no database and no login, and the real `/w/` app keeps its guards.
 
 ## Open questions

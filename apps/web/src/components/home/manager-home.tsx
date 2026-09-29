@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ArrowRight, CaretRight, WarningCircle } from "@phosphor-icons/react/dist/ssr";
+import { CaretRight, WarningCircle } from "@phosphor-icons/react/dist/ssr";
+import { SetupChip } from "./setup-chip";
 import { canSeeDealValue, replyAccess, windowOpen, type RoleTemplateKey } from "@app/domain";
-import { aed, waitedFor } from "@/components/inbox/format";
+import { aed, dueText, waitedFor } from "@/components/inbox/format";
 import type { InboxData } from "@/components/inbox/types";
 
 /*
@@ -69,7 +70,7 @@ export function needsFor(data: InboxData, inboxHref: string): NeedRow[] {
       }
     }
     for (const t of c.contact.tasks) {
-      if (t.ownerId === v.memberId && !t.done) items.push({ text: `${t.text}, due ${t.due.toLowerCase()}`, rank: 3, tone: "plain" });
+      if (t.ownerId === v.memberId && !t.done) items.push({ text: `${t.text}, ${dueText(t.due)}`, rank: 3, tone: "plain" });
     }
     for (const d of c.contact.deals) {
       if (d.ownerId === v.memberId && d.stage === "quoted") {
@@ -143,13 +144,7 @@ export function ManagerHome({
           <p className="text-sm text-muted">{date}</p>
           <h1 className="display text-4xl sm:text-5xl">{greeting(data.now)}, {firstName}</h1>
         </div>
-        {setup && setup.done < setup.total && (
-          <Link href={setup.href} className="inline-flex min-h-9 items-center gap-2 rounded-full bg-surface px-3.5 text-sm shadow-[var(--shadow-1)] ring-1 ring-border hover:bg-surface-2">
-            <span className="font-medium">Setup {setup.done} of {setup.total}</span>
-            <span className="text-muted">Finish setting up</span>
-            <ArrowRight size={14} className="text-muted rtl:rotate-180" aria-hidden="true" />
-          </Link>
-        )}
+        {setup && <SetupChip {...setup} />}
       </header>
 
       <section aria-labelledby="needs" className="grid gap-3">

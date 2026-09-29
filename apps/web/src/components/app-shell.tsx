@@ -31,7 +31,7 @@ function navItems(base: string) {
       href: `${base}/settings`,
       label: "Settings",
       Icon: Gear,
-      match: (p: string) => ["settings", "members", "teams", "roles"].some((s) => p.startsWith(`${base}/${s}`)),
+      match: (p: string) => ["settings", "members", "teams", "roles", "whatsapp", "account"].some((s) => p.startsWith(`${base}/${s}`)),
     },
   ];
 }

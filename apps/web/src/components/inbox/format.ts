@@ -50,6 +50,17 @@ export function sameDay(a: number, b: number) {
   return parts(a).key === parts(b).key;
 }
 
+/** For lists of customers: "4 min ago", "2 h ago", "Yesterday", "9 days ago", then a date. */
+export function ago(at: number, now: number) {
+  const min = Math.max(1, Math.round((now - at) / 60_000));
+  if (min < 60) return `${min} min ago`;
+  if (min < 24 * 60 && dayDiff(at, now) === 0) return `${Math.round(min / 60)} h ago`;
+  const d = dayDiff(at, now);
+  if (d === 1) return "Yesterday";
+  const days = Math.round((now - at) / 86_400_000);
+  return days < 30 ? `${Math.max(2, days)} days ago` : date(at, now);
+}
+
 export function waitedFor(at: number, now: number) {
   const m = Math.max(1, Math.round((now - at) / 60_000));
   return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`;
@@ -61,4 +72,9 @@ export function fileSize(bytes: number) {
 
 export function aed(amount: number) {
   return `AED ${formatAed(toFils(amount))}`;
+}
+
+/** "due today", "due tomorrow", but "due Thursday": only relative words go lowercase. */
+export function dueText(due: string) {
+  return `due ${["Today", "Tomorrow", "No date"].includes(due) ? due.toLowerCase() : due}`;
 }

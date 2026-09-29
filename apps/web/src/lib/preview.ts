@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { ROLE_TEMPLATES, templateScopes, type RoleTemplateKey, type Scope } from "@app/domain";
 import { buildSampleInbox } from "@/components/inbox/sample-data";
+import { buildCustomers } from "@/components/customers/sample";
 
 /**
  * The made-up Qamar Electronics workspace behind /preview (public, no login, no database).
@@ -54,4 +55,19 @@ export function previewInbox(key: string) {
     PREVIEW_TEAMS.map(({ id, name, isDefault }) => ({ id, name, isDefault })),
     { memberId: me.id, teamIds: me.teams, scopes: me.scopes },
   );
+}
+
+/** Customers the viewer may see (contacts.view: the viewer role sees its own teams only). */
+export function previewCustomers(key: string) {
+  const me = previewPerson(key);
+  const data = previewInbox(key);
+  const scope = me.scopes["contacts.view"] ?? "none";
+  const all = buildCustomers(data);
+  const customers = scope === "all" ? all : scope === "team" ? all.filter((c) => me.teams.includes(c.teamId)) : [];
+  return { data, customers };
+}
+
+/** The preview's clock, per request. */
+export function previewNow() {
+  return Date.now();
 }

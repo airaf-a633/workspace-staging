@@ -229,7 +229,7 @@ export function Inbox({ data }: { data: InboxData }) {
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value as Filter)}
-              className="title min-h-11 max-w-full cursor-pointer appearance-none truncate bg-transparent pe-6 text-xl focus-visible:outline-offset-4"
+              className="title min-h-11 max-w-full cursor-pointer appearance-none truncate bg-transparent pe-6 text-xl [field-sizing:content] focus-visible:outline-offset-4"
             >
               {views.map(([f, label]) => (
                 <option key={f} value={f}>{label} ({openCount(f)})</option>

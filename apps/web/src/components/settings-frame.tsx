@@ -1,19 +1,19 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-export type SettingsSection = "members" | "teams" | "roles";
+export type SettingsSection = "members" | "teams" | "roles" | "whatsapp" | "account";
 
 /**
  * Settings as one page with a side sub-menu (decided 2026-09-30). The sections keep their own URLs
- * (`/members`, `/teams`, `/roles`) so links and server actions stay the same.
+ * (`/members`, `/teams`, `/roles`, `/whatsapp`, `/account`) so links and server actions stay the same.
  */
 export function SettingsFrame({ base, active, isOwner, children }: { base: string; active: SettingsSection; isOwner: boolean; children: ReactNode }) {
-  const items: { key: SettingsSection | "whatsapp" | "account"; label: string; href?: string }[] = [
+  const items: { key: SettingsSection; label: string; href?: string }[] = [
     { key: "members", label: "Team members", href: `${base}/members` },
     { key: "teams", label: "Teams and branches", href: `${base}/teams` },
     ...(isOwner ? [{ key: "roles" as const, label: "Roles", href: `${base}/roles` }] : []),
-    { key: "whatsapp", label: "WhatsApp numbers" },
-    { key: "account", label: "Account" },
+    { key: "whatsapp", label: "WhatsApp numbers", href: `${base}/whatsapp` },
+    { key: "account", label: "Account", href: `${base}/account` },
   ];
 
   return (
