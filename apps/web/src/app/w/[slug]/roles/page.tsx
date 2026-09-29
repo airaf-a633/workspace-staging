@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Submit } from "@/components/ui/button";
+import { Submit } from "@/components/ui/submit";
 import { SelectInput, TextInput } from "@/components/ui/field";
 import { Card, Notice, PageHeader } from "@/components/ui/surface";
 import { can, loadWorkspace } from "@/lib/workspace";

@@ -1,5 +1,6 @@
 import { AuthFrame } from "@/components/auth-frame";
-import { ButtonLink, Submit } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button";
+import { Submit } from "@/components/ui/submit";
 import { TextInput } from "@/components/ui/field";
 import { Notice } from "@/components/ui/surface";
 import { getUser } from "@/lib/supabase/server";

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CaretRight } from "@phosphor-icons/react/dist/ssr";
 import { AuthFrame } from "@/components/auth-frame";
-import { Submit } from "@/components/ui/button";
+import { Submit } from "@/components/ui/submit";
 import { TextInput } from "@/components/ui/field";
 import { Notice } from "@/components/ui/surface";
 import { createClient, getUser } from "@/lib/supabase/server";

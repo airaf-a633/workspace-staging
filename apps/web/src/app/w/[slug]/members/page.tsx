@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { CaretDown } from "@phosphor-icons/react/dist/ssr";
-import { Submit } from "@/components/ui/button";
+import { Submit } from "@/components/ui/submit";
 import { CopyField } from "@/components/ui/copy-button";
 import { Checkbox, SelectInput, TextInput } from "@/components/ui/field";
 import { Badge, Card, Notice, PageHeader } from "@/components/ui/surface";

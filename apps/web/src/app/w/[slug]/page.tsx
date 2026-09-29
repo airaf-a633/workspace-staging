@@ -13,7 +13,7 @@ export default async function WorkspaceHome(props: PageProps<"/w/[slug]">) {
   const firstName = me.display_name.split(" ")[0];
 
   const steps = [
-    { title: "Connect WhatsApp", body: "Link your business number and keep using the WhatsApp app on your phone.", done: false, href: null, soon: "Available when the inbox launches" },
+    { title: "Connect WhatsApp", body: "Link your business number and keep using the WhatsApp app on your phone.", done: false, href: null, soon: "Opens as soon as Meta approves our platform. We'll email you." },
     {
       title: shape === "solo" ? "Invite your team (optional)" : "Invite your team",
       body:

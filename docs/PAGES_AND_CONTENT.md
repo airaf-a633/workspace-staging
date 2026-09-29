@@ -135,5 +135,12 @@ Team, sales, and campaigns with Meta cost. Every report exports to CSV or PDF.
 - **Time:** 24-hour clock, Dubai time ("14:05", "Yesterday", "Mon 28 Sep").
 - **Confirmations for destructive actions:** an inline second step with a clearly labelled button. No pop-ups.
 
+- **Hero headline:** "Run your business from WhatsApp, together".
+- **Pricing on the site:** placeholder prices (AED 99 / 249 / 499, Orders pack +99), clearly labelled "Beta pricing, may change".
+- **Main call to action:** "Start free trial" opens sign-up now. Honesty requirement: the page and the setup checklist say that connecting WhatsApp opens after Meta's approval.
+- **Demo:** a guided inline preview on the landing page (hand a chat over), plus "Open the full demo" at /demo.
+- **Imagery until M2 ships:** live, real components with sample data instead of screenshots, which are swapped in once the real inbox exists.
+
 ## Open questions
 - The product name, which is needed before the public website goes live.
+- Should the 14-day trial start only when WhatsApp can actually be connected, so early sign-ups don't lose trial days?

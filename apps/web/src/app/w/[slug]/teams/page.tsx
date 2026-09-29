@@ -1,5 +1,5 @@
 import { CaretDown } from "@phosphor-icons/react/dist/ssr";
-import { Submit } from "@/components/ui/button";
+import { Submit } from "@/components/ui/submit";
 import { Checkbox, SelectInput, TextInput } from "@/components/ui/field";
 import { Badge, Card, Notice, PageHeader } from "@/components/ui/surface";
 import { can, loadWorkspace } from "@/lib/workspace";
