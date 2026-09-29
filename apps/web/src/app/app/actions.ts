@@ -27,5 +27,9 @@ export async function createWorkspace(form: FormData) {
   const supabase = await createClient();
   const { error } = await supabase.rpc("create_workspace", { p_name: parsed.data, p_slug: slug, p_display_name: displayName });
   if (error) redirect(`/app?error=${encodeURIComponent("Couldn't create the workspace. Try again.")}`);
+
+  // Optional team question: only tailors the setup checklist, so a failure here isn't shown.
+  const shape = z.enum(["solo", "small", "split", "delivery"]).safeParse(form.get("teamShape"));
+  if (shape.success) await supabase.from("workspaces").update({ team_shape: shape.data }).eq("slug", slug);
   redirect(`/w/${slug}`);
 }

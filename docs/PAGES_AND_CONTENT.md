@@ -123,8 +123,17 @@ Team, sales, and campaigns with Meta cost. Every report exports to CSV or PDF.
 6. **The first real moment:** "Send a message to your business number from any phone". It appears live, and the checklist ticks itself.
 7. **Emails** (after an email provider is chosen): welcome; a day-3 tip; trial ending in 3 days; trial ended.
 
+## Decisions (2026-09-29)
+- **Language:** the public website launches in English first; Arabic follows. The app itself supports Arabic from M4.
+- **Product name:** decided later. "Workspace" stays as the placeholder.
+- **Team question at sign-up:** included, with 4 skippable choices: "Just me", "A small team (2–5)", "Separate sales and support", "We also deliver orders". Each quietly adjusts the setup checklist.
+- **"Talk to us" contact:** a new, dedicated UAE business number, connected to our own product once M2.8 works. Email until then.
+- **Website tone:** calm and practical. No hype words.
+- **Landing page length:** medium, 8–10 sections, as in §1.1.
+- **Home:** after setup, leads with a "Needs you now" list, then the four numbers.
+- **Inbox default:** chats I hold first, then my teams' unassigned chats. Managers can switch to "All".
+- **Time:** 24-hour clock, Dubai time ("14:05", "Yesterday", "Mon 28 Sep").
+- **Confirmations for destructive actions:** an inline second step with a clearly labelled button. No pop-ups.
+
 ## Open questions
-- Arabic version of the public website at launch, or English first?
-- The product name, which the website needs before it goes live. "Workspace" is a placeholder.
-- The optional "What does your team look like?" question at sign-up: include it?
-- Contact through our own WhatsApp number: which number? It must stay separate from test numbers.
+- The product name, which is needed before the public website goes live.

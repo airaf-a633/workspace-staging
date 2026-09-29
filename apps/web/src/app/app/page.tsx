@@ -42,6 +42,28 @@ export default async function AppHome(props: PageProps<"/app">) {
       )}
       <form action={createWorkspace} className={`grid gap-4 ${hasAny ? "border-t border-border pt-5" : ""}`}>
         <TextInput label="Business name" name="name" placeholder="e.g. Qamar Electronics" required />
+        {!hasAny && (
+          <fieldset className="grid gap-1">
+            <legend className="text-sm font-medium">What does your team look like? <span className="font-normal text-muted">(optional)</span></legend>
+            <p className="text-sm text-muted">We&apos;ll tailor your setup steps. You can change this later.</p>
+            <div className="mt-1 grid gap-2">
+              {[
+                ["solo", "Just me", "I handle customers myself"],
+                ["small", "A small team", "2 to 5 people sharing the work"],
+                ["split", "Separate sales and support", "Different people for new customers and existing ones"],
+                ["delivery", "We also deliver orders", "Our own riders or drivers take orders to customers"],
+              ].map(([value, title, hint]) => (
+                <label key={value} className="flex min-h-12 cursor-pointer items-start gap-3 rounded-[var(--radius-control)] border border-border p-3 has-[:checked]:border-primary has-[:checked]:bg-primary-soft">
+                  <input type="radio" name="teamShape" value={value} className="mt-1 size-5 accent-[var(--primary)]" />
+                  <span className="grid">
+                    <span className="font-medium">{title}</span>
+                    <span className="text-sm text-muted">{hint}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
         <Submit variant={hasAny ? "secondary" : "primary"} pending="Creating…">{hasAny ? "Create another workspace" : "Create workspace"}</Submit>
       </form>
     </AuthFrame>

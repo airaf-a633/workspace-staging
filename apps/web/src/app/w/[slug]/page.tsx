@@ -7,12 +7,23 @@ import { loadWorkspace } from "@/lib/workspace";
 export default async function WorkspaceHome(props: PageProps<"/w/[slug]">) {
   const { slug } = await props.params;
   const { supabase, workspace, me } = await loadWorkspace(slug);
+  const { data: ws } = await supabase.from("workspaces").select("team_shape").eq("id", workspace.id).single();
+  const shape = ws?.team_shape as "solo" | "small" | "split" | "delivery" | null;
   const { count: memberCount } = await supabase.from("members").select("id", { count: "exact", head: true }).eq("workspace_id", workspace.id).eq("status", "active");
   const firstName = me.display_name.split(" ")[0];
 
   const steps = [
     { title: "Connect WhatsApp", body: "Link your business number and keep using the WhatsApp app on your phone.", done: false, href: null, soon: "Available when the inbox launches" },
-    { title: "Invite your team", body: "Add managers and agents, and choose what each can see.", done: (memberCount ?? 0) > 1, href: `/w/${slug}/members`, soon: null },
+    {
+      title: shape === "solo" ? "Invite your team (optional)" : "Invite your team",
+      body:
+        shape === "solo" ? "Skip this if it's just you. You can add people any time."
+        : shape === "split" ? "Add your sales and support managers, then put each in their own team."
+        : "Add managers and agents, and choose what each can see.",
+      done: (memberCount ?? 0) > 1,
+      href: `/w/${slug}/members`,
+      soon: null,
+    },
     { title: "Set working hours", body: "So customers get an out-of-hours reply and reply targets are fair.", done: false, href: null, soon: "Coming soon" },
     { title: "Import your customers", body: "Upload a spreadsheet or bring contacts from your phone.", done: false, href: null, soon: "Coming soon" },
     { title: "Connect your store and email", body: "Shopify or WooCommerce orders and Outlook or Gmail, next to every chat.", done: false, href: null, soon: "Coming soon" },
@@ -51,6 +62,11 @@ export default async function WorkspaceHome(props: PageProps<"/w/[slug]">) {
           })}
         </ol>
       </Card>
+      {shape === "delivery" && (
+        <Card title="Orders & Delivery" description="You said you deliver orders. The Orders & Delivery add-on handles dispatch, a rider page and end-of-day cash. It becomes available after launch.">
+          <p className="text-sm text-muted">We&apos;ll let you know when you can turn it on.</p>
+        </Card>
+      )}
     </>
   );
 }
