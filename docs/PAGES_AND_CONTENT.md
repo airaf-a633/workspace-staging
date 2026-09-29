@@ -210,6 +210,14 @@ Reference: alliahealth.co. The first pass read as generic, next to the competito
   - **Side sheet over the board:** value, stage, owner, team, expected close, follow-up, approval, notes, then Mark won or Mark lost.
   - **Discount approvals:** shown on the card and in the approver's Needs you now; the link opens the deal. Approve or decline with an optional note. Approving applies the discount to the value.
   - **Phones:** the stage columns stack into one list.
+- **Tasks (2026-09-30):**
+  - **Layout:** one list grouped by when: Overdue (warn), Today, Tomorrow, This week, Later, No date, then Done collapsed.
+  - **Each row:** a checkbox, what to do, the customer link, the due time or day, repeat, the calendar mark (Outlook/Google), notes, snooze, and the owner's initial.
+  - **Quick add:** an inline row with chips: customer, when (Today / Tomorrow / Next week / pick a date, with an optional time), repeat, and owner (for managers). There's no sentence parsing.
+  - **Completing:** undo for 6 seconds. Completing a repeating task creates the next one, and the toast says when.
+  - **Snooze:** Later today, Tomorrow, or Next week.
+  - **Notes:** short notes on a task, for the owner and their manager.
+  - **Views:** everyone opens on My tasks. My team and All tasks group by person, with overdue counts.
 - **/preview:** a public, noindexed area with a made-up Qamar workspace and a "Viewing as" switch. It covers Inbox, Home (manager homes), Settings, and Sign-up with onboarding. It has no database and no login, and the real `/w/` app keeps its guards.
 
 ## Open questions

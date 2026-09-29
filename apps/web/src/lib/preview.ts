@@ -3,6 +3,7 @@ import { ROLE_TEMPLATES, templateScopes, type RoleTemplateKey, type Scope } from
 import { buildSampleInbox } from "@/components/inbox/sample-data";
 import { buildCustomers } from "@/components/customers/sample";
 import { buildDeals } from "@/components/deals/sample";
+import { buildTasks } from "@/components/tasks/sample";
 
 /**
  * The made-up Qamar Electronics workspace behind /preview (public, no login, no database).
@@ -77,4 +78,11 @@ export function previewNow() {
 export function previewDeals(key: string) {
   const data = previewInbox(key);
   return { data, deals: buildDeals(data, buildCustomers(data)) };
+}
+
+/** Every sample task; the list filters by the viewer's tasks.manage scope itself. */
+export function previewTasks(key: string) {
+  const data = previewInbox(key);
+  const customers = buildCustomers(data);
+  return { data, tasks: buildTasks(data, customers), customers: previewCustomers(key).customers.map((c) => ({ id: c.id, name: c.name })) };
 }
