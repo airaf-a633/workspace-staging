@@ -1,16 +1,26 @@
 import Link from "next/link";
-import { CaretRight, ChatCircleDots, CheckSquare, DeviceMobile, Handshake, Hourglass, WarningCircle } from "@phosphor-icons/react/dist/ssr";
-import type { Icon } from "@phosphor-icons/react";
+import { ArrowRight, CaretRight, WarningCircle } from "@phosphor-icons/react/dist/ssr";
 import { canSeeDealValue, replyAccess, windowOpen, type RoleTemplateKey } from "@app/domain";
 import { aed, waitedFor } from "@/components/inbox/format";
 import type { InboxData } from "@/components/inbox/types";
 
 /*
- * A manager's home after setup: "Needs you now" first, then the four numbers for their role
- * (decided 2026-09-29). The list is derived from the same conversations and access rules as the inbox.
+ * A manager's home after setup: "Needs you now" first, then the four numbers for their role.
+ * One row per customer (decided 2026-09-30), built from the same conversations and access rules as the inbox.
  */
 
-type Need = { Icon: Icon; tone: "warn" | "fail" | "primary"; text: string; meta: string; href: string; rank: number };
+type Tone = "fail" | "warn" | "plain";
+export interface NeedRow {
+  id: string;
+  name: string;
+  href: string;
+  tone: Tone;
+  rank: number;
+  /** When the customer started waiting, for sorting and the "waiting" label. */
+  waitingSince: number | null;
+  meta: string | null;
+  items: string[];
+}
 
 const NUMBERS: Record<RoleTemplateKey, [string, string, string?][]> = {
   owner: [["Revenue this month", "AED 186,420", "+12% on August"], ["Open pipeline", "AED 94,300"], ["Median first reply", "6 min", "Target 30 min"], ["Unassigned chats", "3"]],
@@ -21,108 +31,163 @@ const NUMBERS: Record<RoleTemplateKey, [string, string, string?][]> = {
   viewer: [["Open chats", "22"], ["Median first reply", "6 min"], ["Resolved this week", "48"], ["Over reply target", "2"]],
 };
 
-const TONE = { warn: "bg-warn-soft text-warn", fail: "bg-fail-soft text-fail", primary: "bg-primary-soft text-primary" };
+const SHOWN = 5;
 
 function greeting(now: number) {
   const h = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Dubai", hour: "numeric", hourCycle: "h23" }).format(now));
   return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
 }
 
-export function needsFor(data: InboxData, inboxHref: string): Need[] {
+export function needsFor(data: InboxData, inboxHref: string): NeedRow[] {
   const { viewer: v, now, people } = data;
   const name = (id: string | null) => people.find((p) => p.id === id)?.name ?? "Someone";
-  const needs: Need[] = [];
+  const rows: NeedRow[] = [];
 
   for (const c of data.conversations) {
-    if (c.status !== "open") continue;
     const access = replyAccess(v, c);
-    if (access === "hidden") continue;
-    const who = c.contact.name.split(" ")[0];
-    const href = `${inboxHref}?c=${c.id}`;
+    if (access === "hidden" || c.status === "spam") continue;
     const real = c.messages.filter((m) => m.kind !== "event");
     const last = real[real.length - 1];
     const mine = c.holderId === v.memberId;
+    const items: { text: string; rank: number; tone: Tone }[] = [];
+    let waitingSince: number | null = null;
 
-    if (!c.holderId && access === "claim" && last?.kind === "in" && c.lastCustomerAt) {
-      const over = now - c.lastCustomerAt > 30 * 60_000;
-      needs.push({ Icon: Hourglass, tone: over ? "warn" : "primary", text: `${c.contact.name} is waiting, and nobody has claimed the chat`, meta: `Waiting ${waitedFor(c.lastCustomerAt, now)}${over ? " · over reply target" : ""}`, href, rank: over ? 0 : 2 });
+    if (c.status === "open") {
+      if (!c.holderId && access === "claim" && last?.kind === "in" && c.lastCustomerAt) {
+        const over = now - c.lastCustomerAt > 30 * 60_000;
+        items.push({ text: "Nobody has claimed the chat", rank: over ? 0 : 2, tone: over ? "warn" : "plain" });
+        waitingSince = c.lastCustomerAt;
+      }
+      if (mine && c.phoneReply) items.push({ text: `${name(c.phoneReply.authorId)} replied from the phone: check before sending`, rank: 1, tone: "warn" });
+      else if (mine && last?.kind === "in" && c.lastCustomerAt) {
+        items.push({ text: "Waiting for your reply", rank: 2, tone: "plain" });
+        waitingSince = c.lastCustomerAt;
+      }
+      if (mine && last?.status === "failed") items.push({ text: "Your message wasn't delivered", rank: 1, tone: "fail" });
+      if (mine && c.channel === "whatsapp" && !windowOpen(c.lastCustomerAt, now) && last?.kind !== "in") {
+        items.push({ text: "24h window closed: send a template", rank: 3, tone: "plain" });
+      }
     }
-    if (!mine) continue;
-    if (c.phoneReply) {
-      needs.push({ Icon: DeviceMobile, tone: "warn", text: `${name(c.phoneReply.authorId)} replied to ${who} from the phone while your reply was waiting`, meta: "Check before sending, so there are no two answers", href, rank: 1 });
-    } else if (last?.kind === "in" && c.lastCustomerAt) {
-      needs.push({ Icon: ChatCircleDots, tone: "primary", text: `${c.contact.name} is waiting for your reply`, meta: `Waiting ${waitedFor(c.lastCustomerAt, now)}`, href, rank: 2 });
-    }
-    if (last?.status === "failed") {
-      needs.push({ Icon: WarningCircle, tone: "fail", text: `Your message to ${who} wasn't delivered`, meta: "Try calling, or email if you have an address", href, rank: 1 });
-    }
-    if (c.channel === "whatsapp" && !windowOpen(c.lastCustomerAt, now) && last?.kind !== "in") {
-      needs.push({ Icon: Hourglass, tone: "primary", text: `${who}'s 24-hour window has closed`, meta: "Send a template to follow up", href, rank: 3 });
-    }
-  }
-
-  for (const c of data.conversations) {
-    if (replyAccess(v, c) === "hidden") continue;
     for (const t of c.contact.tasks) {
-      if (t.ownerId === v.memberId && !t.done) needs.push({ Icon: CheckSquare, tone: "primary", text: t.text, meta: `${c.contact.name} · ${t.due}`, href: `${inboxHref}?c=${c.id}`, rank: 3 });
+      if (t.ownerId === v.memberId && !t.done) items.push({ text: `${t.text}, due ${t.due.toLowerCase()}`, rank: 3, tone: "plain" });
     }
     for (const d of c.contact.deals) {
       if (d.ownerId === v.memberId && d.stage === "quoted") {
-        needs.push({ Icon: Handshake, tone: "primary", text: `Follow up on the quote for ${c.contact.name.split(" ")[0]}`, meta: `${d.title}${canSeeDealValue(v, d.ownerId) ? ` · ${aed(d.fils)}` : ""}`, href: `${inboxHref}?c=${c.id}`, rank: 3 });
+        items.push({ text: `Quote to follow up${canSeeDealValue(v, d.ownerId) ? ` · ${aed(d.fils)}` : ""}`, rank: 3, tone: "plain" });
       }
     }
+    if (items.length === 0) continue;
+
+    items.sort((a, b) => a.rank - b.rank);
+    const tone: Tone = items.some((i) => i.tone === "fail") ? "fail" : items.some((i) => i.tone === "warn") ? "warn" : "plain";
+    rows.push({
+      id: c.id,
+      name: c.contact.name,
+      href: `${inboxHref}?c=${c.id}`,
+      tone,
+      rank: items[0].rank,
+      waitingSince,
+      meta: waitingSince ? `Waiting ${waitedFor(waitingSince, now)}` : null,
+      items: items.map((i) => i.text),
+    });
   }
-  return needs.sort((a, b) => a.rank - b.rank);
+  // Most urgent first; among equals, whoever has waited longest.
+  return rows.sort((a, b) => a.rank - b.rank || (a.waitingSince ?? Infinity) - (b.waitingSince ?? Infinity));
 }
 
-export function ManagerHome({ firstName, template, data, inboxHref }: { firstName: string; template: RoleTemplateKey; data: InboxData; inboxHref: string }) {
+function Row({ n }: { n: NeedRow }) {
+  return (
+    <li className="border-b border-border last:border-0">
+      <Link href={n.href} className="group flex items-center gap-4 px-5 py-4 transition-colors hover:bg-surface-2">
+        <span className="grid min-w-0 flex-1 gap-1">
+          <span className="flex items-baseline justify-between gap-3">
+            <span className="flex min-w-0 items-center gap-2 font-semibold">
+              {n.tone !== "plain" && <WarningCircle size={18} weight="fill" className={`shrink-0 ${n.tone === "fail" ? "text-fail" : "text-warn"}`} aria-label={n.tone === "fail" ? "Failed" : "Needs attention"} />}
+              <bdi className="truncate">{n.name}</bdi>
+            </span>
+            {n.meta && <span className={`shrink-0 text-sm tabular-nums ${n.tone === "warn" ? "font-medium text-warn" : "text-muted"}`}>{n.meta}</span>}
+          </span>
+          <span className="flex flex-wrap gap-x-2 gap-y-0.5 text-sm text-muted">
+            {n.items.map((t, i) => (
+              <span key={i}>{i > 0 && <span aria-hidden="true" className="me-2">·</span>}{t}</span>
+            ))}
+          </span>
+        </span>
+        <CaretRight size={18} className="shrink-0 text-muted transition-transform group-hover:translate-x-0.5 rtl:rotate-180" aria-hidden="true" />
+      </Link>
+    </li>
+  );
+}
+
+export function ManagerHome({
+  firstName,
+  template,
+  data,
+  inboxHref,
+  setup,
+}: {
+  firstName: string;
+  template: RoleTemplateKey;
+  data: InboxData;
+  inboxHref: string;
+  /** Unfinished setup, shown as a small link until done (decided 2026-09-30). */
+  setup?: { done: number; total: number; href: string };
+}) {
   const needs = needsFor(data, inboxHref);
   const date = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Dubai", weekday: "long", day: "numeric", month: "long" }).format(data.now);
 
   return (
     <>
-      <header className="grid gap-2">
-        <p className="text-muted">{date}</p>
-        <h1 className="display text-5xl sm:text-6xl">{greeting(data.now)}, {firstName}</h1>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="grid gap-1">
+          <p className="text-sm text-muted">{date}</p>
+          <h1 className="display text-4xl sm:text-5xl">{greeting(data.now)}, {firstName}</h1>
+        </div>
+        {setup && setup.done < setup.total && (
+          <Link href={setup.href} className="inline-flex min-h-9 items-center gap-2 rounded-full bg-surface px-3.5 text-sm shadow-[var(--shadow-1)] ring-1 ring-border hover:bg-surface-2">
+            <span className="font-medium">Setup {setup.done} of {setup.total}</span>
+            <span className="text-muted">Finish setting up</span>
+            <ArrowRight size={14} className="text-muted rtl:rotate-180" aria-hidden="true" />
+          </Link>
+        )}
       </header>
 
       <section aria-labelledby="needs" className="grid gap-3">
         <div className="flex items-baseline justify-between gap-3">
           <h2 id="needs" className="text-lg font-semibold">Needs you now</h2>
-          <span className="text-sm text-muted">{needs.length === 0 ? "All clear" : `${needs.length} ${needs.length === 1 ? "thing" : "things"}`}</span>
+          <span className="text-sm text-muted">{needs.length === 0 ? "All clear" : `${needs.length} ${needs.length === 1 ? "customer" : "customers"}`}</span>
         </div>
         {needs.length === 0 ? (
-          <p className="rounded-[var(--radius-panel)] border border-border bg-surface p-6 text-muted">Nothing needs you right now. New chats and follow-ups will show up here.</p>
+          <p className="rounded-[var(--radius-panel)] bg-surface p-6 text-muted shadow-[var(--shadow-1)]">Nothing needs you right now. New chats and follow-ups show up here.</p>
         ) : (
-          <ul className="overflow-hidden rounded-[var(--radius-panel)] border border-border bg-surface shadow-[var(--shadow-1)]">
-            {needs.slice(0, 6).map((n, i) => (
-              <li key={i} className="border-b border-border last:border-0">
-                <Link href={n.href} className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-surface-2">
-                  <span className={`grid size-10 shrink-0 place-items-center rounded-full ${TONE[n.tone]}`}><n.Icon size={20} aria-hidden="true" /></span>
-                  <span className="grid min-w-0 flex-1 gap-0.5">
-                    <span className="font-medium">{n.text}</span>
-                    <span className="text-sm text-muted">{n.meta}</span>
-                  </span>
-                  <CaretRight size={18} className="shrink-0 text-muted rtl:rotate-180" aria-hidden="true" />
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <div className="overflow-hidden rounded-[var(--radius-panel)] bg-surface shadow-[var(--shadow-1)] ring-1 ring-border">
+            <ul>{needs.slice(0, SHOWN).map((n) => <Row key={n.id} n={n} />)}</ul>
+            {needs.length > SHOWN && (
+              <details className="group border-t border-border">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center px-5 text-sm font-medium text-primary [&::-webkit-details-marker]:hidden group-open:hidden">
+                  See all {needs.length}
+                </summary>
+                <ul>{needs.slice(SHOWN).map((n) => <Row key={n.id} n={n} />)}</ul>
+              </details>
+            )}
+          </div>
         )}
       </section>
 
-      <section aria-label="Your numbers" className="grid gap-3">
-        <h2 className="text-lg font-semibold">This month</h2>
-        <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {NUMBERS[template].map(([label, value, hint]) => (
-            <div key={label} className="grid content-start gap-1 rounded-[var(--radius-panel)] border border-border bg-surface p-5">
+      <section aria-labelledby="numbers" className="grid gap-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 id="numbers" className="text-lg font-semibold">This month</h2>
+          <span className="text-sm text-muted">Sample numbers</span>
+        </div>
+        <dl className="grid grid-cols-2 overflow-hidden rounded-[var(--radius-panel)] bg-surface shadow-[var(--shadow-1)] ring-1 ring-border lg:grid-cols-4">
+          {NUMBERS[template].map(([label, value, hint], i) => (
+            <div key={label} className={`grid content-start gap-1 p-5 ${i % 2 ? "border-s border-border" : ""} ${i >= 2 ? "border-t border-border lg:border-t-0" : ""} ${i === 2 ? "lg:border-s" : ""}`}>
               <dt className="text-sm text-muted">{label}</dt>
-              <dd className="display text-3xl sm:text-4xl">{value}</dd>
-              {hint && <dd className="text-sm text-muted">{hint}</dd>}
+              <dd className="display whitespace-nowrap text-2xl sm:text-3xl">{value}</dd>
+              {hint && <dd className="text-xs text-muted">{hint}</dd>}
             </div>
           ))}
         </dl>
-        <p className="text-sm text-muted">Sample numbers. Real ones come from your chats, deals and orders once you&apos;re connected.</p>
       </section>
     </>
   );

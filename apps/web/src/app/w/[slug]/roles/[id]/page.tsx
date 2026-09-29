@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
 import { Submit } from "@/components/ui/submit";
 import { TextInput } from "@/components/ui/field";
-import { Card, Notice, PageHeader } from "@/components/ui/surface";
+import { Card, Notice } from "@/components/ui/surface";
+import { SectionHeader, SettingsFrame } from "@/components/settings-frame";
 import { can, loadWorkspace } from "@/lib/workspace";
 import { deleteRole, saveRolePermissions } from "../actions";
 
@@ -22,11 +23,11 @@ export default async function EditRole(props: PageProps<"/w/[slug]/roles/[id]">)
   const scope = new Map(grants?.map((g) => [g.permission, g.scope]));
 
   return (
-    <>
+    <SettingsFrame base={`/w/${slug}`} active="roles" isOwner>
       <Link href={`/w/${slug}/roles`} className="flex min-h-11 w-fit items-center gap-2 text-sm text-primary">
         <ArrowLeft size={18} className="rtl:rotate-180" aria-hidden="true" /> All roles
       </Link>
-      <PageHeader title={role.name} description="Choose how far each permission reaches. Owner-only permissions can't be given to other roles." />
+      <SectionHeader title={role.name} description="Choose how far each permission reaches. Owner-only permissions can't be given to other roles." />
       {typeof sp.error === "string" && <Notice tone="error" title={sp.error} />}
       {sp.saved && <Notice tone="success" title="Role saved" />}
 
@@ -72,6 +73,6 @@ export default async function EditRole(props: PageProps<"/w/[slug]/roles/[id]">)
           <Submit variant="destructive" pending="Deleting…">Delete {role.name}</Submit>
         </form>
       </Card>
-    </>
+    </SettingsFrame>
   );
 }

@@ -181,6 +181,13 @@ Reference: alliahealth.co. The first pass read as generic, next to the competito
   - **Dark mode:** near-neutral charcoal surfaces. Petrol only for actions, selection and focus.
   - **Preview:** one slim bar. The inbox's sample note is a small line you can dismiss.
   - **Landing hero:** words, photo and one floating handoff chip. The interactive demo moves to its own section, at a fixed height.
+- **Home and Settings pass (2026-09-30):**
+  - **"Needs you now":** one row per customer, with that customer's items as small tags. Sorted by urgency, at most 5, with "See all" after that. Icons appear only on warn/fail rows.
+  - **Real Home:**
+    - Before WhatsApp connects, the setup checklist is Home.
+    - After it connects, Home is the manager home. Unfinished setup shrinks to a small "Setup 3 of 5" link until it's done or dismissed.
+  - **Settings:** one page with a side sub-menu (Team members, Teams and branches, Roles, WhatsApp numbers, Account). No hub page and no cards inside cards. Members is a plain list with "Invite" at the top, which opens an inline panel.
+  - **Design system:** ConversationRow, Message, Composer and HandoffTrail get the new look. The Inbox and Manager homes demos are rebuilt from them.
 - **/preview:** a public, noindexed area with a made-up Qamar workspace and a "Viewing as" switch. It covers Inbox, Home (manager homes), Settings, and Sign-up with onboarding. It has no database and no login, and the real `/w/` app keeps its guards.
 
 ## Open questions
