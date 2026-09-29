@@ -168,6 +168,10 @@ Reference: alliahealth.co. The first pass read as generic, next to the competito
 - **Shapes:** a floating glass pill nav on the public site, and pill buttons.
 - **Imagery:** the hero pairs a photo of UAE business people with live product pieces, which float on gradients in the sections. The photo source is still open.
 - **Motion:** gentle. Sections fade and rise in once, the hero gradient drifts slowly, and hover eases. All of it is off with reduced motion.
+- **Photos:** AI-generated (decided 2026-09-30). Brief and prompts: `docs/brand/IMAGERY.md`. Never presented as real customers.
+- **Public site theme:** always light, whatever the device setting (decided 2026-09-30). The app follows the device. Implemented as a `.force-light` scope.
+- **Text font:** Google Sans, from the founder's file (OFL), replaces Geist for text and UI. Geist stays in the stack as the per-letter fallback, because the file only covers Basic Latin and Latin-1.
+- **Design system:** updated to v2 (Petrol, gradients, fonts, pill buttons, new cover) on 2026-09-30, version 9.
 - **/preview:** a public, noindexed area with a made-up Qamar workspace and a "Viewing as" switch. It covers Inbox, Home (manager homes), Settings, and Sign-up with onboarding. It has no database and no login, and the real `/w/` app keeps its guards.
 
 ## Open questions

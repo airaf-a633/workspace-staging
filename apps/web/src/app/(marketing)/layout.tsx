@@ -12,7 +12,7 @@ const NAV = [
 
 export default function MarketingLayout({ children }: LayoutProps<"/">) {
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="force-light flex min-h-dvh flex-col bg-bg text-text">
       {/* Floating glass pill, over the hero on the landing page and over the page elsewhere. */}
       <header className="fixed inset-x-0 top-3 z-30 px-3">
         <div className="glass-light relative mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 rounded-full ps-6 pe-2 shadow-[var(--shadow-2)]">

@@ -8,7 +8,7 @@ import { Check } from "@phosphor-icons/react/dist/ssr";
  */
 export function AuthFrame({ title, description, children, footer }: { title: string; description?: ReactNode; children: ReactNode; footer?: ReactNode }) {
   return (
-    <div className="grid min-h-dvh lg:grid-cols-[1fr_1.1fr]">
+    <div className="force-light grid min-h-dvh bg-bg text-text lg:grid-cols-[1fr_1.1fr]">
       <aside className="bg-hero drift hidden flex-col justify-between p-12 text-white lg:flex">
         <Link href="/" className="font-serif text-3xl tracking-tight">Workspace</Link>
         <div className="grid gap-8">

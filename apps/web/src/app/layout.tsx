@@ -1,8 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Geist, Geist_Mono, IBM_Plex_Sans_Arabic } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-// Visual direction v2 (2026-09-30): Fraunces light for display, Geist for text and UI, Plex Arabic for Arabic.
+// Visual direction v2 (2026-09-30): Fraunces light for display, Google Sans for text and UI, Plex Arabic for Arabic.
+// Google Sans (OFL, see fonts/GoogleSans-OFL.txt) only covers Basic Latin + Latin-1, so Geist stays next in the
+// stack for the letters it lacks (ş ğ ł č, arrows).
+const googleSans = localFont({ src: "./fonts/GoogleSans-Variable.woff2", variable: "--font-google-sans", weight: "400 700", display: "swap" });
 const fraunces = Fraunces({ variable: "--font-fraunces", subsets: ["latin"], axes: ["opsz", "SOFT"], display: "swap" });
 const geist = Geist({ variable: "--font-geist", subsets: ["latin"], display: "swap" });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"], display: "swap" });
@@ -22,7 +26,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" dir="ltr" className={`${fraunces.variable} ${geist.variable} ${geistMono.variable} ${plexArabic.variable}`}>
+    <html lang="en" dir="ltr" className={`${googleSans.variable} ${fraunces.variable} ${geist.variable} ${geistMono.variable} ${plexArabic.variable}`}>
       <body className="min-h-dvh">{children}</body>
     </html>
   );

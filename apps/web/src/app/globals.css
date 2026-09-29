@@ -3,12 +3,13 @@
 /*
  * Workspace design tokens (v0.4, 2026-09-30). Visual direction v2, reference alliahealth.co.
  * Brand accent: Petrol #0A5670. Navy text, pale-sky backgrounds, petrol-to-mint gradients.
- * Fonts: Fraunces (display), Geist (text/UI), IBM Plex Sans Arabic (Arabic), Geist Mono (numbers).
+ * Fonts: Fraunces (display), Google Sans (text/UI, Geist as glyph fallback), IBM Plex Sans Arabic (Arabic), Geist Mono (numbers).
  * Every colour is a semantic token; components never use raw hex values.
  * Theme follows the device; an explicit choice sets data-theme on <html>.
  */
 
-:root {
+/* `.force-light` re-declares the light theme for a subtree: the public site stays light (decided 2026-09-30). */
+:root, .force-light {
   color-scheme: light;
   --bg: #F4F8FA;
   --surface: #FFFFFF;
@@ -110,7 +111,7 @@
   --color-note-soft: var(--note-soft);      --color-note-border: var(--note-border);
   --color-destructive: var(--destructive);  --color-on-destructive: var(--on-destructive);
 
-  --font-sans: var(--font-geist), var(--font-plex-arabic), system-ui, sans-serif;
+  --font-sans: var(--font-google-sans), var(--font-geist), var(--font-plex-arabic), system-ui, sans-serif;
   --font-serif: var(--font-fraunces), var(--font-plex-arabic), Georgia, serif;
   --font-arabic: var(--font-plex-arabic), var(--font-geist), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
@@ -170,9 +171,9 @@ body {
   backdrop-filter: blur(18px) saturate(1.4);
   -webkit-backdrop-filter: blur(18px) saturate(1.4);
 }
-:root[data-theme="dark"] .glass-light { background: rgb(16 37 48 / 0.72); border-color: rgb(255 255 255 / 0.08); }
+:root[data-theme="dark"] .glass-light:not(.force-light *) { background: rgb(16 37 48 / 0.72); border-color: rgb(255 255 255 / 0.08); }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .glass-light { background: rgb(16 37 48 / 0.72); border-color: rgb(255 255 255 / 0.08); }
+  :root:not([data-theme="light"]) .glass-light:not(.force-light *) { background: rgb(16 37 48 / 0.72); border-color: rgb(255 255 255 / 0.08); }
 }
 
 .bg-hero { background: var(--grad-hero); }

@@ -7,7 +7,7 @@ export const metadata = { title: { absolute: "Preview the app · Workspace" } };
 export default function PreviewIndex() {
   const members = previewMembers();
   return (
-    <main className="min-h-dvh">
+    <main className="force-light min-h-dvh bg-bg text-text">
       <section className="bg-hero drift rounded-b-[2.5rem] text-white">
         <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-20 pt-10">
           <Link href="/" className="font-serif text-2xl tracking-tight">Workspace</Link>
