@@ -22,6 +22,11 @@ export const CONVERSATION_PERMISSIONS = [
   "conversations.resolve",
   "deals.view",
   "deals.values",
+  "deals.edit",
+  "deals.close",
+  "deals.approve",
+  "contacts.edit",
+  "contacts.merge",
   "tasks.manage",
 ] as const;
 export type ConversationPermission = (typeof CONVERSATION_PERMISSIONS)[number];

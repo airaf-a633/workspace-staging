@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { ROLE_TEMPLATES, templateScopes, type RoleTemplateKey, type Scope } from "@app/domain";
 import { buildSampleInbox } from "@/components/inbox/sample-data";
 import { buildCustomers } from "@/components/customers/sample";
+import { buildDeals } from "@/components/deals/sample";
 
 /**
  * The made-up Qamar Electronics workspace behind /preview (public, no login, no database).
@@ -70,4 +71,10 @@ export function previewCustomers(key: string) {
 /** The preview's clock, per request. */
 export function previewNow() {
   return Date.now();
+}
+
+/** Every sample deal; the board filters by the viewer's deals.view scope itself. */
+export function previewDeals(key: string) {
+  const data = previewInbox(key);
+  return { data, deals: buildDeals(data, buildCustomers(data)) };
 }

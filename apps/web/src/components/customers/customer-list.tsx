@@ -10,8 +10,8 @@ import { aed, ago } from "@/components/inbox/format";
 import type { Person, Team } from "@/components/inbox/types";
 import { SEGMENTS } from "./sample";
 import type { Customer } from "./types";
+import { STAGE } from "@/components/deals/stages";
 
-const STAGE = { new: ["New", "new"], quoted: ["Quoted", "transit"], won: ["Won", "done"], lost: ["Lost", "fail"] } as const;
 const digits = (s = "") => s.replace(/\D/g, "");
 
 interface Props {
@@ -207,7 +207,7 @@ export function CustomerList({ customers: initial, people, teams, viewer, now, b
               </thead>
               <tbody>
                 {list.map((c) => {
-                  const deal = c.deals.find((d) => d.stage === "new" || d.stage === "quoted") ?? c.deals[0];
+                  const deal = c.deals.find((d) => d.stage === "new" || d.stage === "quoted" || d.stage === "negotiating") ?? c.deals[0];
                   return (
                     <tr key={c.id} className="relative border-b border-border transition-colors last:border-0 hover:bg-surface-2">
                       <td className="px-5 py-3">

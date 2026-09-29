@@ -126,6 +126,7 @@ export function ManagerHome({
   data,
   inboxHref,
   setup,
+  extraNeeds,
 }: {
   firstName: string;
   template: RoleTemplateKey;
@@ -133,8 +134,10 @@ export function ManagerHome({
   inboxHref: string;
   /** Unfinished setup, shown as a small link until done (decided 2026-09-30). */
   setup?: { done: number; total: number; href: string };
+  /** Rows from elsewhere, e.g. discount approvals waiting for this person. */
+  extraNeeds?: NeedRow[];
 }) {
-  const needs = needsFor(data, inboxHref);
+  const needs = [...(extraNeeds ?? []), ...needsFor(data, inboxHref)].sort((a, b) => a.rank - b.rank || (a.waitingSince ?? Infinity) - (b.waitingSince ?? Infinity));
   const date = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Dubai", weekday: "long", day: "numeric", month: "long" }).format(data.now);
 
   return (

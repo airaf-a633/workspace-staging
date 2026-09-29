@@ -1,0 +1,13 @@
+/** Deal stages (decided 2026-09-30): New → Quoted → Negotiating on the board; Won and Lost are outcomes. */
+export const STAGE = {
+  new: ["New", "new"],
+  quoted: ["Quoted", "transit"],
+  negotiating: ["Negotiating", "transit"],
+  won: ["Won", "done"],
+  lost: ["Lost", "fail"],
+} as const;
+
+export const OPEN_STAGES = ["new", "quoted", "negotiating"] as const;
+export type OpenStage = (typeof OPEN_STAGES)[number];
+
+export const LOST_REASONS = ["Price", "Stock", "Went silent", "Competitor", "Other"] as const;

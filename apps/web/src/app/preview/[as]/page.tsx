@@ -1,12 +1,30 @@
-import { ManagerHome } from "@/components/home/manager-home";
-import { previewInbox, previewPerson } from "@/lib/preview";
+import { covers } from "@app/domain";
+import { ManagerHome, type NeedRow } from "@/components/home/manager-home";
+import { previewDeals, previewPerson } from "@/lib/preview";
 
 export const metadata = { title: "Home" };
 
 export default async function PreviewHome(props: PageProps<"/preview/[as]">) {
   const { as } = await props.params;
   const me = previewPerson(as);
+  const { data, deals } = previewDeals(as);
+  const name = (id: string) => data.people.find((p) => p.id === id)?.name ?? "Someone";
+
+  // Discount approvals waiting for this person (decided 2026-09-30: on the card and in Needs you now).
+  const approvals: NeedRow[] = deals
+    .filter((d) => d.approval?.status === "pending" && d.approval.byId !== me.id && covers(data.viewer, "deals.approve", { teamId: d.teamId, holderId: d.ownerId }))
+    .map((d) => ({
+      id: `approve-${d.id}`,
+      name: d.customerName,
+      href: `/preview/${as}/deals?deal=${d.id}`,
+      tone: "warn",
+      rank: 1,
+      waitingSince: null,
+      meta: "Approval",
+      items: [`${name(d.approval!.byId)} asks you to approve ${d.approval!.pct}% off`, d.title],
+    }));
+
   // The sample business has connected WhatsApp and invited its team; hours, import and store are still open.
   const setup = me.template === "owner" ? { done: 2, total: 5, href: `/preview/${as}/account` } : undefined;
-  return <ManagerHome firstName={me.name} template={me.template} data={previewInbox(as)} inboxHref={`/preview/${as}/inbox`} setup={setup} />;
+  return <ManagerHome firstName={me.name} template={me.template} data={data} inboxHref={`/preview/${as}/inbox`} setup={setup} extraNeeds={approvals} />;
 }

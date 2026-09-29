@@ -198,6 +198,6 @@ export const SEGMENTS = [
   { key: "all", label: "All customers", test: () => true },
   { key: "b2b", label: "Businesses", test: (c: Customer) => c.type === "Business" },
   { key: "vip", label: "VIP", test: (c: Customer) => c.type === "VIP" },
-  { key: "open-deal", label: "Open deal", test: (c: Customer) => c.deals.some((d) => d.stage === "new" || d.stage === "quoted") },
+  { key: "open-deal", label: "Open deal", test: (c: Customer) => c.deals.some((d) => d.stage === "new" || d.stage === "quoted" || d.stage === "negotiating") },
   { key: "quiet", label: "No contact in 30 days", test: (c: Customer, now: number) => !c.lastContact || now - c.lastContact.at > 30 * DAY },
 ] as const;

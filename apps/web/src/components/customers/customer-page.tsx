@@ -21,8 +21,8 @@ import { Badge } from "@/components/ui/surface";
 import { aed, dayLabel, dueText, sameDay, time } from "@/components/inbox/format";
 import type { Person, Team } from "@/components/inbox/types";
 import type { Customer, TimelineKind } from "./types";
+import { STAGE } from "@/components/deals/stages";
 
-const STAGE = { new: ["New", "new"], quoted: ["Quoted", "transit"], won: ["Won", "done"], lost: ["Lost", "fail"] } as const;
 const KIND: Record<TimelineKind, { Icon: Icon; group: Filter }> = {
   chat: { Icon: ChatCircle, group: "chats" },
   email: { Icon: EnvelopeSimple, group: "email" },

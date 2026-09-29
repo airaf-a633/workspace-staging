@@ -64,7 +64,7 @@ export interface Deal {
   id: string;
   title: string;
   fils: number;
-  stage: "new" | "quoted" | "won" | "lost";
+  stage: "new" | "quoted" | "negotiating" | "won" | "lost";
   ownerId: string;
 }
 

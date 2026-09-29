@@ -201,6 +201,15 @@ Reference: alliahealth.co. The first pass read as generic, next to the competito
     - **Disconnect:** at the bottom, behind a confirm, owner only.
   - **Before Meta approves us:** the numbers page is a get-ready checklist (verify the business, choose the number, card on Meta, teams). This is the real page today.
   - **Setup chip:** can be hidden for good (this browser for now; per member later). The checklist stays in Settings › Account.
+- **Deals (2026-09-30):**
+  - **Board:** New → Quoted → Negotiating. Won and Lost are outcomes, reached with Mark won (asks for the final value) or Mark lost (asks for a reason: price, stock, went silent, competitor, other). They're listed in the Closed view.
+  - **Cards:** customer, what they're buying, value (per permission), and the owner's initial. One quiet line appears only when the deal needs something: a discount waiting for approval, a follow-up today or tomorrow, or no reply in N days.
+  - **Columns:** each shows a count and a total. The total appears only for roles that see money.
+  - **Moving deals:** drag between stages, or use the Stage menu in the side sheet (keyboard and phones).
+  - **Views:** My deals, My teams, All deals. Each role opens on the widest view it has; agents see their own deals only.
+  - **Side sheet over the board:** value, stage, owner, team, expected close, follow-up, approval, notes, then Mark won or Mark lost.
+  - **Discount approvals:** shown on the card and in the approver's Needs you now; the link opens the deal. Approve or decline with an optional note. Approving applies the discount to the value.
+  - **Phones:** the stage columns stack into one list.
 - **/preview:** a public, noindexed area with a made-up Qamar workspace and a "Viewing as" switch. It covers Inbox, Home (manager homes), Settings, and Sign-up with onboarding. It has no database and no login, and the real `/w/` app keeps its guards.
 
 ## Open questions

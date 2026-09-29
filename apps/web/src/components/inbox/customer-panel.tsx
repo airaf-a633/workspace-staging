@@ -6,8 +6,8 @@ import { buttonClass } from "@/components/ui/button";
 import { aed, messageTime } from "./format";
 import type { InboxAction } from "./store";
 import type { Conversation, Person, Team } from "./types";
+import { STAGE } from "@/components/deals/stages";
 
-const STAGE = { new: ["New", "new"], quoted: ["Quoted", "transit"], won: ["Won", "done"], lost: ["Lost", "fail"] } as const;
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
