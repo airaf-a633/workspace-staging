@@ -24,7 +24,7 @@ export default async function SignUp(props: PageProps<"/sign-up">) {
   return (
     <AuthFrame
       title="Create your account"
-      description="Free for 14 days. No card needed."
+      description="Your 14-day trial starts when you connect WhatsApp. No card needed."
       footer={<>Already have an account? <Link className="font-medium text-primary underline-offset-4 hover:underline" href={`/sign-in?next=${encodeURIComponent(next)}`}>Sign in</Link></>}
     >
       {error && <Notice tone="error" title={error} />}

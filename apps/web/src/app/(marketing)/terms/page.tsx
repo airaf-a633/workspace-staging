@@ -103,7 +103,7 @@ export default function Terms() {
 
       <Section n={7} title="Plans, payment and cancellation">
         <ul className="list-disc ps-6">
-          <li>New accounts get a 14-day free trial. No card is needed to start.</li>
+          <li>New accounts get a 14-day free trial, which starts when you connect your first WhatsApp number. No card is needed.</li>
           <li>Paid plans are billed in advance, monthly or yearly, in AED, and renew automatically until cancelled. Prices exclude VAT where it applies.</li>
           <li>You can cancel at any time in Settings. Cancellation takes effect at the end of the current billing period. Fees already paid are not refunded, except where the law requires.</li>
           <li>If a payment fails, you keep full access for 7 days while we remind you. After that the workspace becomes read-only until payment is made.</li>

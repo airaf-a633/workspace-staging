@@ -141,6 +141,8 @@ Team, sales, and campaigns with Meta cost. Every report exports to CSV or PDF.
 - **Demo:** a guided inline preview on the landing page (hand a chat over), plus "Open the full demo" at /demo.
 - **Imagery until M2 ships:** live, real components with sample data instead of screenshots, which are swapped in once the real inbox exists.
 
+- **Trial:** starts when the first WhatsApp number connects, not at sign-up.
+- **Public site on phones:** a small menu button opens the section links.
+
 ## Open questions
 - The product name, which is needed before the public website goes live.
-- Should the 14-day trial start only when WhatsApp can actually be connected, so early sign-ups don't lose trial days?

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MobileMenu } from "@/components/marketing/mobile-menu";
 import { buttonClass } from "@/components/ui/button";
 
 export default function MarketingLayout({ children }: LayoutProps<"/">) {
@@ -14,8 +15,11 @@ export default function MarketingLayout({ children }: LayoutProps<"/">) {
             <Link href="/#questions" className="text-muted hover:text-text">Questions</Link>
           </nav>
           <div className="flex items-center gap-2">
-            <Link href="/sign-in" className={buttonClass("ghost", "sm")}>Sign in</Link>
+            <span className="hidden md:block">
+              <Link href="/sign-in" className={buttonClass("ghost", "sm")}>Sign in</Link>
+            </span>
             <Link href="/sign-up" className={buttonClass("primary", "sm")}>Start free trial</Link>
+            <MobileMenu />
           </div>
         </div>
       </header>

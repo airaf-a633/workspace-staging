@@ -63,7 +63,7 @@ _Decided with the founder in question rounds starting 2026-09-27. Each line is a
 
 ## 7. Onboarding and billing
 - **Number admin:** only the Owner can connect, reconnect or remove WhatsApp numbers and see Meta billing. Disconnecting needs a confirmation step.
-- **Trial:** 14 days with no card. Onboarding guides the owner to add a card on Meta's side, which is needed to send messages from 1 Oct 2026.
+- **Trial:** 14 days with no card, **starting when the business connects its first WhatsApp number** (decided 2026-09-29), not at sign-up. Until then the account is free and unlimited in time, so early sign-ups during Meta's review lose nothing. Onboarding guides the owner to add a card on Meta's side, which is needed to send messages from 1 Oct 2026.
 - **Seats:** a paid seat is any member who can reply or edit. Read-only viewers are free, up to 5 per workspace.
 
 ## 8. Data, privacy, audit

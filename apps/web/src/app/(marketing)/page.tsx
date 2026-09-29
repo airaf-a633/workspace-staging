@@ -29,7 +29,7 @@ const PLANS = [
 const FAQ = [
   ["Do I pay WhatsApp's message fees to you?", "No. Meta bills those directly to your WhatsApp account. We add nothing on top, and we show you the estimated cost before every campaign."],
   ["Can I keep using the WhatsApp app on my phone?", "Yes. Your number works in the app and in Workspace at the same time. Two things change when you connect: broadcast lists turn off, and WhatsApp groups don't appear in Workspace. You also need to open the app at least every 14 days."],
-  ["When can I connect my WhatsApp number?", "You can create your account and set up your team now. Connecting WhatsApp numbers opens as soon as Meta approves our platform. We'll email you the moment it's ready."],
+  ["When can I connect my WhatsApp number?", "You can create your account and set up your team now. Connecting WhatsApp numbers opens as soon as Meta approves our platform. We'll email you the moment it's ready. Your 14-day trial only starts when you connect, so you lose nothing by signing up early."],
   ["Will my number get banned?", "We only use Meta's official WhatsApp Business Platform, never unofficial tools. Bans usually come from messaging people who didn't agree to it, so Workspace asks for consent before campaigns to imported lists."],
   ["Does it work with Gmail?", "You can send email from Gmail today. Reading Gmail inside Workspace comes after Google's security review. Outlook works fully from the start."],
   ["Where is my data kept?", "In Frankfurt, Germany. Your customers' data belongs to you, and you can export or delete it at any time."],
@@ -50,7 +50,7 @@ export default function Landing() {
             <Link href="/sign-up" className={buttonClass("primary")}>Start free trial</Link>
             <Link href="/demo" className={buttonClass("secondary")}>Try the demo</Link>
           </div>
-          <p className="text-sm text-muted">Free for 14 days. No card needed.</p>
+          <p className="text-sm text-muted">14 days free from the day you connect WhatsApp. No card needed.</p>
         </div>
         <HandoffDemo />
       </section>
