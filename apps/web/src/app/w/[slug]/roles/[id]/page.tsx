@@ -1,5 +1,9 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Notice, Page, Submit } from "@/components/plain";
+import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
+import { Submit } from "@/components/ui/button";
+import { TextInput } from "@/components/ui/field";
+import { Card, Notice, PageHeader } from "@/components/ui/surface";
 import { can, loadWorkspace } from "@/lib/workspace";
 import { deleteRole, saveRolePermissions } from "../actions";
 
@@ -18,37 +22,56 @@ export default async function EditRole(props: PageProps<"/w/[slug]/roles/[id]">)
   const scope = new Map(grants?.map((g) => [g.permission, g.scope]));
 
   return (
-    <Page title={`Edit role: ${role.name}`}>
-      {typeof sp.error === "string" && <Notice tone="error">{sp.error}</Notice>}
-      {sp.saved && <Notice tone="info">Saved.</Notice>}
-      <form action={saveRolePermissions} className="grid gap-4">
+    <>
+      <Link href={`/w/${slug}/roles`} className="flex min-h-11 w-fit items-center gap-2 text-sm text-primary">
+        <ArrowLeft size={18} className="rtl:rotate-180" aria-hidden="true" /> All roles
+      </Link>
+      <PageHeader title={role.name} description="Choose how far each permission reaches. Owner-only permissions can't be given to other roles." />
+      {typeof sp.error === "string" && <Notice tone="error" title={sp.error} />}
+      {sp.saved && <Notice tone="success" title="Role saved" />}
+
+      <form action={saveRolePermissions} className="grid gap-6">
         <input type="hidden" name="slug" value={slug} />
         <input type="hidden" name="roleId" value={id} />
-        <label className="grid gap-1 text-sm font-medium">
-          Role name
-          <input name="name" defaultValue={role.name} required className="rounded border border-slate-500 px-3 py-2 font-normal" />
-        </label>
-        <fieldset className="grid gap-2">
-          <legend className="font-medium">Permissions</legend>
-          {perms?.map((p) => (
-            <label key={p.key} className="flex items-center justify-between gap-4 border-t pt-2 text-sm">
-              <span>{p.description}{p.owner_only ? " (owner only)" : ""}</span>
-              <select name={p.owner_only ? undefined : `perm:${p.key}`} defaultValue={scope.get(p.key) ?? "none"} disabled={p.owner_only} className="rounded border border-slate-500 px-2 py-1">
-                <option value="none">No access</option>
-                <option value="own">Own</option>
-                <option value="team">Their teams</option>
-                <option value="all">Whole workspace</option>
-              </select>
-            </label>
-          ))}
-        </fieldset>
-        <Submit>Save role</Submit>
+        <Card>
+          <div className="sm:max-w-sm">
+            <TextInput label="Role name" name="name" defaultValue={role.name} required />
+          </div>
+        </Card>
+        <Card title="Permissions">
+          <ul className="divide-y divide-border">
+            {perms?.map((p) => (
+              <li key={p.key} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                <label htmlFor={`perm-${p.key}`} className="flex-1">
+                  {p.description}
+                  {p.owner_only && <span className="block text-sm text-muted">Owner only</span>}
+                </label>
+                <select
+                  id={`perm-${p.key}`}
+                  name={p.owner_only ? undefined : `perm:${p.key}`}
+                  defaultValue={scope.get(p.key) ?? "none"}
+                  disabled={p.owner_only}
+                  className="min-h-11 rounded-[var(--radius-control)] border border-input bg-surface px-3 disabled:opacity-60"
+                >
+                  <option value="none">No access</option>
+                  <option value="own">Own</option>
+                  <option value="team">Their teams</option>
+                  <option value="all">Whole workspace</option>
+                </select>
+              </li>
+            ))}
+          </ul>
+        </Card>
+        <div><Submit>Save role</Submit></div>
       </form>
-      <form action={deleteRole}>
-        <input type="hidden" name="slug" value={slug} />
-        <input type="hidden" name="roleId" value={id} />
-        <Submit variant="secondary">Delete role</Submit>
-      </form>
-    </Page>
+
+      <Card title="Delete this role" description="Only possible when nobody uses it.">
+        <form action={deleteRole}>
+          <input type="hidden" name="slug" value={slug} />
+          <input type="hidden" name="roleId" value={id} />
+          <Submit variant="destructive" pending="Deleting…">Delete {role.name}</Submit>
+        </form>
+      </Card>
+    </>
   );
 }

@@ -27,7 +27,7 @@ export default function Terms() {
     <main className="mx-auto grid max-w-3xl gap-6 px-4 py-12 leading-relaxed">
       <header className="grid gap-2">
         <h1 className="text-3xl font-semibold">Terms of service</h1>
-        <p className="text-sm text-slate-600">Last updated: {UPDATED}</p>
+        <p className="text-sm text-muted">Last updated: {UPDATED}</p>
         <p>
           These terms are an agreement between <strong>[COMPANY LEGAL NAME]</strong> ([FREE ZONE], United Arab Emirates, licence{" "}
           <strong>[LICENCE NUMBER]</strong>) (&ldquo;we&rdquo;) and the business that creates a Workspace account (&ldquo;you&rdquo;). By creating an

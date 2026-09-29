@@ -1,26 +1,118 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * Workspace design tokens (v0.3, 2026-09-29). Source: design-system/MASTER.md.
+ * Brand accent: Petrol #0A5670 (chosen 2026-09-29). Density: comfortable (16px body).
+ * Every colour is a semantic token; components never use raw hex values.
+ * Theme follows the device; an explicit choice sets data-theme on <html>.
+ */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+:root {
+  color-scheme: light;
+  --bg: #F6F7F8;
+  --surface: #FFFFFF;
+  --surface-2: #EEF1F3;
+  --border: #DCE1E5;
+  --input-border: #86909A;       /* 3.2:1 on surface: form controls */
+  --text: #151A1E;
+  --text-muted: #56606A;         /* 6.4:1 on surface */
+
+  --primary: #0A5670;            /* Petrol: 8.2:1 on surface */
+  --on-primary: #FFFFFF;
+  --primary-soft: #E2EFF4;
+  --ring: #0A5670;
+
+  --status-new: #56606A;       --status-new-soft: #EEF1F3;
+  --status-transit: #1D4FA8;   --status-transit-soft: #E6EDFA;
+  --status-done: #15703F;      --status-done-soft: #E6F4EC;
+  --status-warn: #8F5200;      --status-warn-soft: #FFF1DB;
+  --status-fail: #B42A23;      --status-fail-soft: #FCEAE8;
+  --note-soft: #FBF6E3;        --note-border: #C9B46A;
+  --destructive: #B42A23;      --on-destructive: #FFFFFF;
+
+  --shadow-1: 0 1px 2px rgb(21 26 30 / 0.06), 0 1px 1px rgb(21 26 30 / 0.04);
+  --shadow-2: 0 8px 24px rgb(21 26 30 / 0.10), 0 2px 6px rgb(21 26 30 / 0.06);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0F1316; --surface: #171C20; --surface-2: #20262B; --border: #2C343A;
+    --input-border: #6C7780; --text: #ECEFF1; --text-muted: #A2ACB4;
+    --primary: #72C4DE; --on-primary: #0F1316; --primary-soft: #0E2C38; --ring: #72C4DE;
+    --status-new: #A2ACB4; --status-new-soft: #20262B;
+    --status-transit: #8DB4F5; --status-transit-soft: #13223D;
+    --status-done: #4CC98A; --status-done-soft: #12301F;
+    --status-warn: #F2B24C; --status-warn-soft: #352610;
+    --status-fail: #FF8A80; --status-fail-soft: #3A1615;
+    --note-soft: #2A2515; --note-border: #6B5A2A;
+    --destructive: #FF8A80; --on-destructive: #0F1316;
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4); --shadow-2: 0 8px 24px rgb(0 0 0 / 0.5);
   }
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0F1316; --surface: #171C20; --surface-2: #20262B; --border: #2C343A;
+  --input-border: #6C7780; --text: #ECEFF1; --text-muted: #A2ACB4;
+  --primary: #72C4DE; --on-primary: #0F1316; --primary-soft: #0E2C38; --ring: #72C4DE;
+  --status-new: #A2ACB4; --status-new-soft: #20262B;
+  --status-transit: #8DB4F5; --status-transit-soft: #13223D;
+  --status-done: #4CC98A; --status-done-soft: #12301F;
+  --status-warn: #F2B24C; --status-warn-soft: #352610;
+  --status-fail: #FF8A80; --status-fail-soft: #3A1615;
+  --note-soft: #2A2515; --note-border: #6B5A2A;
+  --destructive: #FF8A80; --on-destructive: #0F1316;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4); --shadow-2: 0 8px 24px rgb(0 0 0 / 0.5);
+}
+
+/* Expose tokens to Tailwind utilities: bg-surface, text-muted, border-border, bg-primary ... */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-input: var(--input-border);
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-primary-soft: var(--primary-soft);
+  --color-ring: var(--ring);
+  --color-new: var(--status-new);           --color-new-soft: var(--status-new-soft);
+  --color-transit: var(--status-transit);   --color-transit-soft: var(--status-transit-soft);
+  --color-done: var(--status-done);         --color-done-soft: var(--status-done-soft);
+  --color-warn: var(--status-warn);         --color-warn-soft: var(--status-warn-soft);
+  --color-fail: var(--status-fail);         --color-fail-soft: var(--status-fail-soft);
+  --color-note-soft: var(--note-soft);      --color-note-border: var(--note-border);
+  --color-destructive: var(--destructive);  --color-on-destructive: var(--on-destructive);
+
+  --font-sans: var(--font-plex-sans), var(--font-plex-arabic), system-ui, sans-serif;
+  --font-arabic: var(--font-plex-arabic), var(--font-plex-sans), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  --radius-control: 8px;
+  --radius-panel: 12px;
+  --shadow-1: var(--shadow-1);
+  --shadow-2: var(--shadow-2);
+}
+
+/* Comfortable density: 16px body, 44px controls. */
+html { font-size: 16px; }
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+:lang(ar), [dir="rtl"] { font-family: var(--font-arabic); line-height: 1.7; }
+
+/* Numbers people compare: tabular, always left-to-right. */
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; unicode-bidi: isolate; direction: ltr; }
+
+:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
 }

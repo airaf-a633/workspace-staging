@@ -38,7 +38,7 @@ export default function DataProcessingAgreement() {
     <main className="mx-auto grid max-w-3xl gap-6 px-4 py-12 leading-relaxed">
       <header className="grid gap-2">
         <h1 className="text-3xl font-semibold">Data processing agreement</h1>
-        <p className="text-sm text-slate-600">Last updated: {UPDATED}</p>
+        <p className="text-sm text-muted">Last updated: {UPDATED}</p>
         <p>
           This agreement (&ldquo;DPA&rdquo;) is part of the <Link className="underline" href="/terms">Terms of service</Link> between{" "}
           <strong>[COMPANY LEGAL NAME]</strong> (&ldquo;we&rdquo;, the <strong>processor</strong>) and the business using Workspace (&ldquo;you&rdquo;,

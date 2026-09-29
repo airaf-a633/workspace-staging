@@ -1,7 +1,11 @@
-import Link from "next/link";
-import { Field, Notice, Page, Submit } from "@/components/plain";
+import { AuthFrame } from "@/components/auth-frame";
+import { ButtonLink, Submit } from "@/components/ui/button";
+import { TextInput } from "@/components/ui/field";
+import { Notice } from "@/components/ui/surface";
 import { getUser } from "@/lib/supabase/server";
 import { acceptInvite } from "./actions";
+
+export const metadata = { title: "Join the workspace" };
 
 export default async function Invite(props: PageProps<"/invite/[token]">) {
   const { token } = await props.params;
@@ -11,25 +15,23 @@ export default async function Invite(props: PageProps<"/invite/[token]">) {
 
   if (!user) {
     return (
-      <Page title="You've been invited">
-        <p>Create an account or sign in with the email address the invite was sent to.</p>
-        <div className="flex gap-4">
-          <Link className="underline" href={`/sign-up?next=${encodeURIComponent(here)}`}>Create an account</Link>
-          <Link className="underline" href={`/sign-in?next=${encodeURIComponent(here)}`}>Sign in</Link>
+      <AuthFrame title="You've been invited" description="Create an account or sign in with the email address the invite was sent to.">
+        <div className="grid gap-3">
+          <ButtonLink variant="primary" href={`/sign-up?next=${encodeURIComponent(here)}`}>Create an account</ButtonLink>
+          <ButtonLink href={`/sign-in?next=${encodeURIComponent(here)}`}>I already have an account</ButtonLink>
         </div>
-      </Page>
+      </AuthFrame>
     );
   }
 
   return (
-    <Page title="Join the workspace">
-      {typeof sp.error === "string" && <Notice tone="error">{sp.error}</Notice>}
-      <p>You&apos;re signed in as {user.email}.</p>
+    <AuthFrame title="Join the workspace" description={<>Signed in as <strong>{user.email}</strong>.</>}>
+      {typeof sp.error === "string" && <Notice tone="error" title={sp.error} />}
       <form action={acceptInvite} className="grid gap-4">
         <input type="hidden" name="token" value={token} />
-        <Field label="Your name, as your team will see it" name="name" defaultValue={(user.user_metadata?.name as string) ?? ""} required />
-        <Submit>Join</Submit>
+        <TextInput label="Your name, as your team will see it" name="name" defaultValue={(user.user_metadata?.name as string) ?? ""} autoComplete="name" required />
+        <Submit pending="Joining…">Join</Submit>
       </form>
-    </Page>
+    </AuthFrame>
   );
 }

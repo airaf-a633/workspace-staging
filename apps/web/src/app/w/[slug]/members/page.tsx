@@ -1,5 +1,9 @@
 import { cookies } from "next/headers";
-import { Field, Notice, Page, Submit } from "@/components/plain";
+import { CaretDown } from "@phosphor-icons/react/dist/ssr";
+import { Submit } from "@/components/ui/button";
+import { CopyField } from "@/components/ui/copy-button";
+import { Checkbox, SelectInput, TextInput } from "@/components/ui/field";
+import { Badge, Card, Notice, PageHeader } from "@/components/ui/surface";
 import { can, loadWorkspace } from "@/lib/workspace";
 import { changeRole, inviteMember, removeMember, revokeInvite } from "./actions";
 
@@ -22,96 +26,100 @@ export default async function Members(props: PageProps<"/w/[slug]/members">) {
   const roleName = (r: unknown) => (Array.isArray(r) ? r[0]?.name : (r as { name?: string } | null)?.name) ?? "";
 
   return (
-    <Page title="Team">
-      {typeof sp.error === "string" && <Notice tone="error">{sp.error}</Notice>}
+    <>
+      <PageHeader title="Team members" description="Everyone who can sign in to this workspace, and what they can do." />
+
+      {typeof sp.error === "string" && <Notice tone="error" title={sp.error} />}
       {typeof sp.invited === "string" && inviteLink && (
-        <Notice tone="info">
-          Invite created for {sp.invited}. Send them this link (it works once and expires in 7 days; it won&apos;t be shown again):{" "}
-          <code className="break-all">{inviteLink}</code>
+        <Notice tone="success" title={`Invite created for ${sp.invited}`}>
+          <div className="grid gap-2">
+            <p>Send them this link. It works once, expires in 7 days, and won&apos;t be shown again.</p>
+            <CopyField value={inviteLink} label="Invite link" />
+          </div>
         </Notice>
       )}
 
-      <section className="grid gap-2">
-        <h2 className="text-lg font-semibold">Members</h2>
-        <ul className="divide-y">
+      <Card title={`Members (${members?.length ?? 0})`}>
+        <ul className="divide-y divide-border">
           {members?.map((m) => (
-            <li key={m.id} className="flex items-center justify-between gap-4 py-2">
-              <span>
-                {m.display_name} <span className="text-sm text-slate-600">{roleName(m.roles)}</span>
-              </span>
-              {isManager && m.id !== me.id && (
-                <form action={changeRole} className="flex items-center gap-2">
-                  <input type="hidden" name="slug" value={slug} />
-                  <input type="hidden" name="memberId" value={m.id} />
-                  <label className="sr-only" htmlFor={`role-${m.id}`}>Role for {m.display_name}</label>
-                  <select id={`role-${m.id}`} name="roleId" defaultValue={m.role_id} className="rounded border border-slate-500 px-2 py-1 text-sm">
-                    {roles?.map((r) => (
-                      <option key={r.id} value={r.id}>{r.name}</option>
-                    ))}
-                  </select>
-                  <button type="submit" className="text-sm underline">Change role</button>
-                </form>
-              )}
-              {isManager && m.id !== me.id && (
-                <form action={removeMember}>
-                  <input type="hidden" name="slug" value={slug} />
-                  <input type="hidden" name="memberId" value={m.id} />
-                  <button type="submit" className="text-sm underline">Remove</button>
-                </form>
-              )}
+            <li key={m.id} className="grid gap-3 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-medium">{m.display_name}</span>
+                  {m.id === me.id && <span className="text-sm text-muted">(you)</span>}
+                  <Badge>{roleName(m.roles)}</Badge>
+                </div>
+                {isManager && m.id !== me.id && (
+                  <details className="group w-full sm:w-auto">
+                    <summary className="flex min-h-11 cursor-pointer list-none items-center gap-1 text-sm font-medium text-primary [&::-webkit-details-marker]:hidden">
+                      Manage <CaretDown size={16} className="transition-transform group-open:rotate-180" aria-hidden="true" />
+                    </summary>
+                    <div className="mt-2 grid gap-4 rounded-[var(--radius-control)] bg-surface-2 p-4 sm:min-w-80">
+                      <form action={changeRole} className="grid gap-3">
+                        <input type="hidden" name="slug" value={slug} />
+                        <input type="hidden" name="memberId" value={m.id} />
+                        <SelectInput label={`Role for ${m.display_name}`} name="roleId" defaultValue={m.role_id}>
+                          {roles?.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                        </SelectInput>
+                        <Submit variant="secondary">Change role</Submit>
+                      </form>
+                      <details className="border-t border-border pt-3">
+                        <summary className="min-h-11 cursor-pointer list-none text-sm font-medium text-fail [&::-webkit-details-marker]:hidden">Remove from workspace…</summary>
+                        <form action={removeMember} className="mt-2 grid gap-2">
+                          <input type="hidden" name="slug" value={slug} />
+                          <input type="hidden" name="memberId" value={m.id} />
+                          <p className="text-sm">{m.display_name} will lose access immediately. Their past messages and notes stay.</p>
+                          <Submit variant="destructive" pending="Removing…">Remove {m.display_name}</Submit>
+                        </form>
+                      </details>
+                    </div>
+                  </details>
+                )}
+              </div>
             </li>
           ))}
         </ul>
-      </section>
+      </Card>
 
       {isManager && (
-        <>
-          <section className="grid gap-4">
-            <h2 className="text-lg font-semibold">Invite someone</h2>
-            <form action={inviteMember} className="grid gap-4">
-              <input type="hidden" name="slug" value={slug} />
-              <Field label="Their email" name="email" type="email" required />
-              <label className="grid gap-1 text-sm font-medium">
-                Role
-                <select name="role" required className="rounded border border-slate-500 px-3 py-2 font-normal" defaultValue={roles?.find((r) => r.key === "agent")?.id}>
-                  {roles?.filter((r) => r.key !== "owner").map((r) => (
-                    <option key={r.id} value={r.id}>{r.name}</option>
-                  ))}
-                </select>
-              </label>
-              <fieldset className="grid gap-1 text-sm">
-                <legend className="font-medium">Teams (none chosen means the default team)</legend>
-                {teams?.map((t) => (
-                  <label key={t.id} className="flex gap-2">
-                    <input type="checkbox" name="team" value={t.id} /> {t.name}
-                  </label>
-                ))}
-              </fieldset>
-              <Submit>Create invite</Submit>
-            </form>
-          </section>
-
-          {invites && invites.length > 0 && (
-            <section className="grid gap-2">
-              <h2 className="text-lg font-semibold">Waiting to join</h2>
-              <ul className="divide-y">
-                {invites.map((i) => (
-                  <li key={i.id} className="flex items-center justify-between gap-4 py-2">
-                    <span>
-                      {i.email} <span className="text-sm text-slate-600">{roleName(i.roles)}, expires {new Date(i.expires_at).toLocaleDateString("en-AE")}</span>
-                    </span>
-                    <form action={revokeInvite}>
-                      <input type="hidden" name="slug" value={slug} />
-                      <input type="hidden" name="inviteId" value={i.id} />
-                      <button type="submit" className="text-sm underline">Cancel invite</button>
-                    </form>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-        </>
+        <Card title="Invite someone" description="They'll get a link to create an account or sign in with this email.">
+          <form action={inviteMember} className="grid gap-4 sm:max-w-md">
+            <input type="hidden" name="slug" value={slug} />
+            <TextInput label="Their email" name="email" type="email" autoComplete="off" required />
+            <SelectInput label="Role" name="role" required defaultValue={roles?.find((r) => r.key === "agent")?.id}>
+              {roles?.filter((r) => r.key !== "owner").map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </SelectInput>
+            <fieldset className="grid gap-1">
+              <legend className="text-sm font-medium">Teams</legend>
+              <p className="text-sm text-muted">Leave empty to add them to the default team.</p>
+              {teams?.map((t) => <Checkbox key={t.id} name="team" value={t.id} label={t.name} />)}
+            </fieldset>
+            <Submit pending="Creating invite…">Create invite</Submit>
+          </form>
+        </Card>
       )}
-    </Page>
+
+      {isManager && invites && invites.length > 0 && (
+        <Card title="Waiting to join">
+          <ul className="divide-y divide-border">
+            {invites.map((i) => (
+              <li key={i.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                <div className="grid">
+                  <span className="font-medium">{i.email}</span>
+                  <span className="text-sm text-muted">
+                    {roleName(i.roles)}, expires {new Date(i.expires_at).toLocaleDateString("en-AE", { day: "numeric", month: "short" })}
+                  </span>
+                </div>
+                <form action={revokeInvite}>
+                  <input type="hidden" name="slug" value={slug} />
+                  <input type="hidden" name="inviteId" value={i.id} />
+                  <Submit variant="ghost" size="sm" pending="Cancelling…">Cancel invite</Submit>
+                </form>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+    </>
   );
 }

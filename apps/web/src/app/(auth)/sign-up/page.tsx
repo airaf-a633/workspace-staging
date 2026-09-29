@@ -1,7 +1,12 @@
 import Link from "next/link";
-import { Field, Notice, Page, Submit } from "@/components/plain";
+import { AuthFrame } from "@/components/auth-frame";
+import { Submit } from "@/components/ui/button";
+import { TextInput } from "@/components/ui/field";
+import { Notice } from "@/components/ui/surface";
 import { safeNext } from "@/lib/safe-next";
 import { signUp } from "../actions";
+
+export const metadata = { title: "Create your account" };
 
 export default async function SignUp(props: PageProps<"/sign-up">) {
   const sp = await props.searchParams;
@@ -10,25 +15,29 @@ export default async function SignUp(props: PageProps<"/sign-up">) {
 
   if (sp.confirm) {
     return (
-      <Page title="Check your email">
-        <Notice tone="info">We sent you a link to confirm your email. Open it on this device to continue.</Notice>
-      </Page>
+      <AuthFrame title="Check your email" description="We sent you a link to confirm your email. Open it on this device to continue.">
+        <Notice tone="info" title="Didn't get it?">Check your spam folder, or wait a minute and try signing up again.</Notice>
+      </AuthFrame>
     );
   }
 
   return (
-    <Page title="Create your account">
-      {error && <Notice tone="error">{error}</Notice>}
+    <AuthFrame
+      title="Create your account"
+      description="Free for 14 days. No card needed."
+      footer={<>Already have an account? <Link className="font-medium text-primary underline-offset-4 hover:underline" href={`/sign-in?next=${encodeURIComponent(next)}`}>Sign in</Link></>}
+    >
+      {error && <Notice tone="error" title={error} />}
       <form action={signUp} className="grid gap-4">
         <input type="hidden" name="next" value={next} />
-        <Field label="Your name" name="name" autoComplete="name" required />
-        <Field label="Work email" name="email" type="email" autoComplete="email" required />
-        <Field label="Password (at least 10 characters)" name="password" type="password" autoComplete="new-password" minLength={10} required />
-        <Submit>Create account</Submit>
+        <TextInput label="Your name" name="name" autoComplete="name" required />
+        <TextInput label="Work email" name="email" type="email" autoComplete="email" required />
+        <TextInput label="Password" name="password" type="password" autoComplete="new-password" minLength={10} help="At least 10 characters." required />
+        <Submit pending="Creating account…">Create account</Submit>
       </form>
-      <p className="text-sm">
-        Already have an account? <Link className="underline" href={`/sign-in?next=${encodeURIComponent(next)}`}>Sign in</Link>
+      <p className="text-sm text-muted">
+        By creating an account you agree to the <Link className="underline" href="/terms">Terms</Link> and <Link className="underline" href="/privacy">Privacy policy</Link>.
       </p>
-    </Page>
+    </AuthFrame>
   );
 }

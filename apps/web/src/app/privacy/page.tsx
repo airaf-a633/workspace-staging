@@ -29,7 +29,7 @@ export default function PrivacyPolicy() {
     <main className="mx-auto grid max-w-3xl gap-6 px-4 py-12 leading-relaxed">
       <header className="grid gap-2">
         <h1 className="text-3xl font-semibold">Privacy policy</h1>
-        <p className="text-sm text-slate-600">Last updated: {UPDATED}</p>
+        <p className="text-sm text-muted">Last updated: {UPDATED}</p>
       </header>
 
       <section className="grid gap-3">
