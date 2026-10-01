@@ -67,7 +67,7 @@ function Card({ agent, world }: { agent: AgentKey; world: AiWorld }) {
 }
 
 /** "Khalifa" for a person, the full name for a business ("Al Noor Trading", never "Al"). */
-const greetName = (n: string) => (/trading|llc|clinic|group|company|co|est\.?$/i.test(n) ? n : n.split(" ")[0]);
+const greetName = (n: string) => (/\b(trading|llc|clinics?|group|company|co|est)\b/i.test(n) ? n : n.split(" ")[0]);
 
 /** One drafted follow-up per quiet quote: approve, edit or skip. Nothing is sent without a click. */
 function SalesDrafts({ world }: { world: AiWorld }) {
