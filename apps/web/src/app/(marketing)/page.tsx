@@ -71,6 +71,7 @@ export default function Landing() {
 
           <div className="relative lg:ps-6">
             <PhotoSlot
+              src="/img/hero-owner.jpg"
               alt="A shop owner in Dubai answering customers on her phone"
               brief="a shop owner in Dubai replying to customers on her phone, natural light"
               className="aspect-[4/5] rounded-[2rem] sm:aspect-[5/4] lg:aspect-[4/5]"

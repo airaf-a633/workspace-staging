@@ -10,7 +10,8 @@ export function PhotoSlot({ src, alt, brief, className = "" }: { src?: string; a
   if (src) {
     return (
       <div className={`relative overflow-hidden ${className}`}>
-        <Image src={src} alt={alt} fill sizes="(min-width: 1024px) 45vw, 100vw" className="object-cover" priority />
+        {/* Biased slightly up so faces stay in frame when the wide phone/tablet crop trims a portrait photo. */}
+        <Image src={src} alt={alt} fill sizes="(min-width: 1024px) 45vw, 100vw" className="object-cover object-[50%_40%]" priority />
       </div>
     );
   }

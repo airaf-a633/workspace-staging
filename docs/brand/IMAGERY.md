@@ -13,7 +13,7 @@ The public site pairs photographs of people in UAE businesses with live product 
 
 | Slot | File (put in `apps/web/public/photos/`) | Crop | Brief |
 |---|---|---|---|
-| Landing hero | `hero-owner.webp` | 4:5, 1600 x 2000 or larger | A shop owner replying to customers on a phone |
+| Landing hero | `public/img/hero-owner.jpg` (in place, 896 x 1200, AI-generated) | 4:5, 1600 x 2000 or larger | A shop owner replying to customers on a phone |
 | Alternative hero (A/B later) | `hero-team.webp` | 4:5 | Two staff at a counter, one handing a phone to the other |
 | Auth screens (optional) | `auth-counter.webp` | 3:4 | A calm shop counter at golden hour, person out of focus |
 
