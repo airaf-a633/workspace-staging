@@ -30,10 +30,12 @@ interface Props {
   replyRef: Ref<HTMLTextAreaElement>;
   noteRef: Ref<HTMLTextAreaElement>;
   dispatch: (a: InboxAction) => void;
+  /** Real chat: sending arrives with M2.4, so say that instead of "sample". */
+  live?: boolean;
 }
 
 /* The reply box: a floating card at the foot of the thread, with a small Reply / Note switch inside it. */
-export function Composer({ c, actions, people, me, now, mode, setMode, replyRef, noteRef, dispatch }: Props) {
+export function Composer({ c, actions, people, me, now, mode, setMode, replyRef, noteRef, dispatch, live = false }: Props) {
   const [draft, setDraft] = useState(c.phoneReply?.draft ?? "");
   const [aiDrafted, setAiDrafted] = useState(false);
   const aiT = useT("aiChat");
@@ -228,7 +230,7 @@ export function Composer({ c, actions, people, me, now, mode, setMode, replyRef,
       {notSent && !noting && (
         <p role="status" className="mx-auto flex w-full max-w-3xl gap-2 px-1 text-sm text-muted">
           <Info size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
-          {c.channel === "email" ? t("notSentEmail") : t("notSentWhatsapp")}
+          {live ? t("notSentLive") : c.channel === "email" ? t("notSentEmail") : t("notSentWhatsapp")}
         </p>
       )}
     </div>

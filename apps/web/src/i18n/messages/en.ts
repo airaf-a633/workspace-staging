@@ -335,6 +335,7 @@ export const en = {
     sendAnyway: "Send anyway",
     notSentWhatsapp: "Sample chat, so nothing was sent. Replies go out once your WhatsApp number is connected.",
     notSentEmail: "Sample chat, so nothing was sent. Replies go out once your Outlook mailbox is connected.",
+    notSentLive: "Not sent yet: replying from the inbox arrives in the next step. Reply from your phone for now.",
     templates: {
       order_update: { label: "Order update", preview: "Hi {{1}}, an update on your order {{2}}: {{3}}" },
       follow_up: { label: "Follow-up offer", preview: "Hi {{1}}, still interested in {{2}}? This week only: {{3}}" },
@@ -358,6 +359,8 @@ export const en = {
     flags: { phone: "sent from phone", imported: "imported", edited: "edited" },
     deleted: "{name} deleted this message",
     notDelivered: "Not delivered.",
+    open: "Open file",
+    mediaFailed: "This file couldn't be downloaded from WhatsApp.",
     reacted: "{name} reacted {reaction}",
     errors: {
       unknown: "Not delivered. WhatsApp didn't say why: the customer may have blocked this number or no longer uses WhatsApp. Try calling, or email if you have an address.",
@@ -953,6 +956,28 @@ export const en = {
     disconnectMenu: "Disconnect this number…",
     disconnectBody: "Sending and receiving in Workspace stops for {number}. Chats and history stay here, and the WhatsApp Business app on the phone keeps working. You can connect it again later.",
     disconnect: "Disconnect {name}",
+    testBadge: "Test number",
+    connectedTitle: "Number connected",
+    connectedBody: "Send a WhatsApp message to it from your phone. It appears in the inbox within seconds while the worker is running.",
+    test: {
+      title: "Connect Meta's test number",
+      body: "For building and testing before Meta approves our platform. In Meta for Developers, open your app, then WhatsApp › API Setup, and copy the three values below. Your real number connects with one click later.",
+      phoneNumberId: "Phone number ID",
+      wabaId: "WhatsApp Business Account ID",
+      token: "Access token",
+      tokenHelp: "Stored encrypted. It's never shown again or sent anywhere except Meta.",
+      checking: "Checking with Meta…",
+      submit: "Connect",
+    },
+    errors: {
+      invalidFields: "Check the values: the two IDs are numbers only, and the token is long.",
+      badToken: "Meta didn't accept that token. Temporary tokens expire after 24 hours; generate a new one.",
+      notFound: "Meta couldn't find that number or account. Check both IDs.",
+      metaDown: "Couldn't reach Meta. Try again in a minute.",
+      ownerOnly: "Only the owner can connect numbers.",
+      taken: "That number is already connected to another workspace.",
+      saveFailed: "Couldn't save the number. Try again.",
+    },
   },
 
   getReady: {

@@ -31,6 +31,10 @@ export interface Media {
   duration?: string;
   caption?: string;
   phone?: string;
+  /** A short-lived signed link to the stored file (real inbox only). */
+  url?: string;
+  /** The file couldn't be downloaded from WhatsApp. */
+  failed?: boolean;
   /** What a voice note says, written out by AI on request (1 credit). */
   transcript?: string;
 }
@@ -62,6 +66,8 @@ export interface Message {
   status?: "sent" | "delivered" | "read" | "failed";
   /** Why a message failed, as a key under message.errors (from WhatsApp's error code). */
   error?: "unknown";
+  /** WhatsApp's own failure reason, when a real message failed. */
+  errorText?: string;
   edited?: boolean;
   deleted?: boolean;
   imported?: boolean;
@@ -144,4 +150,6 @@ export interface InboxData {
   teams: Team[];
   viewer: ViewerInfo;
   conversations: Conversation[];
+  /** Real data from the database (not the sample chats). */
+  live?: boolean;
 }

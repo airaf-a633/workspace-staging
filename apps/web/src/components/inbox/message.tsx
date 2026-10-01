@@ -63,6 +63,16 @@ function MediaCard({ media }: { media: Media }) {
           {detail && <p className="truncate text-xs text-muted" dir="auto">{detail}</p>}
         </div>
       </div>
+      {media.url && media.type === "photo" && (
+        // eslint-disable-next-line @next/next/no-img-element -- signed, short-lived storage links; next/image can't cache them
+        <a href={media.url} target="_blank" rel="noreferrer"><img src={media.url} alt={media.caption ?? label} className="max-h-72 rounded-[var(--radius-control)] object-cover" /></a>
+      )}
+      {media.url && media.type === "voice" && <audio controls src={media.url} className="w-full max-w-xs" />}
+      {media.url && media.type === "video" && <video controls src={media.url} className="max-h-72 rounded-[var(--radius-control)]" />}
+      {media.url && (media.type === "document" || media.type === "sticker") && (
+        <a href={media.url} target="_blank" rel="noreferrer" className="text-sm font-medium text-primary hover:underline">{tAll("message.open")}</a>
+      )}
+      {media.failed && <p className="text-sm text-fail">{tAll("message.mediaFailed")}</p>}
       {media.caption && <p dir="auto">{media.caption}</p>}
       <Transcribe transcript={media.transcript} />
     </div>
@@ -139,7 +149,7 @@ export function MessageItem({ m, people, teams, customer, first = true, last = t
       {failed && (
         <p className="flex gap-1.5 text-sm text-fail" role="note">
           <WarningCircle size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
-          {m.error ? t(`errors.${m.error}`) : t("notDelivered")}
+          {m.error ? t(`errors.${m.error}`) : m.errorText ?? t("notDelivered")}
         </p>
       )}
       {m.reaction && (

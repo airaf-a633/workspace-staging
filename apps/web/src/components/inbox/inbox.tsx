@@ -78,7 +78,7 @@ function Trail({ ids, people }: { ids: string[]; people: Person[] }) {
   );
 }
 
-export function Inbox({ data }: { data: InboxData }) {
+export function Inbox({ data, onOpen }: { data: InboxData; onOpen?: (conversationId: string) => Promise<void> }) {
   const { now, people, teams } = data;
   const viewer: Viewer = data.viewer;
   const me = viewer.memberId;
@@ -96,7 +96,7 @@ export function Inbox({ data }: { data: InboxData }) {
   // The customer panel stays open or closed across chats until the person changes it.
   const [panelOpen, setPanelOpen] = useState(false);
   const [help, setHelp] = useState(false);
-  const [sampleNote, setSampleNote] = useState(true);
+  const [sampleNote, setSampleNote] = useState(!data.live);
 
   const t = useT("inbox");
   const tAll = useT();
@@ -150,7 +150,11 @@ export function Inbox({ data }: { data: InboxData }) {
     setHanding(false);
     setConfirmSpam(false);
     setMode("reply");
-    if (id) dispatch({ type: "open", id });
+    if (id) {
+      dispatch({ type: "open", id });
+      // Real chats: clear the unread count in the database too.
+      void onOpen?.(id);
+    }
     // Native history keeps the chat in the URL (shareable, Back returns to the list) without a server round trip.
     window.history.pushState(null, "", id ? `?c=${id}` : window.location.pathname);
   }
@@ -401,6 +405,7 @@ export function Inbox({ data }: { data: InboxData }) {
             replyRef={replyRef}
             noteRef={noteRef}
             dispatch={dispatch}
+            live={!!data.live}
           />
         )}
       </section>
@@ -443,6 +448,7 @@ interface ThreadProps {
   replyRef: React.RefObject<HTMLTextAreaElement | null>;
   noteRef: React.RefObject<HTMLTextAreaElement | null>;
   dispatch: (a: InboxAction) => void;
+  live: boolean;
 }
 
 /** Two messages belong to one run when the same sender wrote them within 5 minutes on the same day. */
@@ -613,6 +619,7 @@ function Thread(p: ThreadProps) {
         replyRef={p.replyRef}
         noteRef={p.noteRef}
         dispatch={dispatch}
+        live={p.live}
       />
     </>
   );
