@@ -242,7 +242,12 @@ export const en = {
     searchPlaceholder: "Name, number or message",
     groups: { yours: "Yours", waiting: "Waiting to be claimed" },
     empty: { search: "No chats match your search.", mine: "Nothing needs you right now.", spam: "No spam.", other: "No chats here." },
-    flags: { notDelivered: "Not delivered", waiting: "Waiting {time}", windowClosed: "24h window closed" },
+    flags: { notDelivered: "Not delivered", waiting: "Waiting {time}", windowClosed: "24h window closed", sensitive: "Sensitive" },
+    sensitive: {
+      tag: "Sensitive",
+      kinds: { payment: "Payment dispute", legal: "Legal threat", health: "Health complaint", abuse: "Abuse" },
+      body: "AI won't reply to this chat. The owner and the team's manager were alerted. A person should answer soon.",
+    },
     snippet: {
       deleted: "Deleted message",
       note: "Note: {body}",
@@ -1275,6 +1280,28 @@ export const en = {
 
   aiSettings: {
     title: "AI",
+    labelBusiness: "Qamar Electronics",
+    receptionist: {
+      title: "What the receptionist may send",
+      description: "Outside working hours only, and only from your business knowledge.",
+      sends: {
+        location: { title: "Location and opening hours", body: "Your shop's pin and today's hours." },
+        photos: { title: "Product photos and prices", body: "From your store catalogue only. Never discounts." },
+        orders: { title: "Order status", body: "Only to the number that placed the order." },
+      },
+      preview: "How customers see an AI reply",
+      label: "{business} assistant (AI)",
+      labelNamed: "{name}, {business} assistant (AI)",
+      sample: "Hi! We're closed now and open again at 10:00. Our team will reply to you first thing.",
+      rules: "AI stays quiet if someone on your team replied in the last 30 minutes, never answers sensitive messages, and stops for good for a customer who asks for a person.",
+    },
+    feedback: {
+      title: "Feedback this week",
+      description: "Thumbs-down reports from your team. Wrong facts usually mean the business knowledge needs a fix.",
+      week: { one: "{count} report this week.", other: "{count} reports this week." },
+      sample1: "Wrong fact: said delivery is free over AED 300 (it's AED 500). Fix it in Questions and answers.",
+      sample2: "Wrong tone: a follow-up to a business customer was too casual.",
+    },
     description: "Agents that prepare work for each manager, automations you made with Ask AI, what AI knows about your business, and credits.",
     readOnly: "Only the owner can change these settings. You can see what's switched on.",
     soonTitle: "AI arrives after WhatsApp is connected",
@@ -1284,6 +1311,7 @@ export const en = {
       description: "Each agent works for a role, with that person's permissions. They prepare work; a person approves it.",
       runs: { zero: "Hasn't run this week", one: "Ran once this week", other: "Ran {count} times this week" },
       off: "Off",
+      stats: "This month: {approved} approved as written · {edited} edited · {skipped} skipped",
       nameLabel: "Name",
       namePlaceholder: "Optional, e.g. Noor",
       nameRule: "A named agent is still always marked as AI, to staff and to customers, as WhatsApp's rules require.",
@@ -1315,6 +1343,16 @@ export const en = {
       tone: "Tone",
       tones: { friendly: "Friendly", formal: "Formal", brief: "Short and direct" },
       never: "AI won't discuss anything not listed here; it hands the chat to a person instead.",
+      suggested: "Suggested answers",
+      suggestedHelp: "Questions your team answered more than once. Add them and AI can use them too.",
+      suggestions: {
+        parking: { q: "Is there parking at the Deira shop?", a: "Yes, free parking behind the building for 1 hour.", from: "Answered 4 times this month by Hana and Sara" },
+        installments: { q: "Can I pay in instalments?", a: "Yes, with Tabby on orders over AED 1,000.", from: "Answered 3 times this month by Sara" },
+      },
+      add: "Add to knowledge",
+      dismiss: "Dismiss",
+      added: "Added. AI can use this answer now.",
+      dismissed: "Dismissed.",
     },
     credits: {
       title: "Credits",
@@ -1375,6 +1413,14 @@ export const en = {
       unclaimed: { zero: "No chats waiting", one: "{count} chat waiting to be claimed", other: "{count} chats waiting to be claimed" },
       quiet: { zero: "No quiet quotes", one: "{count} quote has gone quiet", other: "{count} quotes have gone quiet" },
     },
+  },
+
+  feedback: {
+    good: "Helpful",
+    bad: "Not helpful",
+    why: "What was wrong?",
+    reasons: { wrongFact: "Wrong fact", wrongTone: "Wrong tone", wrongLanguage: "Wrong language", other: "Something else" },
+    thanks: "Thanks, noted.",
   },
 
   // @@END: new sections go above this line (keep en.ts and ar.ts in the same order)

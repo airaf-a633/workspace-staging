@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Sparkle } from "@phosphor-icons/react";
 import { useLocale, useT } from "@/i18n/client";
 import { AiTag, CreditCost } from "./ai-tag";
+import { AiFeedback } from "./feedback";
 import { spend } from "./store";
 
 /*
@@ -31,6 +32,7 @@ export function ChatSummary({ conversationId, customer, messageCount }: { conver
     <div className="mb-6 grid gap-1.5 rounded-[var(--radius-panel)] border border-ai/30 bg-ai-soft/50 p-4">
       <p className="flex items-center justify-between gap-2 text-xs font-medium text-muted"><AiTag label={t("summaryTag")} /> {t("teamOnly")}</p>
       <p className="text-sm leading-relaxed">{text}</p>
+      <span className="justify-self-end"><AiFeedback /></span>
     </div>
   );
 }

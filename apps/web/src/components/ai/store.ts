@@ -19,10 +19,12 @@ interface State {
   spent: number;
   /** Names the owner gave agents ("Noor"). Customers still see them marked as AI. */
   names: Partial<Record<string, string>>;
+  /** Thumbs-down reports this session: reason keys (wrongFact, wrongTone, wrongLanguage, other). */
+  reports: string[];
 }
 
 const KEY = "preview-ai";
-const EMPTY: State = { recipes: [], spent: 0, names: {} };
+const EMPTY: State = { recipes: [], spent: 0, names: {}, reports: [] };
 const listeners = new Set<() => void>();
 let cache: State | null = null;
 
@@ -70,6 +72,11 @@ export function addRecipe(key: Recipe["key"]) {
 export function nameAgent(agent: string, name: string) {
   const s = read();
   write({ ...s, names: { ...s.names, [agent]: name.trim().slice(0, 30) || undefined } });
+}
+
+export function report(reason: string) {
+  const s = read();
+  write({ ...s, reports: [...s.reports, reason] });
 }
 
 export function toggleRecipe(id: string) {

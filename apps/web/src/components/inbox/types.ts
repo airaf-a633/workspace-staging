@@ -134,6 +134,8 @@ export interface Conversation {
   handoffs: Handoff[];
   /** The reply AI would suggest, written in the customer's language (sample; the real one is generated on click). */
   aiSuggestion?: string;
+  /** AI flagged this chat as sensitive: it never answers it and alerts the owner and manager (decided 2026-10-01). */
+  sensitive?: "payment" | "legal" | "health" | "abuse";
 }
 
 export interface InboxData {

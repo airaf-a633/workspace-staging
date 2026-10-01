@@ -6,6 +6,7 @@ import { buttonClass } from "@/components/ui/button";
 import { useFormat, useLocale, useT } from "@/i18n/client";
 import { AiButton } from "@/components/ai/chat-ai";
 import { AiTag } from "@/components/ai/ai-tag";
+import { AiFeedback } from "@/components/ai/feedback";
 import type { InboxAction } from "./store";
 import type { Conversation, Person } from "./types";
 
@@ -177,7 +178,7 @@ export function Composer({ c, actions, people, me, now, mode, setMode, replyRef,
         />
         {aiDrafted && (
           <p className="flex flex-wrap items-center gap-2 px-4 pt-1 text-xs text-muted">
-            <AiTag label={aiT("draftTag")} /> {aiT("draftCheck")}
+            <AiTag label={aiT("draftTag")} /> {aiT("draftCheck")} <AiFeedback />
             {/* A suggestion in the customer's language, with what it says for the reader. */}
             {c.contact.language === "Arabic" && locale === "en" && aiT.has(`gloss.${c.id}`) && <span className="basis-full">{aiT(`gloss.${c.id}` as "gloss.lina")}</span>}
           </p>

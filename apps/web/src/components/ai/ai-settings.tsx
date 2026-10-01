@@ -13,6 +13,10 @@ export type AgentKey = (typeof AGENTS)[number];
 /** Sample state: the receptionist is off by default (decided 2026-09-27: after-hours auto-reply is opt-in). */
 const START: Record<AgentKey, boolean> = { sales: true, triage: true, receptionist: false, briefing: true };
 const RUNS: Record<AgentKey, number> = { sales: 6, triage: 23, receptionist: 0, briefing: 5 };
+/** Sample quality stats this month: drafts approved as written / edited / skipped (decided 2026-10-01). */
+const STATS: Partial<Record<AgentKey, [number, number, number]>> = { sales: [14, 6, 3], triage: [41, 5, 2] };
+const SENDS = ["location", "photos", "orders"] as const;
+const FAQ_SUGGESTIONS = ["parking", "installments"] as const;
 const USAGE = [["suggest", 214], ["translate", 96], ["summary", 88], ["ask", 142], ["agents", 120]] as const;
 
 function Toggle({ on, onChange, label, disabled }: { on: boolean; onChange: () => void; label: string; disabled?: boolean }) {
@@ -50,7 +54,10 @@ export function AiSettings({ isOwner, credits }: { isOwner: boolean; credits: { 
   const fmt = useFormat();
   const [agents, setAgents] = useState(START);
   const [tone, setTone] = useState("friendly");
-  const { recipes, spent, names } = useAiState();
+  const [sends, setSends] = useState<Record<(typeof SENDS)[number], boolean>>({ location: true, photos: true, orders: true });
+  const [faqDone, setFaqDone] = useState<Record<string, "added" | "dismissed">>({});
+  const { recipes, spent, names, reports } = useAiState();
+  const business = t("labelBusiness");
   const used = credits.total - credits.left + spent;
   const card = "rounded-[var(--radius-panel)] bg-surface shadow-[var(--shadow-1)] ring-1 ring-border";
 
@@ -66,6 +73,9 @@ export function AiSettings({ isOwner, credits }: { isOwner: boolean; credits: { 
                 <span className="flex flex-wrap items-center gap-2 font-medium">{t(`agents.${k}.name`)} <AiTag /></span>
                 <span className="text-sm text-muted">{t(`agents.${k}.does`)}</span>
                 <span className="text-xs text-muted">{t(`agents.${k}.for`)} · {agents[k] ? t("agents.runs", { count: RUNS[k] }) : t("agents.off")}</span>
+                {STATS[k] && (
+                  <span className="text-xs text-muted">{t("agents.stats", { approved: STATS[k]![0], edited: STATS[k]![1], skipped: STATS[k]![2] })}</span>
+                )}
                 {isOwner && (
                   <label className="mt-1 flex flex-wrap items-center gap-2 text-sm">
                     <span className="text-muted">{t("agents.nameLabel")}</span>
@@ -85,6 +95,28 @@ export function AiSettings({ isOwner, credits }: { isOwner: boolean; credits: { 
           ))}
         </ul>
         <p className="text-xs text-muted">{t("agents.approval")} {t("agents.nameRule")}</p>
+      </Section>
+
+      <Section title={t("receptionist.title")} description={t("receptionist.description")}>
+        <div className={`${card} grid gap-4 p-5`}>
+          <ul className="grid gap-3">
+            {SENDS.map((k) => (
+              <li key={k} className="flex items-start justify-between gap-4">
+                <span className="grid"><span className="font-medium">{t(`receptionist.sends.${k}.title`)}</span><span className="text-sm text-muted">{t(`receptionist.sends.${k}.body`)}</span></span>
+                <Toggle on={sends[k]} disabled={!isOwner} label={t(`receptionist.sends.${k}.title`)} onChange={() => setSends((s) => ({ ...s, [k]: !s[k] }))} />
+              </li>
+            ))}
+          </ul>
+          <div className="grid gap-2 border-t border-border pt-4">
+            <p className="text-sm font-medium">{t("receptionist.preview")}</p>
+            {/* What the customer sees in WhatsApp: the first line always says it's AI. */}
+            <div className="max-w-sm rounded-2xl rounded-ss-sm bg-[#DCF8C6] px-3 py-2 text-sm text-[#0F2537] shadow-sm dark:bg-[#1F4E3D] dark:text-white">
+              <p className="font-semibold">🤖 {names.receptionist ? t("receptionist.labelNamed", { name: names.receptionist, business }) : t("receptionist.label", { business })}</p>
+              <p>{t("receptionist.sample")}</p>
+            </div>
+            <p className="text-xs text-muted">{t("receptionist.rules")}</p>
+          </div>
+        </div>
       </Section>
 
       <Section title={t("recipes.title")} description={t("recipes.description")}>
@@ -136,7 +168,36 @@ export function AiSettings({ isOwner, credits }: { isOwner: boolean; credits: { 
               {(["friendly", "formal", "brief"] as const).map((k) => <option key={k} value={k}>{t(`knowledge.tones.${k}`)}</option>)}
             </select>
           </div>
+          <div className="grid gap-2 border-t border-border pt-4">
+            <p className="flex items-center gap-2 text-sm font-medium">{t("knowledge.suggested")} <AiTag /></p>
+            <p className="text-xs text-muted">{t("knowledge.suggestedHelp")}</p>
+            <ul className="grid gap-2 text-sm">
+              {FAQ_SUGGESTIONS.map((k) => (
+                <li key={k} className="grid gap-2 rounded-[var(--radius-control)] border border-dashed border-ai/40 px-3 py-2">
+                  <span><span className="font-medium">{t(`knowledge.suggestions.${k}.q`)}</span><span className="block text-muted">{t(`knowledge.suggestions.${k}.a`)}</span><span className="block text-xs text-muted">{t(`knowledge.suggestions.${k}.from`)}</span></span>
+                  {faqDone[k] ? (
+                    <span className="text-xs text-muted">{faqDone[k] === "added" ? t("knowledge.added") : t("knowledge.dismissed")}</span>
+                  ) : isOwner ? (
+                    <span className="flex justify-end gap-2">
+                      <button type="button" onClick={() => setFaqDone({ ...faqDone, [k]: "dismissed" })} className={buttonClass("ghost", "sm")}>{t("knowledge.dismiss")}</button>
+                      <button type="button" onClick={() => setFaqDone({ ...faqDone, [k]: "added" })} className={buttonClass("primary", "sm")}>{t("knowledge.add")}</button>
+                    </span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </div>
           <p className="text-xs text-muted">{t("knowledge.never")}</p>
+        </div>
+      </Section>
+
+      <Section title={t("feedback.title")} description={t("feedback.description")}>
+        <div className={`${card} grid gap-2 p-5 text-sm`}>
+          <p>{t("feedback.week", { count: 3 + reports.length })}</p>
+          <ul className="grid list-disc gap-1 ps-5 text-muted">
+            <li>{t("feedback.sample1")}</li>
+            <li>{t("feedback.sample2")}</li>
+          </ul>
         </div>
       </Section>
 

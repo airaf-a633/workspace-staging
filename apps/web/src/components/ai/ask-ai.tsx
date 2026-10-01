@@ -8,6 +8,7 @@ import { buttonClass } from "@/components/ui/button";
 import { useFormat, useLocale, useT } from "@/i18n/client";
 import type { AiWorld } from "@/lib/ai-sample";
 import { AiTag } from "./ai-tag";
+import { AiFeedback } from "./feedback";
 import { addRecipe, spend, useAiState, type Recipe } from "./store";
 
 /*
@@ -172,7 +173,7 @@ export function AskAi({ world, open, onClose }: { world: AiWorld | null; open: b
                   <li key={turn.id} className="max-w-[85%] justify-self-end rounded-[var(--radius-panel)] bg-primary-soft px-3.5 py-2.5" dir="auto">{turn.text}</li>
                 ) : (
                   <li key={turn.id} className="grid gap-2">
-                    <AiTag />
+                    <span className="flex items-center justify-between gap-2"><AiTag /><AiFeedback /></span>
                     <Answer intent={turn.intent!} recipe={turn.recipe} world={world} onAsk={ask} onNavigate={onClose} />
                   </li>
                 ),

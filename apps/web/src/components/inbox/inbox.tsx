@@ -13,6 +13,7 @@ import { roleLabel } from "@/i18n/labels";
 import type { Format, TFor, Translator } from "@/i18n/types";
 import { MessageItem, mediaLabel } from "./message";
 import { AiButton, ChatSummary } from "@/components/ai/chat-ai";
+import { AiTag } from "@/components/ai/ai-tag";
 import { lastActivity, reducer, stamp, type InboxAction } from "./store";
 import type { Conversation, InboxData, Message, Person } from "./types";
 
@@ -42,6 +43,7 @@ function lastReal(c: Conversation) {
 /** Only states that need someone get a label in the list (decided 2026-09-30). */
 function attention(c: Conversation, now: number, t: TFor<"inbox">, fmt: Format): { label: string; tone: "warn" | "fail" } | null {
   if (c.status !== "open") return null;
+  if (c.sensitive) return { label: t("flags.sensitive"), tone: "fail" };
   const last = lastReal(c);
   if (last?.status === "failed") return { label: t("flags.notDelivered"), tone: "fail" };
   if (!c.holderId && last?.kind === "in" && c.lastCustomerAt !== null && now - c.lastCustomerAt > REPLY_TARGET_MIN * 60_000) {
@@ -559,6 +561,12 @@ function Thread(p: ThreadProps) {
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto grid w-full max-w-3xl content-start px-4 py-6 md:px-6">
+          {c.sensitive && (
+            <div role="alert" className="mb-4 grid gap-1 rounded-[var(--radius-panel)] border border-fail/40 bg-fail-soft p-4 text-sm">
+              <p className="flex flex-wrap items-center gap-2 font-semibold"><AiTag label={t("sensitive.tag")} /> {t(`sensitive.kinds.${c.sensitive}`)}</p>
+              <p>{t("sensitive.body")}</p>
+            </div>
+          )}
           <ChatSummary key={c.id} conversationId={c.id} customer={c.contact.name} messageCount={c.messages.filter((m) => m.kind === "in" || m.kind === "out").length} />
           {pinned && (
             <div className="mb-6 grid gap-1 rounded-[var(--radius-panel)] bg-surface p-4 shadow-[var(--shadow-1)]">

@@ -10,6 +10,7 @@ import type { AiWorld } from "@/lib/ai-sample";
 import { AiTag } from "./ai-tag";
 import type { AgentKey } from "./ai-settings";
 import { useAiState } from "./store";
+import { AiFeedback } from "./feedback";
 
 /** Which agents report to which role (decided 2026-10-01). Each works with that person's own permissions. */
 const FOR: Record<RoleTemplateKey, AgentKey[]> = {
@@ -120,7 +121,10 @@ function SalesDrafts({ world }: { world: AiWorld }) {
             ) : s === "editing" ? (
               <textarea dir="auto" rows={3} value={drafts[d.id]} onChange={(e) => setDrafts({ ...drafts, [d.id]: e.target.value })} className="rounded-[var(--radius-control)] border border-input bg-surface px-3 py-2" aria-label={t("sales.editLabel", { name: d.customer })} />
             ) : (
-              <p className="rounded-[var(--radius-control)] bg-ai-soft/60 px-3 py-2" dir="auto">{drafts[d.id]}</p>
+              <div className="grid gap-1">
+                <p className="rounded-[var(--radius-control)] bg-ai-soft/60 px-3 py-2" dir="auto">{drafts[d.id]}</p>
+                <span className="justify-self-end"><AiFeedback /></span>
+              </div>
             )}
             {s !== "sent" && s !== "skipped" && (
               <div className="flex flex-wrap justify-end gap-2">
