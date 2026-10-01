@@ -22,7 +22,7 @@ How it works: with `SITE_MODE=preview`, `apps/web/src/proxy.ts` sends every visi
 
    Don't add the Supabase keys or any other secret. The preview doesn't need them.
 5. Click **Deploy**.
-6. **Settings → Git → Production Branch:** set it to `ui/design-foundations` until that work is merged into `main`. After that, change it back to `main`.
+6. **Settings → Environments → Production → Branch Tracking:** set it to `ui/design-foundations` until that work is merged into `main`, then redeploy. After the merge, change it back to `main`. (This setting used to be under Settings → Git.)
 7. Optional: **Settings → Functions → Region:** Frankfurt (`fra1`), the same region as the database we'll use later.
 
 The address is `https://<project-name>.vercel.app`. Every push to the production branch redeploys it automatically.
