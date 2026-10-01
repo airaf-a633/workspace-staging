@@ -12,6 +12,7 @@ import {
 } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
 import { useFormat, useT } from "@/i18n/client";
+import { Transcribe, TranslateMessage } from "@/components/ai/chat-ai";
 import { roleLabel } from "@/i18n/labels";
 import type { Translator } from "@/i18n/types";
 import type { ChatEvent, Media, MediaType, Message, Person, Team } from "./types";
@@ -63,6 +64,7 @@ function MediaCard({ media }: { media: Media }) {
         </div>
       </div>
       {media.caption && <p dir="auto">{media.caption}</p>}
+      <Transcribe transcript={media.transcript} />
     </div>
   );
 }
@@ -124,6 +126,7 @@ export function MessageItem({ m, people, teams, customer, first = true, last = t
           {m.subject && <p className="font-semibold" dir="auto">{m.subject}</p>}
           {m.media && <MediaCard media={m.media} />}
           {m.text && <p className="whitespace-pre-line" dir="auto">{m.text}</p>}
+          {m.kind === "in" && <TranslateMessage translation={m.translation} />}
         </>
       )}
       {(last || flags) && (

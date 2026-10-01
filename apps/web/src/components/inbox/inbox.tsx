@@ -12,6 +12,7 @@ import { useFormat, useT } from "@/i18n/client";
 import { roleLabel } from "@/i18n/labels";
 import type { Format, TFor, Translator } from "@/i18n/types";
 import { MessageItem, mediaLabel } from "./message";
+import { AiButton, ChatSummary } from "@/components/ai/chat-ai";
 import { lastActivity, reducer, stamp, type InboxAction } from "./store";
 import type { Conversation, InboxData, Message, Person } from "./types";
 
@@ -558,6 +559,7 @@ function Thread(p: ThreadProps) {
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto grid w-full max-w-3xl content-start px-4 py-6 md:px-6">
+          <ChatSummary key={c.id} conversationId={c.id} customer={c.contact.name} messageCount={c.messages.filter((m) => m.kind === "in" || m.kind === "out").length} />
           {pinned && (
             <div className="mb-6 grid gap-1 rounded-[var(--radius-panel)] bg-surface p-4 shadow-[var(--shadow-1)]">
               <p className="text-xs font-medium uppercase tracking-wide text-primary">
@@ -629,6 +631,7 @@ function HandoverPanel({
   // Only real members who can reply; sample teammates can't take real chats.
   const targets = people.filter((x) => !x.sample && x.canReply && x.id !== c.holderId);
   const t = useT("handover");
+  const aiT = useT("aiChat");
   const tAll = useT();
   const common = useT("common");
   const noteError = handoffNoteError(note) ? t("noteTooShort", { min: HANDOFF_NOTE_MIN }) : null;
@@ -680,7 +683,10 @@ function HandoverPanel({
             {tried && toError && <p id={`ho-to-err-${c.id}`} role="alert" className="text-sm text-fail">{toError}</p>}
           </div>
           <div className="grid content-start gap-1">
-            <label htmlFor={`ho-note-${c.id}`} className="text-sm font-medium">{t("why")}</label>
+            <span className="flex flex-wrap items-center justify-between gap-2">
+              <label htmlFor={`ho-note-${c.id}`} className="text-sm font-medium">{t("why")}</label>
+              <AiButton label={aiT("draftNote")} credits={1} onClick={() => setNote(aiT.has(`handoff.${c.id}`) ? aiT(`handoff.${c.id}` as "handoff.mariam") : aiT("handoffGeneric", { name: c.contact.name.split(" ")[0] }))} />
+            </span>
             <textarea
               id={`ho-note-${c.id}`}
               rows={2}

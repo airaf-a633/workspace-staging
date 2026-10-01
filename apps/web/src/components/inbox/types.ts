@@ -31,6 +31,8 @@ export interface Media {
   duration?: string;
   caption?: string;
   phone?: string;
+  /** What a voice note says, written out by AI on request (1 credit). */
+  transcript?: string;
 }
 
 /**
@@ -64,6 +66,8 @@ export interface Message {
   deleted?: boolean;
   imported?: boolean;
   replyTo?: { author: string; text: string };
+  /** AI translation of a customer message into each app language, shown on request. */
+  translation?: { en?: string; ar?: string };
   reaction?: string;
 }
 
@@ -128,6 +132,8 @@ export interface Conversation {
   phoneReply?: { authorId: string; draft: string };
   messages: Message[];
   handoffs: Handoff[];
+  /** The reply AI would suggest, written in the customer's language (sample; the real one is generated on click). */
+  aiSuggestion?: string;
 }
 
 export interface InboxData {

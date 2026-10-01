@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { CaretRight, WarningCircle } from "@phosphor-icons/react/dist/ssr";
 import { SetupChip } from "./setup-chip";
 import { canSeeDealValue, replyAccess, windowOpen, type RoleTemplateKey } from "@app/domain";
@@ -142,6 +143,7 @@ export async function ManagerHome({
   inboxHref,
   setup,
   extraNeeds,
+  briefings,
 }: {
   firstName: string;
   template: RoleTemplateKey;
@@ -151,6 +153,8 @@ export async function ManagerHome({
   setup?: { done: number; total: number; href: string };
   /** Rows from elsewhere, e.g. discount approvals waiting for this person. */
   extraNeeds?: NeedRow[];
+  /** "From your agents": AI work waiting for this person's approval. */
+  briefings?: ReactNode;
 }) {
   const tAll = await getT();
   const t = await getT("home");
@@ -168,6 +172,8 @@ export async function ManagerHome({
         </div>
         {setup && <SetupChip {...setup} />}
       </header>
+
+      {briefings}
 
       <section aria-labelledby="needs" className="grid gap-3">
         <div className="flex items-baseline justify-between gap-3">

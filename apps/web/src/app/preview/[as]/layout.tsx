@@ -5,6 +5,7 @@ import { PreviewBar } from "@/components/preview/preview-bar";
 import { roleLabel } from "@/i18n/labels";
 import { getT } from "@/i18n/server";
 import { PREVIEW_WORKSPACE, previewMembers, previewPerson } from "@/lib/preview";
+import { previewAiWorld } from "@/lib/ai-sample";
 
 export default async function PreviewApp(props: LayoutProps<"/preview/[as]">) {
   const { as } = await props.params;
@@ -18,6 +19,7 @@ export default async function PreviewApp(props: LayoutProps<"/preview/[as]">) {
       workspaceName={PREVIEW_WORKSPACE.name}
       memberName={me.name}
       roleName={roleLabel(tAll, me.role)}
+      ai={previewAiWorld(as)}
       banner={<PreviewBar current={as} people={previewMembers().map(({ key, name, role }) => ({ key, name, role: roleLabel(tAll, role) }))} />}
       footer={
         <Link href="/" className="flex min-h-11 items-center gap-2 text-sm text-muted hover:text-text">

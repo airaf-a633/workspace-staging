@@ -2,6 +2,8 @@ import { covers } from "@app/domain";
 import { ManagerHome, type NeedRow } from "@/components/home/manager-home";
 import { previewDeals, previewPerson } from "@/lib/preview";
 import { getT } from "@/i18n/server";
+import { AgentBriefings } from "@/components/ai/briefings";
+import { previewAiWorld } from "@/lib/ai-sample";
 import { isolate } from "@/i18n/translate";
 
 export async function generateMetadata() {
@@ -33,5 +35,5 @@ export default async function PreviewHome(props: PageProps<"/preview/[as]">) {
 
   // The sample business has connected WhatsApp and invited its team; hours, import and store are still open.
   const setup = me.template === "owner" ? { done: 2, total: 5, href: `/preview/${as}/account` } : undefined;
-  return <ManagerHome firstName={me.name} template={me.template} data={data} inboxHref={`/preview/${as}/inbox`} setup={setup} extraNeeds={approvals} />;
+  return <ManagerHome firstName={me.name} template={me.template} data={data} inboxHref={`/preview/${as}/inbox`} setup={setup} extraNeeds={approvals} briefings={<AgentBriefings world={previewAiWorld(as)} />} />;
 }

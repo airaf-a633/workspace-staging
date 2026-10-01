@@ -32,6 +32,8 @@
   --status-warn: #8F5200;      --status-warn-soft: #FFF1DB;
   --status-fail: #B42A23;      --status-fail-soft: #FCEAE8;
   --note-soft: #FBF6E3;        --note-border: #C9B46A;
+  /* AI-made things (suggestions, drafts, agent work) wear one colour so they are never mistaken for a person's. */
+  --ai: #5B47C9;               --ai-soft: #EFECFC;
   --destructive: #B42A23;      --on-destructive: #FFFFFF;
 
   /* Atmosphere. Hero text sits on the dark left side (white text >= 5:1 up to 70%). */
@@ -62,6 +64,7 @@
     --status-warn: #F2B24C; --status-warn-soft: #352610;
     --status-fail: #FF8A80; --status-fail-soft: #3A1615;
     --note-soft: #2A2515; --note-border: #6B5A2A;
+    --ai: #B9AEF7; --ai-soft: #231E3D;
     --destructive: #FF8A80; --on-destructive: #0B1A22;
     --grad-button: linear-gradient(135deg, #72C4DE 0%, #8FD9D0 100%);
     --grad-card: linear-gradient(160deg, rgb(16 37 48 / 0.9), rgb(16 37 48 / 0.6));
@@ -82,6 +85,7 @@
   --status-warn: #F2B24C; --status-warn-soft: #352610;
   --status-fail: #FF8A80; --status-fail-soft: #3A1615;
   --note-soft: #2A2515; --note-border: #6B5A2A;
+    --ai: #B9AEF7; --ai-soft: #231E3D;
   --destructive: #FF8A80; --on-destructive: #0B1A22;
   --grad-button: linear-gradient(135deg, #72C4DE 0%, #8FD9D0 100%);
   --grad-card: linear-gradient(160deg, rgb(16 37 48 / 0.9), rgb(16 37 48 / 0.6));
@@ -109,6 +113,7 @@
   --color-done: var(--status-done);         --color-done-soft: var(--status-done-soft);
   --color-warn: var(--status-warn);         --color-warn-soft: var(--status-warn-soft);
   --color-fail: var(--status-fail);         --color-fail-soft: var(--status-fail-soft);
+  --color-ai: var(--ai);                    --color-ai-soft: var(--ai-soft);
   --color-note-soft: var(--note-soft);      --color-note-border: var(--note-border);
   --color-destructive: var(--destructive);  --color-on-destructive: var(--on-destructive);
 

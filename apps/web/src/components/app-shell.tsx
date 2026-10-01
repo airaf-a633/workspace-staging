@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
-import { ChatsCircle, CheckSquare, Gear, House, Handshake, SignOut, UsersThree } from "@phosphor-icons/react";
+import { useEffect, useState, type ReactNode } from "react";
+import { ChatsCircle, CheckSquare, Gear, House, Handshake, SignOut, Sparkle, UsersThree } from "@phosphor-icons/react";
+import { AskAi } from "@/components/ai/ask-ai";
+import type { AiWorld } from "@/lib/ai-sample";
 import { useT } from "@/i18n/client";
 import type { TFor } from "@/i18n/types";
 
@@ -18,6 +20,8 @@ interface Props {
   footer?: ReactNode;
   /** A bar above every screen (the preview's "Viewing as" switch). */
   banner?: ReactNode;
+  /** What the assistant may use for this person; null where AI isn't switched on yet (the real app before M5). */
+  ai?: AiWorld | null;
   children: ReactNode;
 }
 
@@ -34,16 +38,41 @@ function navItems(base: string, t: TFor<"nav">) {
       href: `${base}/settings`,
       label: t("settings"),
       Icon: Gear,
-      match: (p: string) => ["settings", "members", "teams", "roles", "whatsapp", "account"].some((s) => p.startsWith(`${base}/${s}`)),
+      match: (p: string) => ["settings", "members", "teams", "roles", "whatsapp", "account", "ai"].some((s) => p.startsWith(`${base}/${s}`)),
     },
   ];
 }
 
-export function AppShell({ base, workspaceName, memberName, roleName, signOut, footer, banner, children }: Props) {
+export function AppShell({ base, workspaceName, memberName, roleName, signOut, footer, banner, ai = null, children }: Props) {
   const path = usePathname();
   const t = useT("nav");
   const common = useT("common");
   const items = navItems(base, t);
+  const [asking, setAsking] = useState(false);
+  const aiT = useT("ai");
+  // ⌘K / Ctrl+K opens Ask AI from anywhere, even while typing (it's the one global shortcut).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setAsking((a) => !a);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+  const askButton = (compact: boolean) => (
+    <button
+      type="button"
+      onClick={() => setAsking(true)}
+      title={compact ? aiT("open") : undefined}
+      className={`flex min-h-11 items-center rounded-full text-base text-ai transition-colors hover:bg-ai-soft ${compact ? "w-11 justify-center" : "gap-3 px-4"}`}
+    >
+      <Sparkle size={22} weight="fill" aria-hidden="true" />
+      <span className={compact ? "sr-only" : "flex-1 text-start"}>{aiT("open")}</span>
+      {!compact && <kbd className="rounded border border-border px-1.5 text-xs text-muted" dir="ltr">⌘K</kbd>}
+    </button>
+  );
   // Phones get the five most-used destinations; Tasks is reachable from Home.
   const mobile = items.filter((i) => i.key !== "tasks");
   // Work screens with their own panes (the inbox) fill the window instead of sitting in a page column.
@@ -83,6 +112,7 @@ export function AppShell({ base, workspaceName, memberName, roleName, signOut, f
               </Link>
             );
           })}
+          {askButton(rail)}
         </nav>
         {rail ? (
           <div className="mt-auto grid justify-items-center gap-2 pb-4">
@@ -119,9 +149,11 @@ export function AppShell({ base, workspaceName, memberName, roleName, signOut, f
       <div className={`flex flex-col lg:pb-0 ${fullBleed ? "h-dvh pb-[calc(4rem+1px+env(safe-area-inset-bottom))]" : "min-h-dvh pb-20"}`}>
         {banner}
         {/* Phone top bar */}
-        <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-surface px-4 py-3 lg:hidden">
+        <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-surface px-4 py-2 lg:hidden">
           <p className="title truncate text-lg">{workspaceName}</p>
-          <p className="truncate text-sm text-muted">{memberName}</p>
+          <button type="button" onClick={() => setAsking(true)} className="flex min-h-10 items-center gap-1.5 rounded-full bg-ai-soft px-3 text-sm font-medium text-ai">
+            <Sparkle size={16} weight="fill" aria-hidden="true" /> {aiT("short")}
+          </button>
         </header>
 
         <main id="main" className={fullBleed ? "min-h-0 flex-1" : "mx-auto grid w-full max-w-5xl content-start gap-6 px-4 py-6 lg:px-8 lg:py-10"}>
@@ -149,6 +181,7 @@ export function AppShell({ base, workspaceName, memberName, roleName, signOut, f
           );
         })}
       </nav>
+      <AskAi world={ai} open={asking} onClose={() => setAsking(false)} />
     </div>
   );
 }

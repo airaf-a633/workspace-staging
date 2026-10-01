@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { getT } from "@/i18n/server";
 
-export type SettingsSection = "members" | "teams" | "roles" | "whatsapp" | "account";
+export type SettingsSection = "members" | "teams" | "roles" | "whatsapp" | "ai" | "account";
 
 /**
  * Settings as one page with a side sub-menu (decided 2026-09-30). The sections keep their own URLs
@@ -16,6 +16,7 @@ export async function SettingsFrame({ base, active, isOwner, children }: { base:
     { key: "teams", label: t("teams"), href: `${base}/teams` },
     ...(isOwner ? [{ key: "roles" as const, label: t("roles"), href: `${base}/roles` }] : []),
     { key: "whatsapp", label: t("whatsapp"), href: `${base}/whatsapp` },
+    { key: "ai", label: t("ai"), href: `${base}/ai` },
     { key: "account", label: t("account"), href: `${base}/account` },
   ];
 

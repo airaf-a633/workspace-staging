@@ -57,6 +57,7 @@ export function buildSampleInbox(members: RealMember[], realTeams: RealTeam[], v
   const conversations: Conversation[] = [
     {
       id: "mariam",
+      aiSuggestion: "Hi Mariam, delivery is booked for Thursday between 10:00 and 12:00 at the loading entrance. Our driver will call you ten minutes before arriving.",
       channel: "whatsapp",
       teamId: team("deira"),
       holderId: ids.priya,
@@ -91,7 +92,7 @@ export function buildSampleInbox(members: RealMember[], realTeams: RealTeam[], v
         msg(136, { kind: "out", authorId: ids.sara, status: "read", reaction: "👍", text: "Hi Mariam, the best we can do is 8% off: AED 42,600.00 for all 12, VAT included. Quote attached." }),
         msg(135, { kind: "out", authorId: ids.sara, status: "read", media: { type: "document", name: "Quote-QE-Q-0412.pdf", size: 188_416 } }),
         msg(66, { kind: "in", text: "Deal. Invoice paid. When can you deliver to Business Bay?" }),
-        msg(65, { kind: "in", media: { type: "voice", duration: "0:38" } }),
+        msg(65, { kind: "in", media: { type: "voice", duration: "0:38", transcript: "Hi, it's Mariam. Please deliver to the loading entrance at the back, not reception. Call me when you're ten minutes away." } }),
         msg(58, { kind: "event", event: { key: "handedToPerson", by: ids.sara, to: ids.priya } }),
         msg(6, { kind: "in", media: { type: "location", name: "Bay Square, Building 7, Business Bay" } }),
         msg(5, { kind: "in", media: { type: "photo", caption: "This is the loading entrance", size: 1_258_291 } }),
@@ -109,6 +110,7 @@ export function buildSampleInbox(members: RealMember[], realTeams: RealTeam[], v
     },
     {
       id: "george",
+      aiSuggestion: "Hi George, the iPhone 16 Pro 256GB is AED 4,990 and we have it in Black Titanium at our Deira shop. Shall I reserve one for you today?",
       channel: "whatsapp",
       teamId: team("deira"),
       holderId: null,
@@ -127,6 +129,7 @@ export function buildSampleInbox(members: RealMember[], realTeams: RealTeam[], v
     },
     {
       id: "rahul",
+      aiSuggestion: "Hi Rahul, sorry about the flicker. Your laptop is still under warranty. Bring it with the invoice to our Dubai Mall shop and we'll check it the same day.",
       channel: "whatsapp",
       teamId: team("mall"),
       holderId: null,
@@ -144,6 +147,7 @@ export function buildSampleInbox(members: RealMember[], realTeams: RealTeam[], v
     },
     {
       id: "fatima",
+      aiSuggestion: "Hi Fatima, yes, we have replacement chargers. Could you send a photo of the label on the laptop's base so I can match the right one?",
       channel: "whatsapp",
       teamId: team("deira"),
       holderId: ids.hana,
@@ -200,6 +204,7 @@ export function buildSampleInbox(members: RealMember[], realTeams: RealTeam[], v
     },
     {
       id: "noura",
+      aiSuggestion: "Hi Noura, sorry about the earbuds. We'll courier a replacement pair to you tomorrow, no need to come to the shop.",
       channel: "whatsapp",
       teamId: team("mall"),
       holderId: ids.omar,
@@ -224,6 +229,7 @@ export function buildSampleInbox(members: RealMember[], realTeams: RealTeam[], v
     },
     {
       id: "lina",
+      aiSuggestion: "مرحبًا لينا، يسعدنا أن الطلب وصلك. إذا احتجتِ أي شيء آخر فنحن هنا.",
       channel: "whatsapp",
       teamId: team("mall"),
       holderId: ids.omar,
@@ -235,9 +241,9 @@ export function buildSampleInbox(members: RealMember[], realTeams: RealTeam[], v
       contact: { name: "Lina Haddad", phone: "+971 55 874 1123", language: "Arabic", tags: ["Online shop"], deals: [], tasks: [], orders: [{ no: "#QE-2238", fils: 64_900, state: "Delivered", source: "Shopify" }] },
       handoffs: [],
       messages: [
-        msg(27 * 60, { kind: "in", text: "مرحبا، طلبت سماعات يوم الإثنين. هل وصلت الطلبية؟" }),
+        msg(27 * 60, { kind: "in", text: "مرحبا، طلبت سماعات يوم الإثنين. هل وصلت الطلبية؟", translation: { en: "Hello, I ordered earphones on Monday. Has the order arrived?" } }),
         msg(26.8 * 60, { kind: "out", authorId: ids.omar, status: "read", text: "مرحبًا لينا، الطلب في الطريق وسيصل اليوم قبل الساعة 6 مساءً." }),
-        msg(26 * 60, { kind: "in", text: "شكرًا" }),
+        msg(26 * 60, { kind: "in", text: "شكرًا", translation: { en: "Thanks" } }),
       ],
     },
     {

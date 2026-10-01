@@ -3,7 +3,9 @@ import { Info, WarningCircle } from "@phosphor-icons/react";
 import type { ConversationActions } from "@app/domain";
 import { windowOpen } from "@app/domain";
 import { buttonClass } from "@/components/ui/button";
-import { useFormat, useT } from "@/i18n/client";
+import { useFormat, useLocale, useT } from "@/i18n/client";
+import { AiButton } from "@/components/ai/chat-ai";
+import { AiTag } from "@/components/ai/ai-tag";
 import type { InboxAction } from "./store";
 import type { Conversation, Person } from "./types";
 
@@ -32,6 +34,9 @@ interface Props {
 /* The reply box: a floating card at the foot of the thread, with a small Reply / Note switch inside it. */
 export function Composer({ c, actions, people, me, now, mode, setMode, replyRef, noteRef, dispatch }: Props) {
   const [draft, setDraft] = useState(c.phoneReply?.draft ?? "");
+  const [aiDrafted, setAiDrafted] = useState(false);
+  const aiT = useT("aiChat");
+  const locale = useLocale();
   const [note, setNote] = useState("");
   const [template, setTemplate] = useState<string>(TEMPLATES[0].name);
   const t = useT("composer");
@@ -170,9 +175,24 @@ export function Composer({ c, actions, people, me, now, mode, setMode, replyRef,
           placeholder={c.channel === "email" ? t("placeholderEmail", { name: first }) : t("placeholderWhatsapp", { name: first })}
           className={field}
         />
+        {aiDrafted && (
+          <p className="flex flex-wrap items-center gap-2 px-4 pt-1 text-xs text-muted">
+            <AiTag label={aiT("draftTag")} /> {aiT("draftCheck")}
+            {/* A suggestion in the customer's language, with what it says for the reader. */}
+            {c.contact.language === "Arabic" && locale === "en" && aiT.has(`gloss.${c.id}`) && <span className="basis-full">{aiT(`gloss.${c.id}` as "gloss.lina")}</span>}
+          </p>
+        )}
         <div className="flex items-center justify-between gap-2 px-3 pb-3 pt-1">
           <span className="flex min-w-0 items-center gap-2">
             {switcher}
+            <AiButton
+              label={aiT("suggest")}
+              credits={1}
+              onClick={() => {
+                setDraft(c.aiSuggestion ?? aiT("genericSuggestion", { name: first }));
+                setAiDrafted(true);
+              }}
+            />
             {actions.access === "override" && holder && (
               <span className="truncate text-xs text-muted" title={t("asManagerTitle", { name: holder.name })}>
                 {t("asManager", { name: holder.name })}

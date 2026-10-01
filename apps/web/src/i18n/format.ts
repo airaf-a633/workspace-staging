@@ -75,6 +75,11 @@ export function makeFormat(locale: Locale, t: Translator) {
       const days = Math.round((now - at) / 86_400_000);
       return days < 30 ? t("time.daysAgo", { count: Math.max(2, days) }) : date(at, now);
     },
+    /** "17 min", "1 h 5 min" from a number of minutes already counted. */
+    minutesWaited(min: number) {
+      const m = Math.max(1, Math.round(min));
+      return m < 60 ? t("time.minutes", { count: m }) : t("time.hoursMinutes", { h: Math.floor(m / 60), m: m % 60 });
+    },
     waitedFor(at: number, now: number) {
       const m = Math.max(1, Math.round((now - at) / 60_000));
       return m < 60 ? t("time.minutes", { count: m }) : t("time.hoursMinutes", { h: Math.floor(m / 60), m: m % 60 });
