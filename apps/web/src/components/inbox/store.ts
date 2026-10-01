@@ -1,4 +1,4 @@
-import type { Conversation, Message, Person, Team } from "./types";
+import type { ChatEvent, Conversation, Message, Person, Team } from "./types";
 
 /**
  * Session-only inbox state (sample chats, reset on reload). Each action matches a server call M2 will make,
@@ -25,16 +25,10 @@ export interface Ctx {
 
 let n = 0;
 const nextId = () => `local-${++n}`;
-const event = (text: string, at: number): Message => ({ id: nextId(), kind: "event", text, at });
+const event = (e: ChatEvent, at: number): Message => ({ id: nextId(), kind: "event", event: e, at });
 
-export function reducer(ctx: Ctx) {
-  const name = (id: string | null) => ctx.people.find((p) => p.id === id)?.name ?? "Someone";
-  const who = (id: string) => {
-    const p = ctx.people.find((x) => x.id === id);
-    return p ? `${p.name} (${p.role})` : "Someone";
-  };
-  const teamName = (id: string) => ctx.teams.find((t) => t.id === id)?.name ?? "a team";
-
+/** Events are stored as who-did-what ids, so the reducer needs no names; screens word them per language. */
+export function reducer() {
   return (state: Conversation[], a: InboxAction): Conversation[] =>
     state.map((c) => {
       if (c.id !== a.id) return c;
@@ -42,11 +36,9 @@ export function reducer(ctx: Ctx) {
         case "open":
           return c.unread ? { ...c, unread: 0 } : c;
         case "claim":
-          return { ...c, holderId: a.by, trail: [...c.trail, a.by], status: "open", messages: [...c.messages, event(`${name(a.by)} claimed this chat`, a.at)] };
+          return { ...c, holderId: a.by, trail: [...c.trail, a.by], status: "open", messages: [...c.messages, event({ key: "claimed", by: a.by }, a.at)] };
         case "handover": {
-          const text = a.toPerson
-            ? `${name(a.by)} handed this chat to ${who(a.toPerson)}`
-            : `${name(a.by)} handed this chat to ${teamName(a.toTeam!)}. The first person to claim it takes over.`;
+          const e: ChatEvent = a.toPerson ? { key: "handedToPerson", by: a.by, to: a.toPerson } : { key: "handedToTeam", by: a.by, team: a.toTeam! };
           return {
             ...c,
             holderId: a.toPerson,
@@ -56,21 +48,21 @@ export function reducer(ctx: Ctx) {
             status: "open",
             phoneReply: undefined,
             handoffs: [...c.handoffs, { fromId: a.by, toId: a.toPerson, toTeamId: a.toTeam, note: a.note.trim(), at: a.at }],
-            messages: [...c.messages, event(text, a.at)],
+            messages: [...c.messages, event(e, a.at)],
           };
         }
         case "resolve":
-          return { ...c, status: "resolved", phoneReply: undefined, messages: [...c.messages, event(`${name(a.by)} resolved this chat`, a.at)] };
+          return { ...c, status: "resolved", phoneReply: undefined, messages: [...c.messages, event({ key: "resolved", by: a.by }, a.at)] };
         case "reopen":
-          return { ...c, status: "open", messages: [...c.messages, event(`${name(a.by)} reopened this chat`, a.at)] };
+          return { ...c, status: "open", messages: [...c.messages, event({ key: "reopened", by: a.by }, a.at)] };
         case "spam":
-          return { ...c, status: "spam", messages: [...c.messages, event(`${name(a.by)} marked this chat as spam`, a.at)] };
+          return { ...c, status: "spam", messages: [...c.messages, event({ key: "spam", by: a.by }, a.at)] };
         case "notSpam":
-          return { ...c, status: "open", messages: [...c.messages, event(`${name(a.by)} moved this chat out of spam`, a.at)] };
+          return { ...c, status: "open", messages: [...c.messages, event({ key: "notSpam", by: a.by }, a.at)] };
         case "note":
           return { ...c, messages: [...c.messages, { id: nextId(), kind: "note", authorId: a.by, text: a.text.trim(), at: a.at }] };
         case "askCollab":
-          return { ...c, messages: [...c.messages, event(`${name(a.by)} asked ${name(c.holderId)} to add them as a collaborator`, a.at)] };
+          return { ...c, messages: [...c.messages, event({ key: "askedCollab", by: a.by, holder: c.holderId }, a.at)] };
         case "dismissPhoneReply":
           return { ...c, phoneReply: undefined };
         case "addTask":

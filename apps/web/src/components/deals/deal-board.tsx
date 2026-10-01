@@ -6,7 +6,8 @@ import { CaretDown, Plus, WarningCircle, X } from "@phosphor-icons/react";
 import { canSeeDealValue, covers, type Viewer } from "@app/domain";
 import { buttonClass } from "@/components/ui/button";
 import { Badge } from "@/components/ui/surface";
-import { aed, ago } from "@/components/inbox/format";
+import { useFormat, useT } from "@/i18n/client";
+import { lineText, valueLabel } from "@/i18n/labels";
 import type { Person, Team } from "@/components/inbox/types";
 import { dealNeed, type BoardDeal } from "./sample";
 import { LOST_REASONS, OPEN_STAGES, STAGE, type OpenStage } from "./stages";
@@ -37,7 +38,10 @@ export function DealBoard({ deals: initial, people, teams, viewer, now, base, in
   const [creating, setCreating] = useState(false);
   const [dragging, setDragging] = useState<string | null>(null);
 
-  const name = (id: string | null | undefined) => people.find((p) => p.id === id)?.name ?? "Someone";
+  const t = useT("deals");
+  const tAll = useT();
+  const fmt = useFormat();
+  const name = (id: string | null | undefined) => people.find((p) => p.id === id)?.name ?? tAll("common.someone");
   const canView = (d: BoardDeal) => covers(viewer, "deals.view", ref(d));
   const canEdit = (d: BoardDeal) => covers(viewer, "deals.edit", ref(d));
   const money = (d: BoardDeal) => canSeeDealValue(viewer, d.ownerId);
@@ -46,9 +50,9 @@ export function DealBoard({ deals: initial, people, teams, viewer, now, base, in
 
   const views: [View, string][] = (
     [
-      ["mine", "My deals"],
-      ["teams", "My teams"],
-      ["all", "All deals"],
+      ["mine", t("views.mine")],
+      ["teams", t("views.teams")],
+      ["all", t("views.all")],
     ] as [View, string][]
   ).filter(([v]) => (v === "all" ? viewer.scopes["deals.view"] === "all" : v === "teams" ? viewer.scopes["deals.view"] !== "own" : true));
 
@@ -70,8 +74,8 @@ export function DealBoard({ deals: initial, people, teams, viewer, now, base, in
   if ((viewer.scopes["deals.view"] ?? "none") === "none") {
     return (
       <div className="grid gap-4">
-        <h1 className="title text-3xl sm:text-4xl">Deals</h1>
-        <p className="rounded-[var(--radius-panel)] bg-surface p-6 text-muted shadow-[var(--shadow-1)] ring-1 ring-border">Your role doesn&apos;t include deals. Ask the owner if you need to see them.</p>
+        <h1 className="title text-3xl sm:text-4xl">{t("title")}</h1>
+        <p className="rounded-[var(--radius-panel)] bg-surface p-6 text-muted shadow-[var(--shadow-1)] ring-1 ring-border">{t("noAccess")}</p>
       </div>
     );
   }
@@ -93,16 +97,16 @@ export function DealBoard({ deals: initial, people, teams, viewer, now, base, in
         >
           <span className="flex items-baseline justify-between gap-2">
             <bdi className="truncate font-semibold">{d.customerName}</bdi>
-            <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary-soft text-xs font-semibold text-primary" title={`Owner: ${name(d.ownerId)}`} aria-label={`Owner ${name(d.ownerId)}`}>
+            <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary-soft text-xs font-semibold text-primary" title={t("ownerIs", { name: name(d.ownerId) })} aria-label={t("ownerIs", { name: name(d.ownerId) })}>
               {name(d.ownerId).charAt(0)}
             </span>
           </span>
-          <span className="line-clamp-2 text-sm text-muted">{d.title}</span>
-          {money(d) && <span className="text-sm font-medium tabular-nums">{aed(d.fils)}</span>}
+          <span className="line-clamp-2 text-sm text-muted"><bdi>{d.title}</bdi></span>
+          {money(d) && <span className="text-sm font-medium tabular-nums">{fmt.aed(d.fils)}</span>}
           {need && (
             <span className={`mt-1 flex items-center gap-1.5 text-xs font-medium ${need.tone === "warn" ? "text-warn" : "text-muted"}`}>
               <span aria-hidden="true" className={`size-1.5 rounded-full ${need.tone === "warn" ? "bg-warn" : "bg-muted"}`} />
-              {need.text}
+              {lineText(tAll, need.line)}
             </span>
           )}
         </button>
@@ -113,24 +117,24 @@ export function DealBoard({ deals: initial, people, teams, viewer, now, base, in
   return (
     <div className="grid gap-5">
       <header className="flex flex-wrap items-center gap-3">
-        <h1 className="sr-only">Deals</h1>
+        <h1 className="sr-only">{t("title")}</h1>
         <label className="relative flex items-center">
-          <span className="sr-only">Show</span>
+          <span className="sr-only">{t("show")}</span>
           <select value={view} onChange={(e) => setView(e.target.value as View)} className="title cursor-pointer appearance-none bg-transparent pe-7 text-3xl [field-sizing:content] sm:text-4xl">
             {views.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
           </select>
           <CaretDown size={18} className="pointer-events-none absolute end-0 text-muted" aria-hidden="true" />
         </label>
-        <div role="group" aria-label="Board or closed deals" className="inline-flex rounded-full bg-surface-2 p-0.5 text-sm">
+        <div role="group" aria-label={t("boardOrClosed")} className="inline-flex rounded-full bg-surface-2 p-0.5 text-sm">
           {[false, true].map((c) => (
             <button key={String(c)} type="button" aria-pressed={closed === c} onClick={() => setClosed(c)} className={`min-h-8 rounded-full px-3 font-medium ${closed === c ? "bg-surface text-text shadow-[var(--shadow-1)]" : "text-muted hover:text-text"}`}>
-              {c ? `Closed (${done.length})` : "Open"}
+              {c ? t("closedCount", { count: done.length }) : t("open")}
             </button>
           ))}
         </div>
         {canCreate && (
           <button type="button" onClick={() => { setCreating(true); setOpenId(null); }} className={buttonClass("primary", "sm", "ms-auto")}>
-            <Plus size={16} aria-hidden="true" /> New deal
+            <Plus size={16} aria-hidden="true" /> {t("new")}
           </button>
         )}
       </header>
@@ -143,7 +147,7 @@ export function DealBoard({ deals: initial, people, teams, viewer, now, base, in
             return (
               <section
                 key={stage}
-                aria-label={STAGE[stage][0]}
+                aria-label={tAll(`stages.${stage}`)}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   const id = e.dataTransfer.getData("text/plain");
@@ -154,16 +158,16 @@ export function DealBoard({ deals: initial, people, teams, viewer, now, base, in
                 className={`grid content-start gap-3 rounded-[var(--radius-panel)] bg-surface-2/70 p-3 ${dragging ? "outline-2 outline-dashed outline-border" : ""}`}
               >
                 <h2 className="flex items-baseline justify-between gap-2 px-1 text-sm">
-                  <span className="font-semibold">{STAGE[stage][0]} <span className="font-normal text-muted">· {col.length}</span></span>
-                  {allMoney && col.length > 0 && <span className="tabular-nums text-muted">{aed(total)}</span>}
+                  <span className="font-semibold">{tAll(`stages.${stage}`)} <span className="font-normal text-muted">· {fmt.number(col.length)}</span></span>
+                  {allMoney && col.length > 0 && <span className="tabular-nums text-muted">{fmt.aed(total)}</span>}
                 </h2>
-                {col.length === 0 ? <p className="px-1 pb-2 text-sm text-muted">No deals here.</p> : <ul className="grid gap-2">{col.map(card)}</ul>}
+                {col.length === 0 ? <p className="px-1 pb-2 text-sm text-muted">{t("emptyStage")}</p> : <ul className="grid gap-2">{col.map(card)}</ul>}
               </section>
             );
           })}
         </div>
       ) : done.length === 0 ? (
-        <p className="rounded-[var(--radius-panel)] bg-surface p-6 text-muted shadow-[var(--shadow-1)] ring-1 ring-border">No closed deals yet.</p>
+        <p className="rounded-[var(--radius-panel)] bg-surface p-6 text-muted shadow-[var(--shadow-1)] ring-1 ring-border">{t("emptyClosed")}</p>
       ) : (
         <ul className="overflow-hidden rounded-[var(--radius-panel)] bg-surface shadow-[var(--shadow-1)] ring-1 ring-border">
           {done.map((d) => (
@@ -171,11 +175,11 @@ export function DealBoard({ deals: initial, people, teams, viewer, now, base, in
               <button type="button" onClick={() => setOpenId(d.id)} className="flex w-full flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3.5 text-start hover:bg-surface-2">
                 <span className="grid min-w-0 flex-1">
                   <bdi className="truncate font-medium">{d.customerName}</bdi>
-                  <span className="truncate text-sm text-muted">{d.title}</span>
+                  <span className="truncate text-sm text-muted"><bdi>{d.title}</bdi></span>
                 </span>
-                <Badge tone={STAGE[d.stage][1]}>{STAGE[d.stage][0]}</Badge>
-                <span className="w-28 text-end text-sm tabular-nums">{d.stage === "won" ? (money(d) ? aed(d.fils) : "Hidden") : d.lostReason}</span>
-                <span className="w-24 text-end text-sm text-muted">{d.closedAt ? ago(d.closedAt, now) : ""}</span>
+                <Badge tone={STAGE[d.stage][1]}>{tAll(`stages.${d.stage}`)}</Badge>
+                <span className="w-28 text-end text-sm tabular-nums">{d.stage === "won" ? (money(d) ? fmt.aed(d.fils) : t("hidden")) : valueLabel(tAll, "lostReason", d.lostReason)}</span>
+                <span className="w-24 text-end text-sm text-muted">{d.closedAt ? fmt.ago(d.closedAt, now) : ""}</span>
               </button>
             </li>
           ))}
@@ -184,8 +188,8 @@ export function DealBoard({ deals: initial, people, teams, viewer, now, base, in
 
       {(selected || creating) && (
         <div className="fixed inset-0 z-40">
-          <button type="button" aria-label="Close deal" onClick={() => { setOpenId(null); setCreating(false); }} className="absolute inset-0 bg-black/25" />
-          <aside aria-label={creating ? "New deal" : "Deal"} className="absolute inset-y-0 end-0 flex w-full max-w-md flex-col overflow-y-auto bg-surface shadow-[var(--shadow-2)]">
+          <button type="button" aria-label={t("closeSheet")} onClick={() => { setOpenId(null); setCreating(false); }} className="absolute inset-0 bg-black/25" />
+          <aside aria-label={creating ? t("new") : t("deal")} className="absolute inset-y-0 end-0 flex w-full max-w-md flex-col overflow-y-auto bg-surface shadow-[var(--shadow-2)]">
             {creating ? (
               <NewDeal
                 onCancel={() => setCreating(false)}
@@ -245,6 +249,9 @@ function DealSheet(p: {
   const isOpen = d.stage !== "won" && d.stage !== "lost";
   const field = "min-h-11 w-full rounded-[var(--radius-control)] border border-input bg-surface px-3 text-base";
   const discounted = d.approval ? Math.round(d.fils * (1 - d.approval.pct / 100)) : 0;
+  const t = useT("deals");
+  const tAll = useT();
+  const fmt = useFormat();
 
   return (
     <>
@@ -253,32 +260,32 @@ function DealSheet(p: {
           <p className="text-sm text-muted">
             {d.customerId ? <Link href={`${p.base}/customers/${d.customerId}`} className="underline-offset-2 hover:underline"><bdi>{d.customerName}</bdi></Link> : <bdi>{d.customerName}</bdi>}
           </p>
-          <h2 className="text-lg font-semibold">{d.title}</h2>
-          <span className="flex items-center gap-2"><Badge tone={STAGE[d.stage][1]}>{STAGE[d.stage][0]}</Badge>{d.stage === "lost" && d.lostReason && <span className="text-sm text-muted">Reason: {d.lostReason}</span>}</span>
+          <h2 className="text-lg font-semibold"><bdi>{d.title}</bdi></h2>
+          <span className="flex items-center gap-2"><Badge tone={STAGE[d.stage][1]}>{tAll(`stages.${d.stage}`)}</Badge>{d.stage === "lost" && d.lostReason && <span className="text-sm text-muted">{t("reason", { reason: valueLabel(tAll, "lostReason", d.lostReason) })}</span>}</span>
         </div>
-        <button type="button" onClick={p.onClose} className={buttonClass("ghost", "sm", "!px-2")} aria-label="Close deal" title="Close (Esc)"><X size={20} aria-hidden="true" /></button>
+        <button type="button" onClick={p.onClose} className={buttonClass("ghost", "sm", "!px-2")} aria-label={t("closeSheet")} title={tAll("panel.closeTitle")}><X size={20} aria-hidden="true" /></button>
       </header>
 
       <div className="grid gap-5 px-5 py-5">
         <dl className="grid gap-3 text-sm">
           <div className="flex items-center justify-between gap-3">
-            <dt className="text-muted">Value</dt>
-            <dd>{p.money ? <span className="font-semibold tabular-nums">{aed(d.fils)}</span> : <span className="text-muted">Hidden for your role</span>}</dd>
+            <dt className="text-muted">{t("value")}</dt>
+            <dd>{p.money ? <span className="font-semibold tabular-nums">{fmt.aed(d.fils)}</span> : <span className="text-muted">{t("hiddenForRole")}</span>}</dd>
           </div>
           {isOpen && p.canEdit && (
             <div className="flex items-center justify-between gap-3">
-              <dt className="text-muted"><label htmlFor="deal-stage">Stage</label></dt>
+              <dt className="text-muted"><label htmlFor="deal-stage">{t("stage")}</label></dt>
               <dd>
                 <select id="deal-stage" value={d.stage} onChange={(e) => update({ stage: e.target.value as OpenStage })} className="min-h-9 rounded-full border border-input bg-surface px-3 text-sm">
-                  {OPEN_STAGES.map((s) => <option key={s} value={s}>{STAGE[s][0]}</option>)}
+                  {OPEN_STAGES.map((s) => <option key={s} value={s}>{tAll(`stages.${s}`)}</option>)}
                 </select>
               </dd>
             </div>
           )}
-          <div className="flex justify-between gap-3"><dt className="text-muted">Owner</dt><dd>{name(d.ownerId)}</dd></div>
-          <div className="flex justify-between gap-3"><dt className="text-muted">Team</dt><dd>{p.team}</dd></div>
-          {d.closeDate && <div className="flex justify-between gap-3"><dt className="text-muted">Expected close</dt><dd>{d.closeDate}</dd></div>}
-          {d.followUp && <div className="flex justify-between gap-3"><dt className="text-muted">Follow-up</dt><dd className="text-end">{d.followUp.text}<span className="block text-muted">{name(d.ownerId)}, {d.followUp.due.toLowerCase()}</span></dd></div>}
+          <div className="flex justify-between gap-3"><dt className="text-muted">{t("owner")}</dt><dd>{name(d.ownerId)}</dd></div>
+          <div className="flex justify-between gap-3"><dt className="text-muted">{t("team")}</dt><dd>{p.team}</dd></div>
+          {d.closeDate && <div className="flex justify-between gap-3"><dt className="text-muted">{t("expectedClose")}</dt><dd>{fmt.date(d.closeDate, p.now)}</dd></div>}
+          {d.followUp && <div className="flex justify-between gap-3"><dt className="text-muted">{t("followUp")}</dt><dd className="text-end"><bdi>{d.followUp.text}</bdi><span className="block text-muted">{t("followUpWho", { name: name(d.ownerId), when: valueLabel(tAll, "due", d.followUp.due) })}</span></dd></div>}
         </dl>
 
         {d.approval && (
@@ -286,35 +293,41 @@ function DealSheet(p: {
             <p className="flex gap-2">
               <WarningCircle size={18} className={`mt-0.5 shrink-0 ${d.approval.status === "pending" ? "text-warn" : "text-muted"}`} aria-hidden="true" />
               <span>
-                <strong className="font-semibold">{name(d.approval.byId)}</strong> asks for {d.approval.pct}% off
-                {p.money && <> (<span className="tabular-nums">{aed(d.fils)}</span> → <span className="tabular-nums">{aed(discounted)}</span>)</>}.
-                <span className="mt-1 block text-muted">&ldquo;{d.approval.note}&rdquo;</span>
+                {p.money
+                  ? t.rich("asksValue", {
+                      name: <strong className="font-semibold">{name(d.approval.byId)}</strong>,
+                      pct: d.approval.pct,
+                      from: <span className="tabular-nums">{fmt.aed(d.fils)}</span>,
+                      to: <span className="tabular-nums">{fmt.aed(discounted)}</span>,
+                    })
+                  : t.rich("asks", { name: <strong className="font-semibold">{name(d.approval.byId)}</strong>, pct: d.approval.pct })}
+                <span className="mt-1 block text-muted" dir="auto">{t("quote", { text: d.approval.note })}</span>
               </span>
             </p>
             {d.approval.status === "pending" ? (
               p.canApprove ? (
                 <div className="grid gap-2">
-                  <label className="sr-only" htmlFor="decision-note">Note for {name(d.approval.byId)}</label>
-                  <input id="decision-note" value={decision} onChange={(e) => setDecision(e.target.value)} placeholder={`Note for ${name(d.approval.byId)} (optional)`} className={field} />
+                  <label className="sr-only" htmlFor="decision-note">{t("noteFor", { name: name(d.approval.byId) })}</label>
+                  <input id="decision-note" value={decision} onChange={(e) => setDecision(e.target.value)} placeholder={t("noteForOptional", { name: name(d.approval.byId) })} className={field} />
                   <div className="flex justify-end gap-2">
-                    <button type="button" onClick={() => update({ approval: { ...d.approval!, status: "declined", decidedById: p.me }, notes: [...d.notes, ...(decision ? [{ byId: p.me, text: decision, at: Date.now() }] : [])] })} className={buttonClass("secondary", "sm")}>Decline</button>
-                    <button type="button" onClick={() => update({ approval: { ...d.approval!, status: "approved", decidedById: p.me }, fils: discounted, notes: [...d.notes, ...(decision ? [{ byId: p.me, text: decision, at: Date.now() }] : [])] })} className={buttonClass("primary", "sm")}>Approve {d.approval.pct}%</button>
+                    <button type="button" onClick={() => update({ approval: { ...d.approval!, status: "declined", decidedById: p.me }, notes: [...d.notes, ...(decision ? [{ byId: p.me, text: decision, at: Date.now() }] : [])] })} className={buttonClass("secondary", "sm")}>{t("decline")}</button>
+                    <button type="button" onClick={() => update({ approval: { ...d.approval!, status: "approved", decidedById: p.me }, fils: discounted, notes: [...d.notes, ...(decision ? [{ byId: p.me, text: decision, at: Date.now() }] : [])] })} className={buttonClass("primary", "sm")}>{t("approve", { pct: d.approval.pct })}</button>
                   </div>
                 </div>
               ) : (
-                <p className="text-muted">Waiting for a manager to approve. They&apos;ll see it on their Home.</p>
+                <p className="text-muted">{t("waitingApproval")}</p>
               )
             ) : (
-              <p className="font-medium">{d.approval.status === "approved" ? "Approved" : "Declined"} by {name(d.approval.decidedById)}. {d.approval.status === "approved" && "The value now includes the discount."}</p>
+              <p className="font-medium">{d.approval.status === "approved" ? t("approvedBy", { name: name(d.approval.decidedById) }) : t("declinedBy", { name: name(d.approval.decidedById) })}</p>
             )}
           </section>
         )}
 
         <section className="grid gap-2">
-          <h3 className="text-xs font-medium uppercase tracking-wide text-muted">Notes</h3>
-          {d.notes.length === 0 && <p className="text-sm text-muted">No notes yet.</p>}
+          <h3 className="text-xs font-medium uppercase tracking-wide text-muted">{t("notes")}</h3>
+          {d.notes.length === 0 && <p className="text-sm text-muted">{t("noNotes")}</p>}
           {d.notes.map((n, i) => (
-            <p key={i} className="rounded-[var(--radius-control)] bg-surface-2 px-3 py-2 text-sm">{n.text}<span className="block text-xs text-muted">{name(n.byId)} · {ago(n.at, p.now)}</span></p>
+            <p key={i} className="rounded-[var(--radius-control)] bg-surface-2 px-3 py-2 text-sm" dir="auto">{n.text}<span className="block text-xs text-muted">{name(n.byId)} · {fmt.ago(n.at, p.now)}</span></p>
           ))}
           {p.canEdit && (
             <form
@@ -326,9 +339,9 @@ function DealSheet(p: {
                 setNote("");
               }}
             >
-              <label className="sr-only" htmlFor="deal-note">Add a note</label>
-              <input id="deal-note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Add a note" className={`${field} min-w-0 flex-1 text-sm`} />
-              <button type="submit" disabled={!note.trim()} className={buttonClass("secondary", "sm")}>Add</button>
+              <label className="sr-only" htmlFor="deal-note">{t("addNote")}</label>
+              <input id="deal-note" value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("addNote")} className={`${field} min-w-0 flex-1 text-sm`} />
+              <button type="submit" disabled={!note.trim()} className={buttonClass("secondary", "sm")}>{tAll("common.add")}</button>
             </form>
           )}
         </section>
@@ -338,30 +351,30 @@ function DealSheet(p: {
         <footer className="mt-auto grid gap-3 border-t border-border px-5 py-4">
           {closing === "won" ? (
             <form className="grid gap-2" onSubmit={(e) => { e.preventDefault(); if (toFils(finalValue) > 0) update({ stage: "won", fils: toFils(finalValue), closedAt: Date.now() }); }}>
-              <label htmlFor="final-value" className="text-sm font-medium">Final value (AED)</label>
+              <label htmlFor="final-value" className="text-sm font-medium">{t("finalValue")}</label>
               <input id="final-value" inputMode="decimal" dir="ltr" value={finalValue} onChange={(e) => setFinalValue(e.target.value)} className={field} autoFocus />
-              <p className="text-sm text-muted">Required to close as won. It feeds revenue and reports.</p>
+              <p className="text-sm text-muted">{t("finalValueHelp")}</p>
               <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setClosing(null)} className={buttonClass("ghost", "sm")}>Cancel</button>
-                <button type="submit" disabled={toFils(finalValue) <= 0} className={buttonClass("primary", "sm")}>Mark won</button>
+                <button type="button" onClick={() => setClosing(null)} className={buttonClass("ghost", "sm")}>{tAll("common.cancel")}</button>
+                <button type="submit" disabled={toFils(finalValue) <= 0} className={buttonClass("primary", "sm")}>{t("markWon")}</button>
               </div>
             </form>
           ) : closing === "lost" ? (
             <form className="grid gap-2" onSubmit={(e) => { e.preventDefault(); if (reason) update({ stage: "lost", lostReason: reason, closedAt: Date.now() }); }}>
-              <label htmlFor="lost-reason" className="text-sm font-medium">Why was it lost?</label>
+              <label htmlFor="lost-reason" className="text-sm font-medium">{t("whyLost")}</label>
               <select id="lost-reason" value={reason} onChange={(e) => setReason(e.target.value)} className={field} autoFocus>
-                <option value="">Choose a reason</option>
-                {LOST_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
+                <option value="">{t("chooseReason")}</option>
+                {LOST_REASONS.map((r) => <option key={r} value={r}>{valueLabel(tAll, "lostReason", r)}</option>)}
               </select>
               <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setClosing(null)} className={buttonClass("ghost", "sm")}>Cancel</button>
-                <button type="submit" disabled={!reason} className={buttonClass("destructive", "sm")}>Mark lost</button>
+                <button type="button" onClick={() => setClosing(null)} className={buttonClass("ghost", "sm")}>{tAll("common.cancel")}</button>
+                <button type="submit" disabled={!reason} className={buttonClass("destructive", "sm")}>{t("markLost")}</button>
               </div>
             </form>
           ) : (
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setClosing("lost")} className={buttonClass("secondary", "sm")}>Mark lost</button>
-              <button type="button" onClick={() => setClosing("won")} className={buttonClass("primary", "sm")}>Mark won</button>
+              <button type="button" onClick={() => setClosing("lost")} className={buttonClass("secondary", "sm")}>{t("markLost")}</button>
+              <button type="button" onClick={() => setClosing("won")} className={buttonClass("primary", "sm")}>{t("markWon")}</button>
             </div>
           )}
         </footer>
@@ -375,6 +388,8 @@ function NewDeal({ onCancel, onCreate }: { onCancel: () => void; onCreate: (d: P
   const [tried, setTried] = useState(false);
   const field = "min-h-11 w-full rounded-[var(--radius-control)] border border-input bg-surface px-3 text-base";
   const ok = form.customer.trim() && form.title.trim();
+  const t = useT("deals");
+  const tAll = useT();
   return (
     <form
       className="flex h-full flex-col"
@@ -385,19 +400,19 @@ function NewDeal({ onCancel, onCreate }: { onCancel: () => void; onCreate: (d: P
       }}
     >
       <header className="flex items-center justify-between border-b border-border px-5 py-4">
-        <h2 className="text-lg font-semibold">New deal</h2>
-        <button type="button" onClick={onCancel} className={buttonClass("ghost", "sm", "!px-2")} aria-label="Close"><X size={20} aria-hidden="true" /></button>
+        <h2 className="text-lg font-semibold">{t("new")}</h2>
+        <button type="button" onClick={onCancel} className={buttonClass("ghost", "sm", "!px-2")} aria-label={tAll("common.close")}><X size={20} aria-hidden="true" /></button>
       </header>
       <div className="grid gap-4 px-5 py-5">
-        <label className="grid gap-1.5 text-sm font-medium">Customer<input className={field} value={form.customer} onChange={(e) => setForm({ ...form, customer: e.target.value })} autoFocus placeholder="Name or company" /></label>
-        <label className="grid gap-1.5 text-sm font-medium">What are they buying?<input className={field} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. 12 x ThinkPad E14" /></label>
-        <label className="grid gap-1.5 text-sm font-medium">Expected value (AED)<input className={field} inputMode="decimal" dir="ltr" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} placeholder="Optional" /></label>
-        {tried && !ok && <p role="alert" className="text-sm text-fail">Add the customer and what they&apos;re buying.</p>}
-        <p className="text-sm text-muted">It starts in New, owned by you. In the real app the customer is picked from Customers.</p>
+        <label className="grid gap-1.5 text-sm font-medium">{t("form.customer")}<input className={field} value={form.customer} onChange={(e) => setForm({ ...form, customer: e.target.value })} autoFocus placeholder={t("form.customerPlaceholder")} /></label>
+        <label className="grid gap-1.5 text-sm font-medium">{t("form.title")}<input className={field} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder={t("form.titlePlaceholder")} /></label>
+        <label className="grid gap-1.5 text-sm font-medium">{t("form.value")}<input className={field} inputMode="decimal" dir="ltr" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} placeholder={tAll("common.optional")} /></label>
+        {tried && !ok && <p role="alert" className="text-sm text-fail">{t("form.error")}</p>}
+        <p className="text-sm text-muted">{t("form.help")}</p>
       </div>
       <footer className="mt-auto flex justify-end gap-2 border-t border-border px-5 py-4">
-        <button type="button" onClick={onCancel} className={buttonClass("ghost", "sm")}>Cancel</button>
-        <button type="submit" className={buttonClass("primary", "sm")}>Create deal</button>
+        <button type="button" onClick={onCancel} className={buttonClass("ghost", "sm")}>{tAll("common.cancel")}</button>
+        <button type="submit" className={buttonClass("primary", "sm")}>{t("form.submit")}</button>
       </footer>
     </form>
   );

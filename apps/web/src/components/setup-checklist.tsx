@@ -2,16 +2,19 @@ import Link from "next/link";
 import { CaretRight, CheckCircle, Circle } from "@phosphor-icons/react/dist/ssr";
 import { ListSurface } from "@/components/settings-frame";
 import type { SetupStep } from "@/lib/setup";
+import { getT } from "@/i18n/server";
 
 /** The setup checklist as a plain list with progress (Home before connecting, and Settings › Account). */
-export function SetupChecklist({ steps, title = "Get set up" }: { steps: SetupStep[]; title?: string }) {
+export async function SetupChecklist({ steps, title }: { steps: SetupStep[]; title?: string }) {
+  const t = await getT("setup");
+  const common = await getT("common");
   const doneCount = steps.filter((s) => s.done).length;
   return (
     <section aria-labelledby="setup" className="grid gap-3">
       <div className="flex items-center justify-between gap-3">
-        <h2 id="setup" className="text-lg font-semibold">{title}</h2>
+        <h2 id="setup" className="text-lg font-semibold">{title ?? t("title")}</h2>
         <span className="flex items-center gap-3 text-sm text-muted">
-          {doneCount} of {steps.length} done
+          {t("progress", { done: doneCount, total: steps.length })}
           <span className="h-1.5 w-24 overflow-hidden rounded-full bg-surface-2" aria-hidden="true">
             <span className="block h-full rounded-full bg-primary" style={{ width: `${(doneCount / steps.length) * 100}%` }} />
           </span>
@@ -26,7 +29,7 @@ export function SetupChecklist({ steps, title = "Get set up" }: { steps: SetupSt
               <span className="grid flex-1 gap-0.5">
                 <span className={`font-medium ${s.done ? "text-muted line-through" : ""}`}>
                   {s.title}
-                  <span className="sr-only">{s.done ? " (done)" : ""}</span>
+                  <span className="sr-only">{s.done ? ` ${common("doneSr")}` : ""}</span>
                 </span>
                 <span className="text-sm text-muted">{s.body}</span>
                 {s.soon && !s.done && <span className="text-xs text-muted">{s.soon}</span>}

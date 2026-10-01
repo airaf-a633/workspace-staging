@@ -4,8 +4,11 @@ import { GetReady } from "@/components/whatsapp/get-ready";
 import { NumberList } from "@/components/whatsapp/number-views";
 import { sampleNumbers } from "@/components/whatsapp/numbers";
 import { PREVIEW_TEAMS, previewNow, previewScope } from "@/lib/preview";
+import { getT } from "@/i18n/server";
 
-export const metadata = { title: "WhatsApp numbers" };
+export async function generateMetadata() {
+  return { title: (await getT("settings"))("whatsapp") };
+}
 
 export default async function PreviewNumbers(props: PageProps<"/preview/[as]/whatsapp">) {
   const { as } = await props.params;
@@ -14,16 +17,17 @@ export default async function PreviewNumbers(props: PageProps<"/preview/[as]/wha
   const isOwner = previewScope(as, "numbers.manage") !== "none";
   const before = sp.state === "before";
   const now = previewNow();
-  const teamName = (key: string) => PREVIEW_TEAMS.find((t) => t.id === `t-${key}`)?.name ?? "No team";
+  const t = await getT("numbers");
+  const teamName = (key: string) => PREVIEW_TEAMS.find((x) => x.id === `t-${key}`)?.name ?? t("noTeam");
 
   return (
     <SettingsFrame base={base} active="whatsapp" isOwner={previewScope(as, "members.manage") !== "none"}>
       <SectionHeader
-        title="WhatsApp numbers"
-        description={isOwner ? "The numbers your customers write to. Open one for its health, routing, profile and costs." : "Only the owner can connect or change WhatsApp numbers."}
+        title={t("title")}
+        description={isOwner ? t("description") : t("ownerOnly")}
         action={
           <Link href={before ? `${base}/whatsapp` : "?state=before"} className="text-sm font-medium text-primary hover:underline">
-            {before ? "See connected numbers" : "See this page before connecting"}
+            {before ? t("seeConnected") : t("seeBefore")}
           </Link>
         }
       />

@@ -1,7 +1,10 @@
 import { DealBoard } from "@/components/deals/deal-board";
 import { previewDeals } from "@/lib/preview";
+import { getT } from "@/i18n/server";
 
-export const metadata = { title: "Deals" };
+export async function generateMetadata() {
+  return { title: (await getT("nav"))("deals") };
+}
 
 export default async function PreviewDeals(props: PageProps<"/preview/[as]/deals">) {
   const { as } = await props.params;

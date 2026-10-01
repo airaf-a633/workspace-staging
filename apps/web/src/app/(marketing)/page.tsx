@@ -4,85 +4,63 @@ import { HandoffDemo } from "@/components/marketing/handoff-demo";
 import { ManagerHomesPreview } from "@/components/marketing/manager-homes-preview";
 import { PhotoSlot } from "@/components/marketing/photo-slot";
 import { buttonClass } from "@/components/ui/button";
+import { getT } from "@/i18n/server";
 
-export const metadata = {
-  title: { absolute: "Workspace: run your business from WhatsApp, together" },
-  description: "A shared WhatsApp inbox, customer records and a home for every manager, for businesses in the UAE.",
-};
+export async function generateMetadata() {
+  const t = await getT("landing");
+  const meta = await getT("meta");
+  return { title: { absolute: `${meta("name")}: ${t("metaTitle")}` }, description: t("metaDescription") };
+}
 
-const FACTS = [
-  ["0%", "markup on WhatsApp's fees. Meta bills you directly."],
-  ["1", "WhatsApp number for your whole team. The phone app keeps working."],
-  ["2", "languages from day one: English and Arabic, right to left."],
-  ["14", "days free, counted from the day you connect WhatsApp."],
-];
-
-const EVERYTHING = [
-  ["Customers and deals", "Every chat, email, deal and order on one timeline per customer."],
-  ["Tasks and calendar", "Follow-ups with due dates, synced to Google or Outlook calendars."],
-  ["Email", "Outlook in the same inbox as WhatsApp. Send from Gmail."],
-  ["Your store", "Shopify and WooCommerce orders next to the chat they came from."],
-  ["AI help", "Reply suggestions, summaries and translation. A person always sends."],
-  ["Campaigns", "Approved templates to the right customers, with opt-outs handled for you."],
-  ["Automations", "Route new chats, reply out of hours, create tasks, all without code."],
-  ["Reports", "Response times, pipeline and campaign costs, per team."],
-];
-
+const FACTS = [["0%", "markup"], ["1", "number"], ["2", "languages"], ["14", "days"]] as const;
+const EVERYTHING = ["customers", "tasks", "email", "store", "ai", "campaigns", "automations", "reports"] as const;
 const PLANS = [
-  { name: "Starter", price: "99", seats: "3 people", numbers: "1 WhatsApp number", extra: ["Inbox and customers", "Email and calendar", "500 AI credits a month"] },
-  { name: "Growth", price: "249", seats: "8 people", numbers: "2 WhatsApp numbers", extra: ["Everything in Starter", "All manager homes and custom roles", "Automations, campaigns, store", "2,500 AI credits a month"], featured: true },
-  { name: "Business", price: "499", seats: "20 people", numbers: "5 WhatsApp numbers", extra: ["Everything in Growth", "Branches and the full API", "7,500 AI credits a month"] },
-];
-
-const FAQ = [
-  ["Do I pay WhatsApp's message fees to you?", "No. Meta bills those directly to your WhatsApp account. We add nothing on top, and we show you the estimated cost before every campaign."],
-  ["Can I keep using the WhatsApp app on my phone?", "Yes. Your number works in the app and in Workspace at the same time. Two things change when you connect: broadcast lists turn off, and WhatsApp groups don't appear in Workspace. You also need to open the app at least every 14 days."],
-  ["When can I connect my WhatsApp number?", "You can create your account and set up your team now. Connecting WhatsApp numbers opens as soon as Meta approves our platform. We'll email you the moment it's ready. Your 14-day trial only starts when you connect, so you lose nothing by signing up early."],
-  ["Will my number get banned?", "We only use Meta's official WhatsApp Business Platform, never unofficial tools. Bans usually come from messaging people who didn't agree to it, so Workspace asks for consent before campaigns to imported lists."],
-  ["Does it work with Gmail?", "You can send email from Gmail today. Reading Gmail inside Workspace comes after Google's security review. Outlook works fully from the start."],
-  ["Where is my data kept?", "In Frankfurt, Germany. Your customers' data belongs to you, and you can export or delete it at any time."],
-  ["Can I cancel any time?", "Yes, from Settings, with no call needed. You keep access until the end of the period you paid for."],
-];
-
+  { key: "starter", price: "99", extras: 3 },
+  { key: "growth", price: "249", extras: 4, featured: true },
+  { key: "business", price: "499", extras: 3 },
+] as const;
+const FAQ = ["fees", "phone", "when", "banned", "gmail", "data", "cancel"] as const;
 const STEPS = [
-  { Icon: WhatsappLogo, title: "Connect your number", body: "Link your WhatsApp Business number in a few minutes. Your phone keeps working as before." },
-  { Icon: UsersThree, title: "Invite your team", body: "Add sales, support and operations, and choose what each person can see and do." },
-  { Icon: ArrowsLeftRight, title: "Work together", body: "Claim chats, hand them over with a note, and follow up. Your customer sees one business." },
-];
+  { Icon: WhatsappLogo, key: "connect" },
+  { Icon: UsersThree, key: "invite" },
+  { Icon: ArrowsLeftRight, key: "together" },
+] as const;
+const POINTS = ["owner", "money", "branches"] as const;
+const PROBLEMS = ["phone", "who", "split"] as const;
 
-export default function Landing() {
+export default async function Landing() {
+  const t = await getT("landing");
+  const site = await getT("site");
   return (
     <main className="overflow-x-clip">
       {/* 1. Hero: atmosphere, a photo of the people, and the real product on top of it. */}
       <section className="bg-hero drift -mt-24 rounded-b-[2.5rem] text-white">
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 pb-20 pt-36 lg:grid-cols-[1.05fr_1fr] lg:pb-28 lg:pt-44">
           <div className="grid gap-7">
-            <h1 className="display text-5xl sm:text-6xl lg:text-7xl">Run your business from WhatsApp, together</h1>
-            <p className="display text-2xl text-white/90 sm:text-3xl">Inbox + customers + handoffs.</p>
-            <p className="max-w-lg text-lg text-white/85">
-              One shared inbox for your team, every customer&apos;s history in one place, and a home for each manager. Keep the WhatsApp app on your phone.
-            </p>
+            <h1 className="display text-5xl sm:text-6xl lg:text-7xl">{t("hero.title")}</h1>
+            <p className="display text-2xl text-white/90 sm:text-3xl">{t("hero.tagline")}</p>
+            <p className="max-w-lg text-lg text-white/85">{t("hero.body")}</p>
             <div className="flex flex-wrap gap-3">
-              <Link href="/sign-up" className={buttonClass("light", "lg")}>Start free trial</Link>
-              <Link href="/demo" className={buttonClass("glass", "lg")}>Try the demo</Link>
+              <Link href="/sign-up" className={buttonClass("light", "lg")}>{site("startTrial")}</Link>
+              <Link href="/demo" className={buttonClass("glass", "lg")}>{site("tryDemo")}</Link>
             </div>
-            <p className="text-sm text-white/75">14 days free from the day you connect WhatsApp. No card needed.</p>
+            <p className="text-sm text-white/75">{t("hero.trial")}</p>
           </div>
 
           <div className="relative lg:ps-6">
             <PhotoSlot
               src="/img/hero-owner.jpg"
-              alt="A shop owner in Dubai answering customers on her phone"
-              brief="a shop owner in Dubai replying to customers on her phone, natural light"
+              alt={t("hero.photoAlt")}
+              brief={t("hero.photoAlt")}
               className="aspect-[4/5] rounded-[2rem] sm:aspect-[5/4] lg:aspect-[4/5]"
             />
             {/* One quiet product moment on the photo (decided 2026-09-30); the interactive demo has its own section. */}
             <div className="glass-light absolute inset-x-4 bottom-4 flex items-start gap-3 rounded-2xl p-4 text-text shadow-[var(--shadow-float)] sm:inset-x-auto sm:end-6 sm:bottom-6 sm:w-80 lg:-start-8 lg:end-auto">
               <span className="bg-button grid size-10 shrink-0 place-items-center rounded-full text-white"><ArrowsLeftRight size={20} aria-hidden="true" /></span>
               <span className="grid gap-0.5">
-                <span className="text-sm font-semibold">Hana handed Mariam to Sara</span>
-                <span className="text-sm text-muted">&ldquo;Wants 10% off 12 laptops. Needs your approval.&rdquo;</span>
-                <span className="text-xs text-muted">Note pinned · Mariam sees one business</span>
+                <span className="text-sm font-semibold">{t("hero.cardTitle")}</span>
+                <span className="text-sm text-muted">{t("hero.cardNote")}</span>
+                <span className="text-xs text-muted">{t("hero.cardMeta")}</span>
               </span>
             </div>
           </div>
@@ -92,10 +70,10 @@ export default function Landing() {
       {/* 2. Facts we can stand behind (no invented customer numbers before launch). */}
       <section className="mx-auto max-w-6xl px-4 py-20 lg:pt-28">
         <dl className="reveal grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {FACTS.map(([n, t]) => (
-            <div key={t} className="grid content-start gap-2 border-t border-border pt-5">
-              <dt className="display text-6xl text-primary">{n}</dt>
-              <dd className="text-muted">{t}</dd>
+          {FACTS.map(([n, k]) => (
+            <div key={k} className="grid content-start gap-2 border-t border-border pt-5">
+              <dt className="display text-6xl text-primary" dir="ltr">{n}</dt>
+              <dd className="text-muted">{t(`facts.${k}`)}</dd>
             </div>
           ))}
         </dl>
@@ -105,11 +83,9 @@ export default function Landing() {
       <section className="bg-soft">
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-24 lg:grid-cols-[1fr_1.1fr]">
           <div className="reveal grid gap-5">
-            <h2 className="display text-4xl sm:text-5xl">Hand a customer over without losing the thread</h2>
-            <p className="text-lg text-muted">
-              Hana can&apos;t approve the discount, so she hands Mariam to Sara with a note. Sara sees the whole chat and the reason at the top. Mariam just sees one business answering.
-            </p>
-            <p className="text-muted">Try it: press &ldquo;Hand over&rdquo; and write a short note.</p>
+            <h2 className="display text-4xl sm:text-5xl">{t("handoff.title")}</h2>
+            <p className="text-lg text-muted">{t("handoff.body")}</p>
+            <p className="text-muted">{t("handoff.try")}</p>
           </div>
           <div className="reveal shadow-[var(--shadow-float)]">
             <HandoffDemo fixed />
@@ -119,11 +95,9 @@ export default function Landing() {
 
       {/* 3. The problem, as a statement */}
       <section className="mx-auto grid max-w-6xl gap-10 px-4 pb-24 md:grid-cols-[1fr_1.4fr]">
-        <h2 className="display reveal text-4xl sm:text-5xl">Sound familiar?</h2>
+        <h2 className="display reveal text-4xl sm:text-5xl">{t("problem.title")}</h2>
         <ul className="reveal grid gap-6 text-xl sm:text-2xl">
-          <li className="border-b border-border pb-6">Customer chats live on one phone, and the whole team takes turns with it.</li>
-          <li className="border-b border-border pb-6">Nobody is sure who replied, who promised what, or who is following up.</li>
-          <li>Customer details are split between WhatsApp, email and a spreadsheet.</li>
+          {PROBLEMS.map((k) => <li key={k} className="border-b border-border pb-6 last:border-0 last:pb-0">{t(`problem.${k}`)}</li>)}
         </ul>
       </section>
 
@@ -131,18 +105,18 @@ export default function Landing() {
       <section id="how" className="bg-soft scroll-mt-24">
         <div className="mx-auto grid max-w-6xl gap-12 px-4 py-24">
           <div className="reveal grid max-w-2xl gap-3">
-            <h2 className="display text-4xl sm:text-5xl">How it works</h2>
-            <p className="text-lg text-muted">Three steps, and your team is working from one number.</p>
+            <h2 className="display text-4xl sm:text-5xl">{t("how.title")}</h2>
+            <p className="text-lg text-muted">{t("how.body")}</p>
           </div>
           <ol className="grid gap-5 md:grid-cols-3">
-            {STEPS.map(({ Icon, title, body }, i) => (
-              <li key={title} className="glass-light reveal grid content-start gap-4 rounded-[var(--radius-panel)] p-7 shadow-[var(--shadow-1)]" style={{ transitionDelay: `${i * 90}ms` }}>
+            {STEPS.map(({ Icon, key }, i) => (
+              <li key={key} className="glass-light reveal grid content-start gap-4 rounded-[var(--radius-panel)] p-7 shadow-[var(--shadow-1)]" style={{ transitionDelay: `${i * 90}ms` }}>
                 <div className="flex items-center justify-between">
                   <span className="grid size-12 place-items-center rounded-full bg-button text-on-primary"><Icon size={24} aria-hidden="true" /></span>
-                  <span className="display text-5xl text-primary/40">0{i + 1}</span>
+                  <span className="display text-5xl text-primary/40" dir="ltr">0{i + 1}</span>
                 </div>
-                <h3 className="text-xl font-semibold">{title}</h3>
-                <p className="text-muted">{body}</p>
+                <h3 className="text-xl font-semibold">{t(`how.steps.${key}.title`)}</h3>
+                <p className="text-muted">{t(`how.steps.${key}.body`)}</p>
               </li>
             ))}
           </ol>
@@ -152,17 +126,15 @@ export default function Landing() {
       {/* 5. Manager homes */}
       <section className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-24 lg:grid-cols-2">
         <div className="reveal grid gap-5">
-          <h2 className="display text-4xl sm:text-5xl">Each manager gets their own home</h2>
-          <p className="text-lg text-muted">
-            The owner sees the whole business. Sales sees the pipeline, support sees who&apos;s waiting, operations sees today&apos;s work. Same customers, same data, different focus.
-          </p>
+          <h2 className="display text-4xl sm:text-5xl">{t("homes.title")}</h2>
+          <p className="text-lg text-muted">{t("homes.body")}</p>
           <ul className="grid gap-3">
-            {["Chats, deals and tasks each have a clear owner", "Money stays visible only to the roles that need it", "Branches work as teams, each with its own number"].map((t) => (
-              <li key={t} className="flex gap-3"><Check size={22} className="mt-0.5 shrink-0 text-primary" aria-hidden="true" />{t}</li>
+            {POINTS.map((k) => (
+              <li key={k} className="flex gap-3"><Check size={22} className="mt-0.5 shrink-0 text-primary" aria-hidden="true" />{t(`homes.points.${k}`)}</li>
             ))}
           </ul>
           <Link href="/preview" className="inline-flex items-center gap-2 font-medium text-primary hover:underline">
-            Walk through the app <ArrowRight size={18} className="rtl:rotate-180" aria-hidden="true" />
+            {t("homes.walk")} <ArrowRight size={18} className="rtl:rotate-180" aria-hidden="true" />
           </Link>
         </div>
         <div className="reveal relative">
@@ -173,12 +145,12 @@ export default function Landing() {
 
       {/* 6. Everything else */}
       <section className="mx-auto grid max-w-6xl gap-12 px-4 pb-24">
-        <h2 className="display reveal max-w-3xl text-4xl sm:text-5xl">Everything a small team needs, in one place</h2>
+        <h2 className="display reveal max-w-3xl text-4xl sm:text-5xl">{t("everything.title")}</h2>
         <dl className="reveal grid gap-x-12 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
-          {EVERYTHING.map(([title, body]) => (
-            <div key={title} className="grid content-start gap-2 border-t border-border pt-5">
-              <dt className="font-semibold">{title}</dt>
-              <dd className="text-muted">{body}</dd>
+          {EVERYTHING.map((k) => (
+            <div key={k} className="grid content-start gap-2 border-t border-border pt-5">
+              <dt className="font-semibold">{t(`everything.items.${k}.title`)}</dt>
+              <dd className="text-muted">{t(`everything.items.${k}.body`)}</dd>
             </div>
           ))}
         </dl>
@@ -188,8 +160,8 @@ export default function Landing() {
       <section className="px-3">
         <div className="bg-hero drift mx-auto grid max-w-6xl items-center gap-10 rounded-[2.5rem] px-6 py-16 text-white md:grid-cols-2 md:px-12">
           <div className="reveal grid gap-4">
-            <h2 className="display text-4xl sm:text-5xl">Arabic, done properly</h2>
-            <p className="text-lg text-white/85">Every screen works right to left. Each person picks their own language, and customers&apos; messages always show as they wrote them.</p>
+            <h2 className="display text-4xl sm:text-5xl">{t("arabic.title")}</h2>
+            <p className="text-lg text-white/85">{t("arabic.body")}</p>
           </div>
           <div dir="rtl" lang="ar" className="reveal grid gap-3 rounded-[var(--radius-panel)] bg-surface p-6 text-text shadow-[var(--shadow-float)]">
             <p className="font-semibold">مريم السويدي</p>
@@ -202,51 +174,51 @@ export default function Landing() {
       {/* 8. Pricing (placeholder, labelled) */}
       <section id="pricing" className="mx-auto grid max-w-6xl scroll-mt-24 gap-10 px-4 py-24">
         <div className="reveal grid max-w-2xl gap-3">
-          <h2 className="display text-4xl sm:text-5xl">Simple pricing</h2>
-          <p className="text-lg text-muted">Per business, not per message. WhatsApp&apos;s own fees are billed by Meta with no markup. <strong className="font-medium text-text">Beta pricing, may change.</strong></p>
+          <h2 className="display text-4xl sm:text-5xl">{t("pricing.title")}</h2>
+          <p className="text-lg text-muted">{t("pricing.body")} <strong className="font-medium text-text">{t("pricing.beta")}</strong></p>
         </div>
         <div className="grid gap-5 md:grid-cols-3">
           {PLANS.map((p, i) => (
             <div
-              key={p.name}
+              key={p.key}
               style={{ transitionDelay: `${i * 90}ms` }}
-              className={`reveal grid content-start gap-6 rounded-[var(--radius-panel)] p-7 ${p.featured ? "bg-hero text-white shadow-[var(--shadow-float)]" : "border border-border bg-surface"}`}
+              className={`reveal grid content-start gap-6 rounded-[var(--radius-panel)] p-7 ${"featured" in p ? "bg-hero text-white shadow-[var(--shadow-float)]" : "border border-border bg-surface"}`}
             >
               <div className="grid gap-2">
                 <div className="flex items-center justify-between gap-2">
-                  <h3 className="text-xl font-semibold">{p.name}</h3>
-                  {p.featured && <span className="glass rounded-full px-3 py-0.5 text-sm">Most teams</span>}
+                  <h3 className="text-xl font-semibold">{t(`pricing.plans.${p.key}.name`)}</h3>
+                  {"featured" in p && p.featured && <span className="glass rounded-full px-3 py-0.5 text-sm">{t("pricing.mostTeams")}</span>}
                 </div>
                 <p className="flex items-baseline gap-2">
-                  <span className="display text-5xl">AED {p.price}</span>
-                  <span className={p.featured ? "text-white/75" : "text-muted"}>/ month</span>
+                  <span className="display text-5xl">{t("pricing.price", { price: p.price })}</span>
+                  <span className={"featured" in p ? "text-white/75" : "text-muted"}>{t("pricing.perMonth")}</span>
                 </p>
-                <p className={`text-sm ${p.featured ? "text-white/80" : "text-muted"}`}>{p.seats} · {p.numbers}</p>
+                <p className={`text-sm ${"featured" in p ? "text-white/80" : "text-muted"}`}>{t(`pricing.plans.${p.key}.size`)}</p>
               </div>
               <ul className="grid gap-2.5">
-                {p.extra.map((e) => (
-                  <li key={e} className="flex gap-2"><Check size={20} className={`mt-0.5 shrink-0 ${p.featured ? "text-[#8FD9D0]" : "text-primary"}`} aria-hidden="true" />{e}</li>
+                {Array.from({ length: p.extras }, (_, i) => (
+                  <li key={i} className="flex gap-2"><Check size={20} className={`mt-0.5 shrink-0 ${"featured" in p ? "text-[#8FD9D0]" : "text-primary"}`} aria-hidden="true" />{t(`pricing.plans.${p.key}.extras.${i}` as "pricing.plans.starter.extras.0")}</li>
                 ))}
               </ul>
-              <Link href="/sign-up" className={buttonClass(p.featured ? "light" : "secondary", "md", "mt-auto")}>Start free trial</Link>
+              <Link href="/sign-up" className={buttonClass("featured" in p ? "light" : "secondary", "md", "mt-auto")}>{site("startTrial")}</Link>
             </div>
           ))}
         </div>
-        <p className="reveal text-muted">Deliver your own orders? Add <strong className="font-medium text-text">Orders &amp; Delivery</strong> for AED 99 a month: dispatch, a rider page and end-of-day cash. Riders are free.</p>
+        <p className="reveal text-muted">{t.rich("pricing.orders", { pack: <strong className="font-medium text-text">{t("pricing.ordersPack")}</strong> })}</p>
       </section>
 
       {/* 9. Questions */}
       <section id="questions" className="bg-soft scroll-mt-24">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-24 md:grid-cols-[1fr_1.6fr]">
-          <h2 className="display reveal text-4xl sm:text-5xl">Questions</h2>
+          <h2 className="display reveal text-4xl sm:text-5xl">{t("faq.title")}</h2>
           <div className="reveal grid gap-3">
-            {FAQ.map(([q, a]) => (
-              <details key={q} className="glass-light group rounded-[var(--radius-panel)]">
+            {FAQ.map((k) => (
+              <details key={k} className="glass-light group rounded-[var(--radius-panel)]">
                 <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 px-5 font-medium [&::-webkit-details-marker]:hidden">
-                  {q}
+                  {t(`faq.items.${k}.q`)}
                   <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-full bg-primary-soft text-lg text-primary transition-transform duration-300 group-open:rotate-45">+</span>
                 </summary>
-                <p className="px-5 pb-5 text-muted">{a}</p>
+                <p className="px-5 pb-5 text-muted">{t(`faq.items.${k}.a`)}</p>
               </details>
             ))}
           </div>
@@ -255,10 +227,10 @@ export default function Landing() {
 
       {/* 10. Final call to action */}
       <section className="mx-auto grid max-w-6xl gap-8 px-4 py-28">
-        <h2 className="display reveal max-w-4xl text-5xl sm:text-7xl lg:text-8xl">Bring your team onto one WhatsApp number.</h2>
+        <h2 className="display reveal max-w-4xl text-5xl sm:text-7xl lg:text-8xl">{t("final")}</h2>
         <div className="reveal flex flex-wrap gap-3">
-          <Link href="/sign-up" className={buttonClass("primary", "lg")}>Start free trial</Link>
-          <Link href="/demo" className={buttonClass("secondary", "lg")}>Try the demo</Link>
+          <Link href="/sign-up" className={buttonClass("primary", "lg")}>{site("startTrial")}</Link>
+          <Link href="/demo" className={buttonClass("secondary", "lg")}>{site("tryDemo")}</Link>
         </div>
       </section>
     </main>

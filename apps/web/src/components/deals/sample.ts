@@ -1,5 +1,6 @@
 import type { Customer } from "@/components/customers/types";
 import type { InboxData } from "@/components/inbox/types";
+import type { Line } from "@/i18n/labels";
 
 /** A deal as the board shows it. Built from the sample customers, plus a few more so every stage has cards. */
 export interface BoardDeal {
@@ -12,7 +13,8 @@ export interface BoardDeal {
   customerName: string;
   teamId: string;
   createdAt: number;
-  closeDate?: string;
+  /** Expected close, as a timestamp (shown as a date in the reader's language). */
+  closeDate?: number;
   /** When the customer last wrote, for "No reply 3 days" on quoted deals. */
   lastCustomerAt?: number;
   followUp?: { text: string; due: string };
@@ -58,7 +60,7 @@ export function buildDeals(data: InboxData, customers: Customer[]): BoardDeal[] 
       customerName: "Fatima Khoury",
       teamId: team("deira"),
       createdAt: now - 6 * DAY,
-      closeDate: "Sun 4 Oct",
+      closeDate: now + 3 * DAY,
       lastCustomerAt: now - 5 * 3600_000,
       approval: { byId: id("Hana"), pct: 8, note: "She'll order today if we do 8%. Competitor quoted 6% off.", status: "pending" },
       notes: [{ byId: id("Hana"), text: "Needs delivery to Al Barsha before Sunday's training.", at: now - 5 * DAY }],
@@ -73,7 +75,7 @@ export function buildDeals(data: InboxData, customers: Customer[]): BoardDeal[] 
       customerName: "Al Noor Trading",
       teamId: team("deira"),
       createdAt: now - 21 * DAY,
-      closeDate: "Thu 15 Oct",
+      closeDate: now + 14 * DAY,
       lastCustomerAt: now - 2 * DAY,
       followUp: { text: "Send revised quote with 3-year warranty", due: "Today" },
       notes: [],
@@ -111,12 +113,12 @@ export function buildDeals(data: InboxData, customers: Customer[]): BoardDeal[] 
 }
 
 /** One quiet line on the card, only when the deal needs something (decided 2026-09-30). */
-export function dealNeed(d: BoardDeal, now: number): { text: string; tone: "warn" | "plain" } | null {
-  if (d.approval?.status === "pending") return { text: "Discount waiting for approval", tone: "warn" };
-  if (d.followUp && ["Today", "Tomorrow"].includes(d.followUp.due)) return { text: `Follow-up ${d.followUp.due.toLowerCase()}`, tone: d.followUp.due === "Today" ? "warn" : "plain" };
+export function dealNeed(d: BoardDeal, now: number): { line: Line; tone: "warn" | "plain" } | null {
+  if (d.approval?.status === "pending") return { line: { key: "deals.need.approval" }, tone: "warn" };
+  if (d.followUp?.due === "Today") return { line: { key: "deals.need.followUpToday" }, tone: "warn" };
+  if (d.followUp?.due === "Tomorrow") return { line: { key: "deals.need.followUpTomorrow" }, tone: "plain" };
   if ((d.stage === "quoted" || d.stage === "negotiating") && d.lastCustomerAt && now - d.lastCustomerAt >= DAY) {
-    const days = Math.floor((now - d.lastCustomerAt) / DAY);
-    return { text: `No reply ${days} ${days === 1 ? "day" : "days"}`, tone: "plain" };
+    return { line: { key: "deals.need.noReply", vars: { count: Math.floor((now - d.lastCustomerAt) / DAY) } }, tone: "plain" };
   }
   return null;
 }

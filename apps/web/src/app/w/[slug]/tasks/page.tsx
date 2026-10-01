@@ -1,10 +1,17 @@
 import { CheckSquare } from "@phosphor-icons/react/dist/ssr";
 import { ComingSoon } from "@/components/coming-soon";
+import { getT } from "@/i18n/server";
 
-export default function Page() {
+export async function generateMetadata() {
+  return { title: (await getT("nav"))("tasks") };
+}
+
+export default async function Page() {
+  const t = await getT("comingSoon");
+  const nav = await getT("nav");
   return (
-    <ComingSoon title="Tasks" icon={<CheckSquare size={40} />} heading="Nothing to do yet">
-      Follow-ups, calls and deliveries with due dates, linked to the customer they&apos;re for.
+    <ComingSoon title={nav("tasks")} icon={<CheckSquare size={40} />} heading={t("tasks.heading")}>
+      {t("tasks.body")}
     </ComingSoon>
   );
 }

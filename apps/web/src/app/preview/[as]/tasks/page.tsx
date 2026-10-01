@@ -1,7 +1,10 @@
 import { TaskList } from "@/components/tasks/task-list";
 import { previewTasks } from "@/lib/preview";
+import { getT } from "@/i18n/server";
 
-export const metadata = { title: "Tasks" };
+export async function generateMetadata() {
+  return { title: (await getT("nav"))("tasks") };
+}
 
 export default async function PreviewTasks(props: PageProps<"/preview/[as]/tasks">) {
   const { as } = await props.params;

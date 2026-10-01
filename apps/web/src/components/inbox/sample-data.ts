@@ -13,7 +13,7 @@ const SAMPLE_PEOPLE = [
   { key: "sara", name: "Sara", role: "Sales manager" },
   { key: "omar", name: "Omar", role: "Support manager" },
   { key: "priya", name: "Priya", role: "Operations manager" },
-  { key: "hana", name: "Hana", role: "Sales agent" },
+  { key: "hana", name: "Hana", role: "Agent" },
 ] as const;
 type PersonKey = (typeof SAMPLE_PEOPLE)[number]["key"];
 type TeamKey = "deira" | "mall" | "general";
@@ -50,7 +50,6 @@ export function buildSampleInbox(members: RealMember[], realTeams: RealTeam[], v
   const teams: Team[] = realTeams.map((t) => ({ id: t.id, name: t.name }));
 
   const P = (k: PersonKey) => people.find((p) => p.id === ids[k])!;
-  const who = (k: PersonKey) => `${P(k).name} (${P(k).role})`;
   const at = (minutesAgo: number) => now - minutesAgo * MIN;
   let seq = 0;
   const msg = (minutesAgo: number, m: Omit<Message, "id" | "at">): Message => ({ id: `s${++seq}`, at: at(minutesAgo), ...m });
@@ -87,13 +86,13 @@ export function buildSampleInbox(members: RealMember[], realTeams: RealTeam[], v
         msg(180, { kind: "in", text: "Hi, do you have the ThinkPad E14 in stock? I need 12 for my office." }),
         msg(177, { kind: "out", authorId: ids.hana, status: "read", text: "Hello Mariam, yes, we have 12 in stock. I'll send you a quote now." }),
         msg(160, { kind: "in", edited: true, text: "Thanks. Can you do 10% off for 12 units? We pay by bank transfer." }),
-        msg(150, { kind: "event", text: `${P("hana").name} handed this chat to ${who("sara")}` }),
+        msg(150, { kind: "event", event: { key: "handedToPerson", by: ids.hana, to: ids.sara } }),
         msg(140, { kind: "note", authorId: ids.sara, text: "Approved 8% for 12 units. Final AED 42,600.00 including VAT." }),
         msg(136, { kind: "out", authorId: ids.sara, status: "read", reaction: "👍", text: "Hi Mariam, the best we can do is 8% off: AED 42,600.00 for all 12, VAT included. Quote attached." }),
         msg(135, { kind: "out", authorId: ids.sara, status: "read", media: { type: "document", name: "Quote-QE-Q-0412.pdf", size: 188_416 } }),
         msg(66, { kind: "in", text: "Deal. Invoice paid. When can you deliver to Business Bay?" }),
         msg(65, { kind: "in", media: { type: "voice", duration: "0:38" } }),
-        msg(58, { kind: "event", text: `${P("sara").name} handed this chat to ${who("priya")}` }),
+        msg(58, { kind: "event", event: { key: "handedToPerson", by: ids.sara, to: ids.priya } }),
         msg(6, { kind: "in", media: { type: "location", name: "Bay Square, Building 7, Business Bay" } }),
         msg(5, { kind: "in", media: { type: "photo", caption: "This is the loading entrance", size: 1_258_291 } }),
         msg(5, { kind: "in", deleted: true }),
@@ -218,7 +217,7 @@ export function buildSampleInbox(members: RealMember[], realTeams: RealTeam[], v
           kind: "out",
           authorId: ids.omar,
           status: "failed",
-          error: "Not delivered. WhatsApp didn't say why: the customer may have blocked this number or no longer uses WhatsApp. Try calling, or email if you have an address.",
+          error: "unknown",
           text: "Sorry about that, Noura. We'll send a replacement pair to you tomorrow.",
         }),
       ],
@@ -256,7 +255,7 @@ export function buildSampleInbox(members: RealMember[], realTeams: RealTeam[], v
       messages: [
         msg(30 * 60, { kind: "in", text: "Are you open on Friday evening?" }),
         msg(29.9 * 60, { kind: "out", authorId: ids.hana, status: "read", text: "Yes, both shops are open until 23:00 on Friday." }),
-        msg(29.8 * 60, { kind: "event", text: `${P("hana").name} resolved this chat` }),
+        msg(29.8 * 60, { kind: "event", event: { key: "resolved", by: ids.hana } }),
       ],
     },
     {
@@ -273,7 +272,7 @@ export function buildSampleInbox(members: RealMember[], realTeams: RealTeam[], v
       contact: { name: "Yousef Karim", phone: "+971 56 204 7713", language: "English", tags: [], deals: [], tasks: [], orders: [] },
       handoffs: [],
       messages: [
-        msg(79 * 24 * 60 + 10, { kind: "event", text: "History imported from the phone when the number was connected" }),
+        msg(79 * 24 * 60 + 10, { kind: "event", event: { key: "imported" } }),
         msg(79 * 24 * 60 + 8, { kind: "in", imported: true, text: "Can you send me your technician's number?" }),
         msg(79 * 24 * 60 + 5, { kind: "out", imported: true, authorId: ids.khalid, source: "phone", media: { type: "contact", name: "Qamar Service Desk", phone: "+971 4 555 0191" } }),
         msg(79 * 24 * 60, { kind: "in", imported: true, media: { type: "sticker" } }),
@@ -293,7 +292,7 @@ export function buildSampleInbox(members: RealMember[], realTeams: RealTeam[], v
       handoffs: [],
       messages: [
         msg(300, { kind: "in", text: "Earn AED 5,000 a day from home!! Reply YES to join our investment group" }),
-        msg(290, { kind: "event", text: `${P("omar").name} marked this chat as spam` }),
+        msg(290, { kind: "event", event: { key: "spam", by: ids.omar } }),
       ],
     },
   ];

@@ -133,7 +133,13 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
-:lang(ar), [dir="rtl"] { font-family: var(--font-arabic); line-height: 1.7; }
+/* Arabic follows `lang`, not `dir`, so an English island inside an Arabic page (a legal text, an email) keeps its own type. */
+/* In the base layer so Tailwind's leading-* and font-* utilities can still override it. */
+@layer base {
+  :lang(ar) { font-family: var(--font-arabic); line-height: 1.7; }
+}
+/* Arabic letters join: any letter-spacing (tracking-wide, tight display tracking) breaks the joins. */
+:lang(ar) * { letter-spacing: 0 !important; }
 
 /* Editorial display type: light Fraunces, large optical size, soft terminals, tight tracking. */
 .display {
@@ -145,7 +151,7 @@ body {
   text-wrap: balance;
 }
 /* Arabic has no matching serif: use Plex Arabic, light, with normal tracking. */
-:lang(ar) .display, [dir="rtl"] .display { font-family: var(--font-arabic); letter-spacing: 0; line-height: 1.3; }
+:lang(ar) .display { font-family: var(--font-arabic); letter-spacing: 0; line-height: 1.3; }
 
 /* App page titles: the same serif, a little heavier so it reads at smaller sizes. */
 .title {
@@ -154,7 +160,7 @@ body {
   font-variation-settings: "opsz" 72, "SOFT" 30;
   letter-spacing: -0.015em;
 }
-:lang(ar) .title, [dir="rtl"] .title { font-family: var(--font-arabic); font-weight: 600; letter-spacing: 0; }
+:lang(ar) .title { font-family: var(--font-arabic); font-weight: 600; letter-spacing: 0; }
 
 /* Numbers people compare: tabular, always left-to-right. */
 .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; unicode-bidi: isolate; direction: ltr; }

@@ -29,10 +29,11 @@ export const RATE_FILS = { utility: 6, marketing: 21 } as const;
 export const DISCONNECT_DAYS = 14;
 export const REMIND_FROM_DAY = 10;
 
-export const QUALITY: Record<Quality, { label: string; tone: "done" | "warn" | "fail"; help: string }> = {
-  high: { label: "High", tone: "done", help: "Customers are happy with your messages." },
-  medium: { label: "Medium", tone: "warn", help: "Some customers blocked or reported this number lately. Send fewer marketing messages for a few days." },
-  low: { label: "Low", tone: "fail", help: "Meta may lower your daily limit. Pause marketing and only message customers who asked to hear from you." },
+/** Badge tone per quality rating; the words are in the language files (numbers.quality.<key>). */
+export const QUALITY: Record<Quality, { tone: "done" | "warn" | "fail" }> = {
+  high: { tone: "done" },
+  medium: { tone: "warn" },
+  low: { tone: "fail" },
 };
 
 const DAY = 86_400_000;
@@ -80,8 +81,4 @@ export function daysLeft(n: WaNumber, now: number) {
 
 export function estimatedCostFils(n: WaNumber) {
   return n.usage.utility * RATE_FILS.utility + n.usage.marketing * RATE_FILS.marketing;
-}
-
-export function limitText(limit: WaNumber["limit"]) {
-  return limit === "unlimited" ? "No daily limit" : `Up to ${limit.toLocaleString("en-GB")} new customers a day`;
 }

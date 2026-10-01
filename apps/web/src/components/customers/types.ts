@@ -1,4 +1,5 @@
 import type { Deal, Order, Task } from "@/components/inbox/types";
+import type { Line } from "@/i18n/labels";
 
 /** Shapes follow the planned contacts model (PRODUCT_DECISIONS §5, §18) so real rows can replace the sample later. */
 
@@ -8,8 +9,12 @@ export interface TimelineItem {
   id: string;
   at: number;
   kind: TimelineKind;
-  title: string;
+  /** Worded when shown, in the reader's language. */
+  title: Line;
+  /** People's own words (a message, a note), or for deal / order / task rows the stage, order state or due word. */
   body?: string;
+  /** Interface text in place of `body` (a "Photo" or "Deleted message" placeholder). */
+  bodyLine?: Line;
   by?: string;
   href?: string;
 }

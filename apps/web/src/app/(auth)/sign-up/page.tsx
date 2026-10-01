@@ -3,40 +3,47 @@ import { AuthFrame } from "@/components/auth-frame";
 import { Submit } from "@/components/ui/submit";
 import { TextInput } from "@/components/ui/field";
 import { Notice } from "@/components/ui/surface";
+import { getT } from "@/i18n/server";
 import { safeNext } from "@/lib/safe-next";
 import { signUp } from "../actions";
 
-export const metadata = { title: "Create your account" };
+export async function generateMetadata() {
+  return { title: (await getT("auth"))("signUp.title") };
+}
 
 export default async function SignUp(props: PageProps<"/sign-up">) {
   const sp = await props.searchParams;
   const next = safeNext(typeof sp.next === "string" ? sp.next : undefined);
-  const error = typeof sp.error === "string" ? sp.error : undefined;
+  const t = await getT("auth");
+  const error = typeof sp.error === "string" ? (t.has(`errors.${sp.error}`) ? t(`errors.${sp.error}` as "errors.generic") : t("errors.generic")) : undefined;
 
   if (sp.confirm) {
     return (
-      <AuthFrame title="Check your email" description="We sent you a link to confirm your email. Open it on this device to continue.">
-        <Notice tone="info" title="Didn't get it?">Check your spam folder, or wait a minute and try signing up again.</Notice>
+      <AuthFrame title={t("confirm.title")} description={t("confirm.body")}>
+        <Notice tone="info" title={t("confirm.notGot")}>{t("confirm.notGotBody")}</Notice>
       </AuthFrame>
     );
   }
 
   return (
     <AuthFrame
-      title="Create your account"
-      description="Your 14-day trial starts when you connect WhatsApp. No card needed."
-      footer={<>Already have an account? <Link className="font-medium text-primary underline-offset-4 hover:underline" href={`/sign-in?next=${encodeURIComponent(next)}`}>Sign in</Link></>}
+      title={t("signUp.title")}
+      description={t("signUp.description")}
+      footer={<>{t("signUp.haveAccount")} <Link className="font-medium text-primary underline-offset-4 hover:underline" href={`/sign-in?next=${encodeURIComponent(next)}`}>{t("signIn.title")}</Link></>}
     >
       {error && <Notice tone="error" title={error} />}
       <form action={signUp} className="grid gap-4">
         <input type="hidden" name="next" value={next} />
-        <TextInput label="Your name" name="name" autoComplete="name" required />
-        <TextInput label="Work email" name="email" type="email" autoComplete="email" required />
-        <TextInput label="Password" name="password" type="password" autoComplete="new-password" minLength={10} help="At least 10 characters." required />
-        <Submit pending="Creating account…">Create account</Submit>
+        <TextInput label={t("yourName")} name="name" autoComplete="name" required />
+        <TextInput label={t("workEmail")} name="email" type="email" autoComplete="email" dir="ltr" required />
+        <TextInput label={t("password")} name="password" type="password" autoComplete="new-password" dir="ltr" minLength={10} help={t("passwordHelp")} required />
+        <Submit pending={t("signUp.pending")}>{t("signUp.submit")}</Submit>
       </form>
       <p className="text-sm text-muted">
-        By creating an account you agree to the <Link className="underline" href="/terms">Terms</Link> and <Link className="underline" href="/privacy">Privacy policy</Link>.
+        {t.rich("signUp.agree", {
+          terms: <Link className="underline" href="/terms">{t("signUp.terms")}</Link>,
+          privacy: <Link className="underline" href="/privacy">{t("signUp.privacy")}</Link>,
+        })}
       </p>
     </AuthFrame>
   );

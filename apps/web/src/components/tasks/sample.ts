@@ -111,15 +111,6 @@ export function whenOf(task: BoardTask, now: number): When {
   return "later";
 }
 
-export const WHEN_LABEL: Record<When, string> = {
-  overdue: "Overdue",
-  today: "Today",
-  tomorrow: "Tomorrow",
-  week: "This week",
-  later: "Later",
-  none: "No date",
-};
-
 /** The next due date for a repeating task. */
 export function nextDue(task: BoardTask): number | null {
   if (!task.due || !task.repeat) return null;

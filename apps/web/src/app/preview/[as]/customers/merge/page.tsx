@@ -1,8 +1,11 @@
 import { notFound } from "next/navigation";
 import { MergeCustomers } from "@/components/customers/merge-customers";
 import { previewCustomers, previewScope } from "@/lib/preview";
+import { getT } from "@/i18n/server";
 
-export const metadata = { title: "Merge customers" };
+export async function generateMetadata() {
+  return { title: (await getT("merge"))("title") };
+}
 
 export default async function PreviewMerge(props: PageProps<"/preview/[as]/customers/merge">) {
   const { as } = await props.params;

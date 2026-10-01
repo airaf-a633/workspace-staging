@@ -3,12 +3,14 @@
 import { Fragment, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, CaretDown, ChatsCircle, DotsThree, EnvelopeSimple, MagnifyingGlass, SidebarSimple, X } from "@phosphor-icons/react";
-import { conversationActions, handoffNoteError, replyAccess, windowOpen, type Viewer } from "@app/domain";
+import { HANDOFF_NOTE_MIN, conversationActions, handoffNoteError, replyAccess, windowOpen, type Viewer } from "@app/domain";
 import { buttonClass } from "@/components/ui/button";
 import { Badge } from "@/components/ui/surface";
 import { Composer, type ComposerMode } from "./composer";
 import { CustomerPanel } from "./customer-panel";
-import { dayLabel, listTime, sameDay, waitedFor } from "./format";
+import { useFormat, useT } from "@/i18n/client";
+import { roleLabel } from "@/i18n/labels";
+import type { Format, TFor, Translator } from "@/i18n/types";
 import { MessageItem, mediaLabel } from "./message";
 import { lastActivity, reducer, stamp, type InboxAction } from "./store";
 import type { Conversation, InboxData, Message, Person } from "./types";
@@ -17,23 +19,18 @@ type Filter = "mine" | "teams" | "unassigned" | "all" | "spam";
 const REPLY_TARGET_MIN = 30;
 const GROUP_MS = 5 * 60_000;
 
-const VIEWS: [Filter, string][] = [
-  ["mine", "Mine"],
-  ["teams", "My teams"],
-  ["unassigned", "Unassigned"],
-  ["all", "All"],
-  ["spam", "Spam"],
-];
+const VIEWS: Filter[] = ["mine", "teams", "unassigned", "all", "spam"];
 
-const SHORTCUTS: [string, string][] = [
-  ["J / K", "Next / previous chat"],
-  ["R", "Reply"],
-  ["N", "Internal note"],
-  ["H", "Hand over"],
-  ["E", "Resolve or reopen"],
-  ["/", "Search"],
-  ["Esc", "Close"],
-  ["?", "Show shortcuts"],
+/* Keys stay Latin letters in Arabic too: they're the physical keys. */
+const SHORTCUTS: [string, keyof typeof import("@/i18n/messages/en").en.inbox.shortcuts][] = [
+  ["J / K", "next"],
+  ["R", "reply"],
+  ["N", "note"],
+  ["H", "handover"],
+  ["E", "resolve"],
+  ["/", "search"],
+  ["Esc", "close"],
+  ["?", "help"],
 ];
 
 function lastReal(c: Conversation) {
@@ -42,34 +39,36 @@ function lastReal(c: Conversation) {
 }
 
 /** Only states that need someone get a label in the list (decided 2026-09-30). */
-function attention(c: Conversation, now: number): { label: string; tone: "warn" | "fail" } | null {
+function attention(c: Conversation, now: number, t: TFor<"inbox">, fmt: Format): { label: string; tone: "warn" | "fail" } | null {
   if (c.status !== "open") return null;
   const last = lastReal(c);
-  if (last?.status === "failed") return { label: "Not delivered", tone: "fail" };
+  if (last?.status === "failed") return { label: t("flags.notDelivered"), tone: "fail" };
   if (!c.holderId && last?.kind === "in" && c.lastCustomerAt !== null && now - c.lastCustomerAt > REPLY_TARGET_MIN * 60_000) {
-    return { label: `Waiting ${waitedFor(c.lastCustomerAt, now)}`, tone: "warn" };
+    return { label: t("flags.waiting", { time: fmt.waitedFor(c.lastCustomerAt, now) }), tone: "warn" };
   }
-  if (c.channel === "whatsapp" && c.holderId && !windowOpen(c.lastCustomerAt, now)) return { label: "24h window closed", tone: "warn" };
+  if (c.channel === "whatsapp" && c.holderId && !windowOpen(c.lastCustomerAt, now)) return { label: t("flags.windowClosed"), tone: "warn" };
   return null;
 }
 
-function snippet(c: Conversation, people: Person[], me: string) {
+function snippet(c: Conversation, people: Person[], me: string, tAll: Translator) {
   const m = lastReal(c);
   if (!m) return "";
-  const body = m.deleted ? "Deleted message" : m.subject ?? m.text ?? (m.media ? mediaLabel(m.media) : "");
-  if (m.kind === "note") return `Note: ${body}`;
-  if (m.kind === "out") return `${m.authorId === me ? "You" : people.find((p) => p.id === m.authorId)?.name ?? "Team"}: ${body}`;
+  const body = m.deleted ? tAll("inbox.snippet.deleted") : m.subject ?? m.text ?? (m.media ? mediaLabel(m.media, tAll) : "");
+  if (m.kind === "note") return tAll("inbox.snippet.note", { body });
+  if (m.kind === "out") return tAll("inbox.snippet.by", { name: m.authorId === me ? tAll("common.you") : people.find((p) => p.id === m.authorId)?.name ?? tAll("common.team"), body });
   return body;
 }
 
 /** Who has held the chat, in order; the last one can reply now. */
 function Trail({ ids, people }: { ids: string[]; people: Person[] }) {
+  const t = useT("inbox");
+  const common = useT("common");
   return (
-    <span className="inline-flex min-w-0 items-center gap-1" aria-label="Handled by, in order">
+    <span className="inline-flex min-w-0 items-center gap-1" aria-label={t("trail")}>
       {ids.map((id, i) => (
         <Fragment key={`${id}-${i}`}>
-          {i > 0 && <span aria-hidden="true" className="rtl:rotate-180">→</span>}
-          <span className={i === ids.length - 1 ? "font-medium text-primary" : ""}>{people.find((x) => x.id === id)?.name ?? "Someone"}</span>
+          {i > 0 && <span aria-hidden="true" className="inline-block rtl:rotate-180">→</span>}
+          <span className={i === ids.length - 1 ? "font-medium text-primary" : ""}>{people.find((x) => x.id === id)?.name ?? common("someone")}</span>
         </Fragment>
       ))}
     </span>
@@ -80,7 +79,7 @@ export function Inbox({ data }: { data: InboxData }) {
   const { now, people, teams } = data;
   const viewer: Viewer = data.viewer;
   const me = viewer.memberId;
-  const [conversations, dispatch] = useReducer(useMemo(() => reducer({ people, teams }), [people, teams]), data.conversations);
+  const [conversations, dispatch] = useReducer(useMemo(() => reducer(), []), data.conversations);
 
   const params = useSearchParams();
   const selectedId = params.get("c");
@@ -96,12 +95,15 @@ export function Inbox({ data }: { data: InboxData }) {
   const [help, setHelp] = useState(false);
   const [sampleNote, setSampleNote] = useState(true);
 
+  const t = useT("inbox");
+  const tAll = useT();
+  const fmt = useFormat();
   const searchRef = useRef<HTMLInputElement>(null);
   const replyRef = useRef<HTMLTextAreaElement>(null);
   const noteRef = useRef<HTMLTextAreaElement>(null);
 
   const canSeeAll = viewer.scopes["conversations.view"] === "all";
-  const views = VIEWS.filter(([f]) => f !== "all" || canSeeAll);
+  const views = VIEWS.filter((f) => f !== "all" || canSeeAll);
   const visible = conversations.filter((c) => replyAccess(viewer, c) !== "hidden");
   const byRecent = (a: Conversation, b: Conversation) => lastActivity(b) - lastActivity(a);
   const isMine = (c: Conversation) => c.holderId === me || c.collaboratorIds.includes(me);
@@ -132,8 +134,8 @@ export function Inbox({ data }: { data: InboxData }) {
   const groups: [string | null, Conversation[]][] =
     filter === "mine" && !showResolved
       ? [
-          ["Yours", list.filter(isMine)],
-          ["Waiting to be claimed", list.filter((c) => !isMine(c))],
+          [t("groups.yours"), list.filter(isMine)],
+          [t("groups.waiting"), list.filter((c) => !isMine(c))],
         ]
       : [[null, list]];
   const ordered = groups.flatMap(([, g]) => g);
@@ -216,31 +218,31 @@ export function Inbox({ data }: { data: InboxData }) {
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  const currentLabel = views.find(([f]) => f === filter)?.[1] ?? "Mine";
+  const currentLabel = t(`views.${filter}`);
 
   return (
     <div className={`grid h-full min-h-0 grid-cols-1 md:grid-cols-[320px_minmax(0,1fr)] ${selected && panelOpen ? "xl:grid-cols-[320px_minmax(0,1fr)_320px]" : ""}`}>
       {/* Conversation list */}
-      <section aria-label="Conversations" className={`${selected ? "hidden md:flex" : "flex"} relative min-h-0 flex-col border-e border-border bg-surface`}>
-        <h1 className="sr-only">Inbox</h1>
+      <section aria-label={t("conversations")} className={`${selected ? "hidden md:flex" : "flex"} relative min-h-0 flex-col border-e border-border bg-surface`}>
+        <h1 className="sr-only">{t("title")}</h1>
         <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border ps-4 pe-2">
           <label className="relative flex min-w-0 items-center">
-            <span className="sr-only">View</span>
+            <span className="sr-only">{t("view")}</span>
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value as Filter)}
               className="title min-h-11 max-w-full cursor-pointer appearance-none truncate bg-transparent pe-6 text-xl [field-sizing:content] focus-visible:outline-offset-4"
             >
-              {views.map(([f, label]) => (
-                <option key={f} value={f}>{label} ({openCount(f)})</option>
+              {views.map((f) => (
+                <option key={f} value={f}>{t("viewCount", { view: t(`views.${f}`), count: openCount(f) })}</option>
               ))}
             </select>
             <CaretDown size={16} className="pointer-events-none absolute end-0 text-muted" aria-hidden="true" />
-            <span className="sr-only">Showing {currentLabel}</span>
+            <span className="sr-only">{t("showing", { view: currentLabel })}</span>
           </label>
           <div className="ms-auto flex items-center gap-1">
             {filter !== "spam" && (
-              <div role="group" aria-label="Status" className="inline-flex rounded-full bg-surface-2 p-0.5 text-sm">
+              <div role="group" aria-label={t("status")} className="inline-flex rounded-full bg-surface-2 p-0.5 text-sm">
                 {[false, true].map((r) => (
                   <button
                     key={String(r)}
@@ -249,7 +251,7 @@ export function Inbox({ data }: { data: InboxData }) {
                     onClick={() => setShowResolved(r)}
                     className={`min-h-8 rounded-full px-3 font-medium transition-colors ${showResolved === r ? "bg-surface text-text shadow-[var(--shadow-1)]" : "text-muted hover:text-text"}`}
                   >
-                    {r ? "Resolved" : "Open"}
+                    {r ? t("resolved") : t("open")}
                   </button>
                 ))}
               </div>
@@ -258,8 +260,8 @@ export function Inbox({ data }: { data: InboxData }) {
               type="button"
               onClick={() => (searching ? (setSearching(false), setQuery("")) : openSearch())}
               aria-expanded={searching}
-              aria-label={searching ? "Close search" : "Search chats"}
-              title="Search by name, number or message (/)"
+              aria-label={searching ? t("searchClose") : t("searchOpen")}
+              title={t("searchTitle")}
               className={buttonClass("ghost", "sm", "!px-2.5 text-text")}
             >
               {searching ? <X size={20} aria-hidden="true" /> : <MagnifyingGlass size={20} aria-hidden="true" />}
@@ -269,14 +271,14 @@ export function Inbox({ data }: { data: InboxData }) {
 
         {searching && (
           <div className="border-b border-border p-2">
-            <label className="sr-only" htmlFor="inbox-search">Search conversations</label>
+            <label className="sr-only" htmlFor="inbox-search">{t("searchLabel")}</label>
             <input
               id="inbox-search"
               ref={searchRef}
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Name, number or message"
+              placeholder={t("searchPlaceholder")}
               className="min-h-10 w-full rounded-full border border-input bg-surface px-4 text-sm placeholder:text-muted"
             />
           </div>
@@ -285,14 +287,14 @@ export function Inbox({ data }: { data: InboxData }) {
         {help && (
           <div className="absolute inset-x-2 top-16 z-10 rounded-[var(--radius-panel)] border border-border bg-surface p-4 shadow-[var(--shadow-2)]">
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-sm font-semibold">Keyboard shortcuts</p>
-              <button type="button" onClick={() => setHelp(false)} className={buttonClass("ghost", "sm", "!px-2")} aria-label="Close shortcuts"><X size={18} aria-hidden="true" /></button>
+              <p className="text-sm font-semibold">{t("shortcutsTitle")}</p>
+              <button type="button" onClick={() => setHelp(false)} className={buttonClass("ghost", "sm", "!px-2")} aria-label={t("shortcutsClose")}><X size={18} aria-hidden="true" /></button>
             </div>
             <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-sm">
               {SHORTCUTS.map(([k, d]) => (
                 <div key={k} className="contents">
-                  <dt><kbd className="rounded border border-border bg-surface-2 px-1.5 text-xs">{k}</kbd></dt>
-                  <dd className="text-muted">{d}</dd>
+                  <dt><kbd dir="ltr" className="rounded border border-border bg-surface-2 px-1.5 text-xs">{k}</kbd></dt>
+                  <dd className="text-muted">{t(`shortcuts.${d}`)}</dd>
                 </div>
               ))}
             </dl>
@@ -302,7 +304,7 @@ export function Inbox({ data }: { data: InboxData }) {
         <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
           {ordered.length === 0 ? (
             <p className="p-8 text-center text-muted">
-              {query ? "No chats match your search." : filter === "mine" ? "Nothing needs you right now." : filter === "spam" ? "No spam." : "No chats here."}
+              {query ? t("empty.search") : filter === "mine" ? t("empty.mine") : filter === "spam" ? t("empty.spam") : t("empty.other")}
             </p>
           ) : (
             groups.map(([title, g]) =>
@@ -311,7 +313,7 @@ export function Inbox({ data }: { data: InboxData }) {
                   {title && <h2 className="px-4 pb-1 pt-4 text-xs font-medium uppercase tracking-wide text-muted">{title}</h2>}
                   <ul className="px-2 pb-1">
                     {g.map((c) => {
-                      const flag = attention(c, now);
+                      const flag = attention(c, now, t, fmt);
                       const on = c.id === selectedId;
                       return (
                         <li key={c.id}>
@@ -323,13 +325,13 @@ export function Inbox({ data }: { data: InboxData }) {
                           >
                             <span className="flex items-baseline justify-between gap-3">
                               <span className={`flex min-w-0 items-center gap-1.5 ${c.unread ? "font-semibold" : "font-medium"}`}>
-                                {c.channel === "email" && <EnvelopeSimple size={16} className="shrink-0 text-muted" aria-label="Email" />}
+                                {c.channel === "email" && <EnvelopeSimple size={16} className="shrink-0 text-muted" aria-label={t("email")} />}
                                 <bdi className="truncate">{c.contact.name}</bdi>
                               </span>
-                              <span className={`shrink-0 text-xs tabular-nums ${c.unread ? "font-semibold text-primary" : "text-muted"}`}>{listTime(lastActivity(c), now)}</span>
+                              <span className={`shrink-0 text-xs tabular-nums ${c.unread ? "font-semibold text-primary" : "text-muted"}`}>{fmt.listTime(lastActivity(c), now)}</span>
                             </span>
                             <span className="flex items-center justify-between gap-3">
-                              <span className="truncate text-sm text-muted" dir="auto">{snippet(c, people, me)}</span>
+                              <span className="truncate text-sm text-muted" dir="auto">{snippet(c, people, me, tAll)}</span>
                               <span className="flex shrink-0 items-center gap-2">
                                 {flag && (
                                   <span className={`inline-flex items-center gap-1 text-xs font-medium ${flag.tone === "fail" ? "text-fail" : "text-warn"}`}>
@@ -338,7 +340,7 @@ export function Inbox({ data }: { data: InboxData }) {
                                   </span>
                                 )}
                                 {c.unread > 0 && (
-                                  <span className="min-w-5 rounded-full bg-primary px-1.5 text-center text-xs font-semibold leading-5 text-on-primary" aria-label={`${c.unread} unread`}>{c.unread}</span>
+                                  <span className="min-w-5 rounded-full bg-primary px-1.5 text-center text-xs font-semibold leading-5 text-on-primary" aria-label={t("unread", { count: c.unread })}>{c.unread}</span>
                                 )}
                               </span>
                             </span>
@@ -355,21 +357,23 @@ export function Inbox({ data }: { data: InboxData }) {
 
         {sampleNote && (
           <p className="flex items-center justify-between gap-2 border-t border-border px-4 py-2 text-xs text-muted">
-            <span>Sample chats. Nothing is sent; changes reset on reload.</span>
-            <button type="button" onClick={() => setSampleNote(false)} className="min-h-8 shrink-0 font-medium text-primary hover:underline">Dismiss</button>
+            <span>{t("sampleNote")}</span>
+            <button type="button" onClick={() => setSampleNote(false)} className="min-h-8 shrink-0 font-medium text-primary hover:underline">{tAll("common.dismiss")}</button>
           </p>
         )}
       </section>
 
       {/* Thread */}
-      <section aria-label="Conversation" className={`${selected ? "flex" : "hidden md:flex"} min-h-0 min-w-0 flex-col bg-bg`}>
+      <section aria-label={t("conversation")} className={`${selected ? "flex" : "hidden md:flex"} min-h-0 min-w-0 flex-col bg-bg`}>
         {!selected || !actions ? (
           <div className="grid flex-1 place-content-center justify-items-center gap-3 p-8 text-center text-muted">
             <ChatsCircle size={44} weight="light" aria-hidden="true" />
-            <p>Choose a chat to read it.</p>
+            <p>{t("choose")}</p>
             <p className="hidden text-sm md:block">
-              Press <kbd className="rounded border border-border bg-surface px-1.5 text-xs">J</kbd> to open the first one, or{" "}
-              <kbd className="rounded border border-border bg-surface px-1.5 text-xs">?</kbd> for shortcuts.
+              {t.rich("chooseHint", {
+                j: <kbd className="rounded border border-border bg-surface px-1.5 text-xs">J</kbd>,
+                help: <kbd className="rounded border border-border bg-surface px-1.5 text-xs">?</kbd>,
+              })}
             </p>
           </div>
         ) : (
@@ -401,12 +405,12 @@ export function Inbox({ data }: { data: InboxData }) {
       {/* Customer panel: closed by default; a column from 1280px, a sheet below that. */}
       {selected && panelOpen && (
         <>
-          <aside aria-label="Customer" className="hidden min-h-0 overflow-y-auto border-s border-border bg-surface xl:block">
+          <aside aria-label={t("customer")} className="hidden min-h-0 overflow-y-auto border-s border-border bg-surface xl:block">
             <CustomerPanel c={selected} people={people} teams={teams} viewer={viewer} now={now} dispatch={dispatch} onClose={() => setPanelOpen(false)} />
           </aside>
           <div className="fixed inset-0 z-40 xl:hidden">
-            <button type="button" aria-label="Close customer details" onClick={() => setPanelOpen(false)} className="absolute inset-0 bg-black/40" />
-            <aside aria-label="Customer" className="absolute inset-y-0 end-0 w-full max-w-sm overflow-y-auto bg-surface shadow-[var(--shadow-2)]">
+            <button type="button" aria-label={t("closeCustomerDetails")} onClick={() => setPanelOpen(false)} className="absolute inset-0 bg-black/40" />
+            <aside aria-label={t("customer")} className="absolute inset-y-0 end-0 w-full max-w-sm overflow-y-auto bg-surface shadow-[var(--shadow-2)]">
               <CustomerPanel c={selected} people={people} teams={teams} viewer={viewer} now={now} dispatch={dispatch} onClose={() => setPanelOpen(false)} />
             </aside>
           </div>
@@ -439,7 +443,7 @@ interface ThreadProps {
 }
 
 /** Two messages belong to one run when the same sender wrote them within 5 minutes on the same day. */
-function sameRun(a: Message | undefined, b: Message | undefined) {
+function sameRun(a: Message | undefined, b: Message | undefined, sameDay: Format["sameDay"]) {
   if (!a || !b || a.kind === "event" || b.kind === "event" || a.kind !== b.kind) return false;
   return (a.kind === "in" || a.authorId === b.authorId) && a.source === b.source && Math.abs(b.at - a.at) <= GROUP_MS && sameDay(a.at, b.at);
 }
@@ -452,6 +456,10 @@ function Thread(p: ThreadProps) {
   const endRef = useRef<HTMLDivElement>(null);
   const count = c.messages.length;
   const first = c.contact.name.split(" ")[0];
+  const t = useT("inbox");
+  const common = useT("common");
+  const fmt = useFormat();
+  const { sameDay } = fmt;
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
@@ -461,19 +469,19 @@ function Thread(p: ThreadProps) {
     <>
       <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-surface ps-2 pe-2 md:ps-5">
         <div className="flex min-w-0 items-center gap-1">
-          <button type="button" onClick={p.onBack} className={buttonClass("ghost", "sm", "!px-2 md:hidden")} aria-label="Back to chats">
+          <button type="button" onClick={p.onBack} className={buttonClass("ghost", "sm", "!px-2 md:hidden")} aria-label={t("back")}>
             <ArrowLeft size={20} className="rtl:rotate-180" aria-hidden="true" />
           </button>
           <div className="grid min-w-0 leading-tight">
             <h2 className="flex min-w-0 items-center gap-2 font-semibold">
               <bdi className="truncate">{c.contact.name}</bdi>
-              {c.channel === "email" && <span className="shrink-0 text-xs font-normal text-muted">Outlook</span>}
-              {c.imported && <Badge>Imported</Badge>}
-              {c.status === "resolved" && <Badge tone="done">Resolved</Badge>}
-              {c.status === "spam" && <Badge tone="fail">Spam</Badge>}
+              {c.channel === "email" && <span className="shrink-0 text-xs font-normal text-muted">{t("outlook")}</span>}
+              {c.imported && <Badge>{t("imported")}</Badge>}
+              {c.status === "resolved" && <Badge tone="done">{t("resolved")}</Badge>}
+              {c.status === "spam" && <Badge tone="fail">{t("spam")}</Badge>}
             </h2>
             <p className="flex min-w-0 items-center gap-1 truncate text-xs text-muted">
-              {c.trail.length > 0 ? <Trail ids={c.trail} people={people} /> : <span>{c.imported ? "Imported from the phone" : "Unassigned"}</span>}
+              {c.trail.length > 0 ? <Trail ids={c.trail} people={people} /> : <span>{c.imported ? t("importedFromPhone") : t("unassigned")}</span>}
               {team && <span className="truncate">· {team.name}</span>}
             </p>
           </div>
@@ -481,13 +489,13 @@ function Thread(p: ThreadProps) {
 
         <div className="flex shrink-0 items-center gap-1">
           {actions.canHandOver && c.status !== "spam" && (
-            <button type="button" onClick={() => p.setHanding(!p.handing)} aria-expanded={p.handing} className={buttonClass("secondary", "sm")} title="Hand over (H)">
-              Hand over
+            <button type="button" onClick={() => p.setHanding(!p.handing)} aria-expanded={p.handing} className={buttonClass("secondary", "sm")} title={t("handOverTitle")}>
+              {t("handOver")}
             </button>
           )}
           {actions.canResolve && c.status !== "spam" && (
-            <button type="button" onClick={p.onToggleResolve} className={buttonClass("ghost", "sm", "hidden lg:inline-flex")} title={`${c.status === "resolved" ? "Reopen" : "Resolve"} (E)`}>
-              {c.status === "resolved" ? "Reopen" : "Resolve"}
+            <button type="button" onClick={p.onToggleResolve} className={buttonClass("ghost", "sm", "hidden lg:inline-flex")} title={t("withKey", { action: c.status === "resolved" ? t("reopen") : t("resolve") })}>
+              {c.status === "resolved" ? t("reopen") : t("resolve")}
             </button>
           )}
           <button
@@ -495,30 +503,30 @@ function Thread(p: ThreadProps) {
             onClick={p.onTogglePanel}
             aria-pressed={p.panelOpen}
             className={buttonClass("ghost", "sm", `!px-2.5 ${p.panelOpen ? "bg-primary-soft" : ""}`)}
-            title="Customer details"
-            aria-label="Customer details"
+            title={t("customerDetails")}
+            aria-label={t("customerDetails")}
           >
             <SidebarSimple size={20} className="rotate-180 rtl:rotate-0" aria-hidden="true" />
           </button>
           {(actions.canMarkSpam || actions.canResolve) && (
             <details className="relative">
-              <summary className={buttonClass("ghost", "sm", "!px-2 list-none [&::-webkit-details-marker]:hidden")} aria-label="More actions">
+              <summary className={buttonClass("ghost", "sm", "!px-2 list-none [&::-webkit-details-marker]:hidden")} aria-label={common("moreActions")}>
                 <DotsThree size={22} weight="bold" aria-hidden="true" />
               </summary>
               <div className="absolute end-0 top-full z-20 mt-1 grid min-w-48 rounded-[var(--radius-control)] border border-border bg-surface p-1 shadow-[var(--shadow-2)]">
                 {actions.canResolve && c.status !== "spam" && (
                   <button type="button" onClick={p.onToggleResolve} className="min-h-11 rounded px-3 text-start hover:bg-surface-2 lg:hidden">
-                    {c.status === "resolved" ? "Reopen" : "Resolve"}
+                    {c.status === "resolved" ? t("reopen") : t("resolve")}
                   </button>
                 )}
                 {actions.canMarkSpam &&
                   (c.status === "spam" ? (
                     <button type="button" onClick={() => dispatch({ type: "notSpam", id: c.id, by: me, at: stamp() })} className="min-h-11 rounded px-3 text-start hover:bg-surface-2">
-                      Not spam
+                      {t("notSpam")}
                     </button>
                   ) : (
                     <button type="button" onClick={() => p.setConfirmSpam(true)} className="min-h-11 rounded px-3 text-start text-fail hover:bg-surface-2">
-                      Mark as spam…
+                      {t("markSpamMenu")}
                     </button>
                   ))}
               </div>
@@ -530,10 +538,10 @@ function Thread(p: ThreadProps) {
       {p.confirmSpam && (
         <div role="alert" className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-fail-soft px-5 py-3">
           <p className="text-sm">
-            Mark <bdi className="font-semibold">{c.contact.name}</bdi> as spam? The chat is hidden, and future messages from this number go to Spam.
+            {t.rich("markSpamConfirm", { name: <bdi className="font-semibold">{c.contact.name}</bdi> })}
           </p>
           <div className="flex gap-2">
-            <button type="button" className={buttonClass("ghost", "sm")} onClick={() => p.setConfirmSpam(false)}>Cancel</button>
+            <button type="button" className={buttonClass("ghost", "sm")} onClick={() => p.setConfirmSpam(false)}>{common("cancel")}</button>
             <button
               type="button"
               className={buttonClass("destructive", "sm")}
@@ -542,7 +550,7 @@ function Thread(p: ThreadProps) {
                 p.setConfirmSpam(false);
               }}
             >
-              Mark as spam
+              {t("markSpam")}
             </button>
           </div>
         </div>
@@ -553,7 +561,7 @@ function Thread(p: ThreadProps) {
           {pinned && (
             <div className="mb-6 grid gap-1 rounded-[var(--radius-panel)] bg-surface p-4 shadow-[var(--shadow-1)]">
               <p className="text-xs font-medium uppercase tracking-wide text-primary">
-                Handoff note · {people.find((x) => x.id === pinned.fromId)?.name ?? "Someone"}
+                {t("handoffNote", { name: people.find((x) => x.id === pinned.fromId)?.name ?? common("someone") })}
               </p>
               <p dir="auto">{pinned.note}</p>
             </div>
@@ -562,18 +570,18 @@ function Thread(p: ThreadProps) {
             const prev = c.messages[i - 1];
             const next = c.messages[i + 1];
             const newDay = !prev || !sameDay(prev.at, m.at);
-            const joined = !newDay && sameRun(prev, m);
+            const joined = !newDay && sameRun(prev, m, sameDay);
             return (
               <Fragment key={m.id}>
                 {newDay && (
-                  <div className="my-4 flex items-center gap-3 text-xs font-medium text-muted" role="separator" aria-label={dayLabel(m.at, now)}>
+                  <div className="my-4 flex items-center gap-3 text-xs font-medium text-muted" role="separator" aria-label={fmt.dayLabel(m.at, now)}>
                     <span className="h-px flex-1 bg-border" />
-                    {dayLabel(m.at, now)}
+                    {fmt.dayLabel(m.at, now)}
                     <span className="h-px flex-1 bg-border" />
                   </div>
                 )}
                 <div id={i === c.messages.length - 1 ? `last-${c.id}` : undefined} className={`grid ${newDay ? "" : joined ? "mt-1" : "mt-4"}`}>
-                  <MessageItem m={m} people={people} customer={first} first={!joined} last={!sameRun(m, next) || (!!next && !sameDay(m.at, next.at))} />
+                  <MessageItem m={m} people={people} teams={teams} customer={first} first={!joined} last={!sameRun(m, next, sameDay) || (!!next && !sameDay(m.at, next.at))} />
                 </div>
               </Fragment>
             );
@@ -620,8 +628,11 @@ function HandoverPanel({
   const [tried, setTried] = useState(false);
   // Only real members who can reply; sample teammates can't take real chats.
   const targets = people.filter((x) => !x.sample && x.canReply && x.id !== c.holderId);
-  const noteError = handoffNoteError(note);
-  const toError = to ? null : "Choose who takes over.";
+  const t = useT("handover");
+  const tAll = useT();
+  const common = useT("common");
+  const noteError = handoffNoteError(note) ? t("noteTooShort", { min: HANDOFF_NOTE_MIN }) : null;
+  const toError = to ? null : t("chooseError");
 
   function submit() {
     setTried(true);
@@ -641,11 +652,11 @@ function HandoverPanel({
           submit();
         }}
         className="mx-auto grid w-full max-w-3xl gap-3 rounded-[var(--radius-panel)] border border-border bg-surface p-4 shadow-[var(--shadow-2)]"
-        aria-label="Hand over this chat"
+        aria-label={t("form")}
       >
         <div className="grid gap-3 sm:grid-cols-[minmax(0,14rem)_1fr]">
           <div className="grid content-start gap-1">
-            <label htmlFor={`ho-to-${c.id}`} className="text-sm font-medium">Hand over to</label>
+            <label htmlFor={`ho-to-${c.id}`} className="text-sm font-medium">{t("to")}</label>
             <select
               id={`ho-to-${c.id}`}
               value={to}
@@ -654,22 +665,22 @@ function HandoverPanel({
               aria-describedby={tried && toError ? `ho-to-err-${c.id}` : undefined}
               className={`${field} min-h-11`}
             >
-              <option value="">Choose a person or team</option>
+              <option value="">{t("choose")}</option>
               {targets.length > 0 && (
-                <optgroup label="People">
+                <optgroup label={t("people")}>
                   {targets.map((x) => (
-                    <option key={x.id} value={`p:${x.id}`}>{x.id === me ? `${x.name} (you)` : `${x.name}, ${x.role}`}</option>
+                    <option key={x.id} value={`p:${x.id}`}>{x.id === me ? common("youSuffix", { name: x.name }) : common("nameRole", { name: x.name, role: roleLabel(tAll, x.role) })}</option>
                   ))}
                 </optgroup>
               )}
-              <optgroup label="Teams (first to claim takes over)">
+              <optgroup label={t("teams")}>
                 {teams.map((t) => <option key={t.id} value={`t:${t.id}`}>{t.name}</option>)}
               </optgroup>
             </select>
             {tried && toError && <p id={`ho-to-err-${c.id}`} role="alert" className="text-sm text-fail">{toError}</p>}
           </div>
           <div className="grid content-start gap-1">
-            <label htmlFor={`ho-note-${c.id}`} className="text-sm font-medium">Why are you handing this over?</label>
+            <label htmlFor={`ho-note-${c.id}`} className="text-sm font-medium">{t("why")}</label>
             <textarea
               id={`ho-note-${c.id}`}
               rows={2}
@@ -681,13 +692,13 @@ function HandoverPanel({
               className={`${field} resize-y py-2`}
             />
             <p id={`ho-note-help-${c.id}`} role={tried && noteError ? "alert" : undefined} className={`text-sm ${tried && noteError ? "text-fail" : "text-muted"}`}>
-              {tried && noteError ? noteError : "Pinned at the top of the chat for the next person. The customer doesn't see it."}
+              {tried && noteError ? noteError : t("help")}
             </p>
           </div>
         </div>
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className={buttonClass("ghost", "sm")}>Cancel</button>
-          <button type="submit" className={buttonClass("primary", "sm")}>Hand over</button>
+          <button type="button" onClick={onClose} className={buttonClass("ghost", "sm")}>{common("cancel")}</button>
+          <button type="submit" className={buttonClass("primary", "sm")}>{t("submit")}</button>
         </div>
       </form>
     </div>

@@ -125,7 +125,7 @@ Team, sales, and campaigns with Meta cost. Every report exports to CSV or PDF.
 7. **Emails** (after an email provider is chosen): welcome; a day-3 tip; trial ending in 3 days; trial ended.
 
 ## Decisions (2026-09-29)
-- **Language:** the public website launches in English first; Arabic follows. The app itself supports Arabic from M4.
+- **Language:** the website, the preview and the app switch between English and Arabic (right to left) from 2026-10-01. The Arabic text is a draft for checking layouts until a native speaker reviews it; legal pages stay English. See docs/ARABIC.md.
 - **Product name:** decided later. "Workspace" stays as the placeholder.
 - **Team question at sign-up:** included, with 4 skippable choices: "Just me", "A small team (2–5)", "Separate sales and support", "We also deliver orders". Each quietly adjusts the setup checklist.
 - **"Talk to us" contact:** a new, dedicated UAE business number, connected to our own product once M2.8 works. Email until then.

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { EnglishOnlyNotice } from "@/components/marketing/english-only";
 
 /*
  * DRAFT privacy policy, written 2026-09-28. Must be reviewed by a UAE lawyer before launch.
@@ -26,7 +27,8 @@ const SUBPROCESSORS = [
 
 export default function PrivacyPolicy() {
   return (
-    <main className="mx-auto grid max-w-3xl gap-6 px-4 py-12 leading-relaxed">
+    <main lang="en" dir="ltr" className="mx-auto grid max-w-3xl gap-6 px-4 py-12 leading-relaxed">
+      <EnglishOnlyNotice />
       <header className="grid gap-2">
         <h1 className="text-3xl font-semibold">Privacy policy</h1>
         <p className="text-sm text-muted">Last updated: {UPDATED}</p>

@@ -1,14 +1,20 @@
 import { covers } from "@app/domain";
 import { ManagerHome, type NeedRow } from "@/components/home/manager-home";
 import { previewDeals, previewPerson } from "@/lib/preview";
+import { getT } from "@/i18n/server";
+import { isolate } from "@/i18n/translate";
 
-export const metadata = { title: "Home" };
+export async function generateMetadata() {
+  return { title: (await getT("nav"))("home") };
+}
 
 export default async function PreviewHome(props: PageProps<"/preview/[as]">) {
   const { as } = await props.params;
   const me = previewPerson(as);
   const { data, deals } = previewDeals(as);
-  const name = (id: string) => data.people.find((p) => p.id === id)?.name ?? "Someone";
+  const t = await getT("home");
+  const common = await getT("common");
+  const name = (id: string) => data.people.find((p) => p.id === id)?.name ?? common("someone");
 
   // Discount approvals waiting for this person (decided 2026-09-30: on the card and in Needs you now).
   const approvals: NeedRow[] = deals
@@ -20,8 +26,9 @@ export default async function PreviewHome(props: PageProps<"/preview/[as]">) {
       tone: "warn",
       rank: 1,
       waitingSince: null,
-      meta: "Approval",
-      items: [`${name(d.approval!.byId)} asks you to approve ${d.approval!.pct}% off`, d.title],
+      meta: t("approval"),
+      // The deal title is someone's own words: isolated so "8 x iPad…" keeps its order in an Arabic row.
+      items: [t("approveAsk", { name: name(d.approval!.byId), pct: d.approval!.pct }), isolate(d.title)],
     }));
 
   // The sample business has connected WhatsApp and invited its team; hours, import and store are still open.

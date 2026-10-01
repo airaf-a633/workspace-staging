@@ -19,14 +19,15 @@ export const PREVIEW_TEAMS = [
   { id: "t-mall", name: "Dubai Mall shop", isDefault: false, isBranch: true },
 ];
 
+/** What each person sees is described in the language files (preview.people.<key>). */
 export const PREVIEW_PEOPLE = [
-  { key: "khalid", name: "Khalid", template: "owner", teams: ["t-general"], sees: "The whole business: money, every team, every chat." },
-  { key: "sara", name: "Sara", template: "sales_manager", teams: ["t-deira"], sees: "Pipeline and deals. Replies in her team without taking over." },
-  { key: "omar", name: "Omar", template: "support_manager", teams: ["t-mall"], sees: "Who's waiting and reply times at the mall. No deal values." },
-  { key: "priya", name: "Priya", template: "ops_manager", teams: ["t-deira", "t-mall"], sees: "Today's tasks and orders in both shops. Holds Mariam's chat." },
-  { key: "hana", name: "Hana", template: "agent", teams: ["t-deira"], sees: "Her own chats and deals. Follows chats she handed over." },
-  { key: "aisha", name: "Aisha", template: "viewer", teams: ["t-mall"], sees: "Reads the mall's chats and reports. Can't reply." },
-] as const satisfies readonly { key: string; name: string; template: RoleTemplateKey; teams: string[]; sees: string }[];
+  { key: "khalid", name: "Khalid", template: "owner", teams: ["t-general"] },
+  { key: "sara", name: "Sara", template: "sales_manager", teams: ["t-deira"] },
+  { key: "omar", name: "Omar", template: "support_manager", teams: ["t-mall"] },
+  { key: "priya", name: "Priya", template: "ops_manager", teams: ["t-deira", "t-mall"] },
+  { key: "hana", name: "Hana", template: "agent", teams: ["t-deira"] },
+  { key: "aisha", name: "Aisha", template: "viewer", teams: ["t-mall"] },
+] as const satisfies readonly { key: string; name: string; template: RoleTemplateKey; teams: string[] }[];
 
 export type PreviewKey = (typeof PREVIEW_PEOPLE)[number]["key"];
 

@@ -1,10 +1,17 @@
 import { UsersThree } from "@phosphor-icons/react/dist/ssr";
 import { ComingSoon } from "@/components/coming-soon";
+import { getT } from "@/i18n/server";
 
-export default function Page() {
+export async function generateMetadata() {
+  return { title: (await getT("nav"))("customers") };
+}
+
+export default async function Page() {
+  const t = await getT("comingSoon");
+  const nav = await getT("nav");
   return (
-    <ComingSoon title="Customers" icon={<UsersThree size={40} />} heading="No customers yet">
-      Everyone who messages you becomes a customer here, with their chats, deals and orders in one place. You&apos;ll also be able to import a spreadsheet.
+    <ComingSoon title={nav("customers")} icon={<UsersThree size={40} />} heading={t("customers.heading")}>
+      {t("customers.body")}
     </ComingSoon>
   );
 }

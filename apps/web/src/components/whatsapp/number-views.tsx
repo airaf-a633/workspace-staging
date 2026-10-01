@@ -3,17 +3,14 @@ import { ArrowLeft, CaretRight, WarningCircle } from "@phosphor-icons/react/dist
 import { Badge } from "@/components/ui/surface";
 import { buttonClass } from "@/components/ui/button";
 import { ListSurface } from "@/components/settings-frame";
-import { aed } from "@/components/inbox/format";
-import { DISCONNECT_DAYS, QUALITY, RATE_FILS, REMIND_FROM_DAY, daysLeft, estimatedCostFils, limitText, type WaNumber } from "./numbers";
+import { getFormat, getT } from "@/i18n/server";
+import { DISCONNECT_DAYS, QUALITY, RATE_FILS, REMIND_FROM_DAY, daysLeft, estimatedCostFils, type WaNumber } from "./numbers";
 
-const STATUS = {
-  connected: { label: "Connected", tone: "done" },
-  attention: { label: "Needs attention", tone: "warn" },
-  disconnected: { label: "Disconnected", tone: "fail" },
-} as const;
+const STATUS_TONE = { connected: "done", attention: "warn", disconnected: "fail" } as const;
 
 /* Settings › WhatsApp numbers: one row per number, then "Connect a number" (decided 2026-09-30). */
-export function NumberList({ numbers, teamName, base, isOwner, plan, now }: { numbers: WaNumber[]; teamName: (key: string) => string; base: string; isOwner: boolean; plan: { name: string; max: number }; now: number }) {
+export async function NumberList({ numbers, teamName, base, isOwner, plan, now }: { numbers: WaNumber[]; teamName: (key: string) => string; base: string; isOwner: boolean; plan: { name: string; max: number }; now: number }) {
+  const t = await getT("numbers");
   const full = numbers.length >= plan.max;
   return (
     <div className="grid gap-4">
@@ -27,14 +24,14 @@ export function NumberList({ numbers, teamName, base, isOwner, plan, now }: { nu
                 <span className="grid min-w-0 flex-1 gap-0.5">
                   <span className="flex flex-wrap items-center gap-2 font-medium">
                     {n.displayName}
-                    <Badge tone={STATUS[n.status].tone}>{STATUS[n.status].label}</Badge>
+                    <Badge tone={STATUS_TONE[n.status]}>{t(`status.${n.status}`)}</Badge>
                   </span>
                   <span className="text-sm text-muted">
-                    <span dir="ltr" className="tabular-nums">{n.number}</span> · {teamName(n.teamKey)} · Quality {QUALITY[n.quality].label.toLowerCase()}
+                    <span dir="ltr" className="tabular-nums">{n.number}</span> · {teamName(n.teamKey)} · {t("qualityIs", { quality: t(`quality.${n.quality}.word`) })}
                   </span>
                   {n.status === "attention" && (
                     <span className="flex items-center gap-1.5 text-sm text-warn">
-                      <WarningCircle size={16} aria-hidden="true" /> Open WhatsApp Business on the phone within {left} {left === 1 ? "day" : "days"}
+                      <WarningCircle size={16} aria-hidden="true" /> {t("openAppWithin", { count: left })}
                     </span>
                   )}
                 </span>
@@ -46,8 +43,8 @@ export function NumberList({ numbers, teamName, base, isOwner, plan, now }: { nu
       </ListSurface>
       {isOwner && (
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-muted">{numbers.length} of {plan.max} numbers on your {plan.name} plan.</p>
-          <button type="button" disabled={full} className={buttonClass("secondary", "sm")} title={full ? "Your plan's numbers are all in use" : undefined}>Connect a number</button>
+          <p className="text-sm text-muted">{t("planUsage", { used: numbers.length, max: plan.max, plan: plan.name })}</p>
+          <button type="button" disabled={full} className={buttonClass("secondary", "sm")} title={full ? t("planFull") : undefined}>{t("connect")}</button>
         </div>
       )}
     </div>
@@ -78,67 +75,71 @@ function Row({ label, children, help }: { label: string; children: React.ReactNo
   );
 }
 
+const ROUTES = ["team", "person", "rules"] as const;
+const USAGE = ["service", "utility", "marketing"] as const;
+
 /* One number's page: Health, Routing, Profile, Usage; Disconnect at the bottom behind an inline confirm. */
-export function NumberDetail({ n, teams, base, isOwner, now, people }: { n: WaNumber; teams: { key: string; name: string }[]; base: string; isOwner: boolean; now: number; people: string[] }) {
+export async function NumberDetail({ n, teams, base, isOwner, now, people }: { n: WaNumber; teams: { key: string; name: string }[]; base: string; isOwner: boolean; now: number; people: string[] }) {
+  const t = await getT("numbers");
+  const common = await getT("common");
+  const fmt = await getFormat();
   const left = daysLeft(n, now);
   const opened = DISCONNECT_DAYS - left;
-  const q = QUALITY[n.quality];
+  const warn = left <= DISCONNECT_DAYS - REMIND_FROM_DAY;
   const cost = estimatedCostFils(n);
   const control = "min-h-11 w-full rounded-[var(--radius-control)] border border-input bg-surface px-3 text-base disabled:opacity-100";
+  const usageHelp = { service: t("usage.free"), utility: t("usage.each", { cost: fmt.aed(RATE_FILS.utility) }), marketing: t("usage.each", { cost: fmt.aed(RATE_FILS.marketing) }) };
 
   return (
     <div className="grid gap-8">
       <Link href={`${base}/whatsapp`} className="-mb-4 inline-flex min-h-9 w-fit items-center gap-1.5 text-sm text-muted hover:text-text">
-        <ArrowLeft size={16} className="rtl:rotate-180" aria-hidden="true" /> WhatsApp numbers
+        <ArrowLeft size={16} className="rtl:rotate-180" aria-hidden="true" /> {t("back")}
       </Link>
       <header className="flex flex-wrap items-center gap-3">
         <span className="bg-hero grid size-12 place-items-center rounded-full font-serif text-xl text-white" aria-hidden="true">{n.displayName.charAt(0)}</span>
         <div className="grid">
           <h2 className="flex flex-wrap items-center gap-2 text-xl font-semibold">
-            {n.displayName} <Badge tone={STATUS[n.status].tone}>{STATUS[n.status].label}</Badge>
+            {n.displayName} <Badge tone={STATUS_TONE[n.status]}>{t(`status.${n.status}`)}</Badge>
           </h2>
           <p className="text-muted"><span dir="ltr" className="tabular-nums">{n.number}</span></p>
         </div>
       </header>
 
-      <Section title="Health">
-        <Row label="Phone app" help={`WhatsApp disconnects a number when the WhatsApp Business app isn't opened for ${DISCONNECT_DAYS} days. We remind you from day ${REMIND_FROM_DAY}.`}>
+      <Section title={t("health")}>
+        <Row label={t("phoneApp")} help={t("phoneAppHelp", { days: DISCONNECT_DAYS, from: REMIND_FROM_DAY })}>
           <div className="grid gap-2">
-            <p className={left <= DISCONNECT_DAYS - REMIND_FROM_DAY ? "font-medium text-warn" : ""}>
-              Last opened {opened === 0 ? "today" : opened === 1 ? "yesterday" : `${opened} days ago`}. {left <= DISCONNECT_DAYS - REMIND_FROM_DAY ? `Open it within ${left} ${left === 1 ? "day" : "days"}.` : `${left} days to go.`}
+            <p className={warn ? "font-medium text-warn" : ""}>
+              {opened === 0 ? t("openedToday") : opened === 1 ? t("openedYesterday") : t("openedDaysAgo", { count: opened })}{" "}
+              {warn ? t("openWithin", { count: left }) : t("daysToGo", { count: left })}
             </p>
-            <span className="h-2 w-full max-w-sm overflow-hidden rounded-full bg-surface-2" role="img" aria-label={`${opened} of ${DISCONNECT_DAYS} days used`}>
-              <span className={`block h-full rounded-full ${left <= DISCONNECT_DAYS - REMIND_FROM_DAY ? "bg-warn" : "bg-primary"}`} style={{ width: `${(opened / DISCONNECT_DAYS) * 100}%` }} />
+            <span className="h-2 w-full max-w-sm overflow-hidden rounded-full bg-surface-2" role="img" aria-label={t("daysUsed", { used: opened, total: DISCONNECT_DAYS })}>
+              <span className={`block h-full rounded-full ${warn ? "bg-warn" : "bg-primary"}`} style={{ width: `${(opened / DISCONNECT_DAYS) * 100}%` }} />
             </span>
           </div>
         </Row>
-        <Row label="Quality" help={q.help}>
-          <Badge tone={q.tone}>{q.label}</Badge>
+        <Row label={t("qualityLabel")} help={t(`quality.${n.quality}.help`)}>
+          <Badge tone={QUALITY[n.quality].tone}>{t(`quality.${n.quality}.label`)}</Badge>
         </Row>
-        <Row label="Daily limit" help="Set by Meta. Meta raises it over time while quality stays good.">
-          {limitText(n.limit)}
+        <Row label={t("dailyLimit")} help={t("dailyLimitHelp")}>
+          {n.limit === "unlimited" ? t("noLimit") : t("limit", { count: n.limit })}
         </Row>
       </Section>
 
-      <Section title="Routing">
-        <Row label="Team">
-          <select disabled={!isOwner} defaultValue={n.teamKey} className={control} aria-label="Team">
-            {teams.map((t) => <option key={t.key} value={t.key}>{t.name}</option>)}
+      <Section title={t("routing")}>
+        <Row label={t("team")}>
+          <select disabled={!isOwner} defaultValue={n.teamKey} className={control} aria-label={t("team")}>
+            {teams.map((x) => <option key={x.key} value={x.key}>{x.name}</option>)}
           </select>
         </Row>
-        <Row label="New chats go to">
+        <Row label={t("newChatsGo")}>
           <fieldset disabled={!isOwner} className="grid gap-2">
-            <legend className="sr-only">New chats go to</legend>
-            {[
-              ["team", "The team's queue", "First person to claim takes it."],
-              ["person", "One person", people.join(", ")],
-              ["rules", "Routing rules", "Keywords, the ad clicked or the customer's language. Coming with automations."],
-            ].map(([value, title, help]) => (
+            <legend className="sr-only">{t("newChatsGo")}</legend>
+            {ROUTES.map((value) => (
               <label key={value} className="flex cursor-pointer items-start gap-3 rounded-[var(--radius-control)] border border-border p-3 has-[:checked]:border-primary has-[:checked]:bg-primary-soft">
                 <input type="radio" name={`route-${n.id}`} value={value} defaultChecked={n.newChats === value} disabled={value === "rules"} className="mt-1 size-4 accent-[var(--primary)]" />
                 <span className="grid">
-                  <span className="font-medium">{title}</span>
-                  <span className="text-sm text-muted">{help}</span>
+                  <span className="font-medium">{t(`routes.${value}.title`)}</span>
+                  <span className="text-sm text-muted">{value === "person" ? fmt.list(people) : t(`routes.${value}.help`)}</span>
                 </span>
               </label>
             ))}
@@ -146,50 +147,46 @@ export function NumberDetail({ n, teams, base, isOwner, now, people }: { n: WaNu
         </Row>
       </Section>
 
-      <Section title="Profile">
+      <Section title={t("profile")}>
         <div className="grid items-start gap-6 xl:grid-cols-[1fr_16rem]">
           <div className="grid gap-4">
-            <Row label="Display name" help={n.displayNameStatus === "approved" ? "Approved by Meta." : n.displayNameStatus === "pending" ? "Meta is reviewing this name. Customers see the number until it's approved." : "Meta rejected this name. It must match your business name."}>
-              <span className="flex flex-wrap items-center gap-2">{n.displayName} {n.displayNameStatus !== "approved" && <Badge tone={n.displayNameStatus === "pending" ? "warn" : "fail"}>{n.displayNameStatus === "pending" ? "In review" : "Rejected"}</Badge>}</span>
+            <Row label={t("displayName")} help={t(`displayNameHelp.${n.displayNameStatus}`)}>
+              <span className="flex flex-wrap items-center gap-2">{n.displayName} {n.displayNameStatus !== "approved" && <Badge tone={n.displayNameStatus === "pending" ? "warn" : "fail"}>{t(`displayNameBadge.${n.displayNameStatus}`)}</Badge>}</span>
             </Row>
-            <Row label="About">
-              <textarea disabled={!isOwner} defaultValue={n.about} rows={2} maxLength={139} className={`${control} resize-none py-2`} aria-label="About" />
+            <Row label={t("about")}>
+              <textarea disabled={!isOwner} defaultValue={n.about} rows={2} maxLength={139} dir="auto" className={`${control} resize-none py-2`} aria-label={t("about")} />
             </Row>
-            <Row label="Category">{n.category}</Row>
+            <Row label={t("category")}>{n.category}</Row>
           </div>
           {/* How customers see the profile */}
-          <div aria-label="What customers see" className="grid w-full max-w-64 justify-items-center gap-2 justify-self-center rounded-[1.75rem] border-[6px] border-text/80 bg-bg px-4 pb-6 pt-8 text-center">
+          <div aria-label={t("customersSee")} className="grid w-full max-w-64 justify-items-center gap-2 justify-self-center rounded-[1.75rem] border-[6px] border-text/80 bg-bg px-4 pb-6 pt-8 text-center">
             <span className="bg-hero grid size-16 place-items-center rounded-full font-serif text-2xl text-white" aria-hidden="true">{n.displayName.charAt(0)}</span>
-            <p className="font-semibold">{n.displayNameStatus === "approved" ? n.displayName : n.number}</p>
-            <p className="text-xs text-muted">Business account · {n.category}</p>
-            <p className="text-sm">{n.about}</p>
+            <p className="font-semibold">{n.displayNameStatus === "approved" ? n.displayName : <span dir="ltr">{n.number}</span>}</p>
+            <p className="text-xs text-muted">{t("businessAccount", { category: n.category })}</p>
+            <p className="text-sm" dir="auto">{n.about}</p>
           </div>
         </div>
       </Section>
 
-      <Section title="Usage this month">
+      <Section title={t("usageTitle")}>
         <dl className="grid grid-cols-3 gap-4">
-          {[
-            ["Customer service", n.usage.service, "Free in September"],
-            ["Utility", n.usage.utility, `${aed(RATE_FILS.utility)} each`],
-            ["Marketing", n.usage.marketing, `${aed(RATE_FILS.marketing)} each`],
-          ].map(([label, count, help]) => (
-            <div key={label as string} className="grid gap-0.5">
-              <dt className="text-sm text-muted">{label}</dt>
-              <dd className="display text-3xl">{count}</dd>
-              <dd className="text-xs text-muted">{help}</dd>
+          {USAGE.map((k) => (
+            <div key={k} className="grid gap-0.5">
+              <dt className="text-sm text-muted">{t(`usage.${k}`)}</dt>
+              <dd className="display text-3xl">{fmt.number(n.usage[k])}</dd>
+              <dd className="text-xs text-muted">{usageHelp[k]}</dd>
             </div>
           ))}
         </dl>
         <p className="border-t border-border pt-4 text-sm">
-          Estimated Meta charges: <strong className="font-semibold tabular-nums">{aed(cost)}</strong>. Meta bills your card directly; we add nothing on top.
+          {t.rich("estimated", { cost: <strong className="font-semibold tabular-nums">{fmt.aed(cost)}</strong> })}
         </p>
         {n.cardOnMeta ? (
-          <p className="text-sm text-muted">A card is on file with Meta.</p>
+          <p className="text-sm text-muted">{t("cardOnFile")}</p>
         ) : (
           <p className="flex gap-2 rounded-[var(--radius-control)] bg-warn-soft p-3 text-sm">
             <WarningCircle size={18} className="mt-0.5 shrink-0 text-warn" aria-hidden="true" />
-            No card on file with Meta. Messages that cost money won&apos;t send until you add one in Meta Business Suite, under Billing.
+            {t("noCard")}
           </p>
         )}
       </Section>
@@ -197,13 +194,11 @@ export function NumberDetail({ n, teams, base, isOwner, now, people }: { n: WaNu
       {isOwner && (
         <details className="group rounded-[var(--radius-panel)] border border-border p-5">
           <summary className="flex min-h-9 cursor-pointer list-none items-center justify-between font-medium text-fail [&::-webkit-details-marker]:hidden">
-            Disconnect this number…
+            {t("disconnectMenu")}
           </summary>
           <div className="mt-3 grid gap-3">
-            <p className="text-sm">
-              Sending and receiving in Workspace stops for {n.number}. Chats and history stay here, and the WhatsApp Business app on the phone keeps working. You can connect it again later.
-            </p>
-            <button type="button" disabled className={buttonClass("destructive", "sm", "w-fit")} title="Turned off in the preview">Disconnect {n.displayName}</button>
+            <p className="text-sm">{t.rich("disconnectBody", { number: <span dir="ltr">{n.number}</span> })}</p>
+            <button type="button" disabled className={buttonClass("destructive", "sm", "w-fit")} title={common("turnedOffInPreview")}>{t("disconnect", { name: n.displayName })}</button>
           </div>
         </details>
       )}

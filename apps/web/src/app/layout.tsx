@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Geist, Geist_Mono, IBM_Plex_Sans_Arabic } from "next/font/google";
 import localFont from "next/font/local";
+import { dirOf } from "@/i18n/config";
+import { I18nProvider } from "@/i18n/client";
+import { MESSAGES, getLocale, getT } from "@/i18n/server";
 import "./globals.css";
 
 // Visual direction v2 (2026-09-30): Fraunces light for display, Google Sans for text and UI, Plex Arabic for Arabic.
@@ -12,10 +15,13 @@ const geist = Geist({ variable: "--font-geist", subsets: ["latin"], display: "sw
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"], display: "swap" });
 const plexArabic = IBM_Plex_Sans_Arabic({ variable: "--font-plex-arabic", subsets: ["arabic"], weight: ["300", "400", "500", "600"], display: "swap" });
 
-export const metadata: Metadata = {
-  title: { default: "Workspace", template: "%s · Workspace" },
-  description: "WhatsApp, email and customers in one place, for every manager.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT("meta");
+  return {
+    title: { default: t("name"), template: `%s · ${t("name")}` },
+    description: t("description"),
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: [
@@ -24,10 +30,14 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+/* The language comes from the person's cookie (Settings › Account, or the preview's EN / عربي switch). */
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const locale = await getLocale();
   return (
-    <html lang="en" dir="ltr" className={`${googleSans.variable} ${fraunces.variable} ${geist.variable} ${geistMono.variable} ${plexArabic.variable}`}>
-      <body className="min-h-dvh">{children}</body>
+    <html lang={locale} dir={dirOf(locale)} className={`${googleSans.variable} ${fraunces.variable} ${geist.variable} ${geistMono.variable} ${plexArabic.variable}`}>
+      <body className="min-h-dvh">
+        <I18nProvider locale={locale} messages={MESSAGES[locale]}>{children}</I18nProvider>
+      </body>
     </html>
   );
 }

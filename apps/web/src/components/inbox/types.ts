@@ -33,10 +33,24 @@ export interface Media {
   phone?: string;
 }
 
+/**
+ * Something that happened in a chat, stored as who-did-what (ids) and worded when shown, so each
+ * person reads it in their own language: "Sara handed this chat to Priya (Operations manager)".
+ */
+export interface ChatEvent {
+  key: "claimed" | "handedToPerson" | "handedToTeam" | "resolved" | "reopened" | "spam" | "notSpam" | "askedCollab" | "imported";
+  by?: string;
+  to?: string;
+  team?: string;
+  holder?: string | null;
+}
+
 export interface Message {
   id: string;
   kind: "in" | "out" | "note" | "event";
   at: number;
+  /** For kind "event". */
+  event?: ChatEvent;
   text?: string;
   subject?: string;
   media?: Media;
@@ -44,7 +58,8 @@ export interface Message {
   /** Where an outgoing message came from: the inbox, or the WhatsApp phone app (coexistence). */
   source?: "inbox" | "phone";
   status?: "sent" | "delivered" | "read" | "failed";
-  error?: string;
+  /** Why a message failed, as a key under message.errors (from WhatsApp's error code). */
+  error?: "unknown";
   edited?: boolean;
   deleted?: boolean;
   imported?: boolean;

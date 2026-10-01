@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { EnglishOnlyNotice } from "@/components/marketing/english-only";
 import Link from "next/link";
 
 /*
@@ -35,7 +36,8 @@ function Section({ n, title, children }: { n: string; title: string; children: R
 
 export default function DataProcessingAgreement() {
   return (
-    <main className="mx-auto grid max-w-3xl gap-6 px-4 py-12 leading-relaxed">
+    <main lang="en" dir="ltr" className="mx-auto grid max-w-3xl gap-6 px-4 py-12 leading-relaxed">
+      <EnglishOnlyNotice />
       <header className="grid gap-2">
         <h1 className="text-3xl font-semibold">Data processing agreement</h1>
         <p className="text-sm text-muted">Last updated: {UPDATED}</p>

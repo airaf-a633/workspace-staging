@@ -3,17 +3,18 @@ import { Info, WarningCircle } from "@phosphor-icons/react";
 import type { ConversationActions } from "@app/domain";
 import { windowOpen } from "@app/domain";
 import { buttonClass } from "@/components/ui/button";
-import { aed } from "./format";
+import { useFormat, useT } from "@/i18n/client";
 import type { InboxAction } from "./store";
 import type { Conversation, Person } from "./types";
 
 export type ComposerMode = "reply" | "note";
 
 // Meta's UAE rate card, per delivered template message (fils). Shown before sending, never marked up.
+// Labels and previews live in the language files (composer.templates.<name>): each template has a version per language.
 const TEMPLATES = [
-  { name: "order_update", label: "Order update", category: "Utility", preview: "Hi {{1}}, an update on your order {{2}}: {{3}}", costFils: 6 },
-  { name: "follow_up", label: "Follow-up offer", category: "Marketing", preview: "Hi {{1}}, still interested in {{2}}? This week only: {{3}}", costFils: 21 },
-];
+  { name: "order_update", category: "Utility", costFils: 6 },
+  { name: "follow_up", category: "Marketing", costFils: 21 },
+] as const;
 
 interface Props {
   c: Conversation;
@@ -32,7 +33,9 @@ interface Props {
 export function Composer({ c, actions, people, me, now, mode, setMode, replyRef, noteRef, dispatch }: Props) {
   const [draft, setDraft] = useState(c.phoneReply?.draft ?? "");
   const [note, setNote] = useState("");
-  const [template, setTemplate] = useState(TEMPLATES[0].name);
+  const [template, setTemplate] = useState<string>(TEMPLATES[0].name);
+  const t = useT("composer");
+  const fmt = useFormat();
   const [notSent, setNotSent] = useState(false);
   const holder = people.find((p) => p.id === c.holderId);
   const phoneAuthor = people.find((p) => p.id === c.phoneReply?.authorId);
@@ -49,17 +52,17 @@ export function Composer({ c, actions, people, me, now, mode, setMode, replyRef,
   }
 
   const switcher = actions.canWriteNotes && (
-    <div role="group" aria-label="Reply or internal note" className="inline-flex rounded-full bg-surface-2 p-0.5 text-sm">
+    <div role="group" aria-label={t("switcher")} className="inline-flex rounded-full bg-surface-2 p-0.5 text-sm">
       {(["reply", "note"] as const).map((m) => (
         <button
           key={m}
           type="button"
           aria-pressed={mode === m}
-          title={m === "reply" ? "Reply (R)" : "Internal note (N)"}
+          title={m === "reply" ? t("replyTitle") : t("noteTitle")}
           onClick={() => setMode(m)}
           className={`min-h-8 rounded-full px-3 font-medium transition-colors ${mode === m ? "bg-surface text-text shadow-[var(--shadow-1)]" : "text-muted hover:text-text"}`}
         >
-          {m === "reply" ? "Reply" : "Note"}
+          {m === "reply" ? t("reply") : t("note")}
         </button>
       ))}
     </div>
@@ -79,7 +82,7 @@ export function Composer({ c, actions, people, me, now, mode, setMode, replyRef,
           addNote();
         }}
       >
-        <label htmlFor={`note-${c.id}`} className="sr-only">Internal note</label>
+        <label htmlFor={`note-${c.id}`} className="sr-only">{t("noteLabel")}</label>
         <textarea
           ref={noteRef}
           id={`note-${c.id}`}
@@ -87,25 +90,25 @@ export function Composer({ c, actions, people, me, now, mode, setMode, replyRef,
           value={note}
           onChange={(e) => setNote(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && (e.ctrlKey || e.metaKey) && addNote()}
-          placeholder={`A note for your team. ${first} never sees it.`}
+          placeholder={t("notePlaceholder", { name: first })}
           className={field}
         />
         <div className="flex items-center justify-between gap-2 px-3 pb-3 pt-1">
           {switcher}
-          <button type="submit" disabled={!note.trim()} className={buttonClass("secondary", "sm")}>Add note</button>
+          <button type="submit" disabled={!note.trim()} className={buttonClass("secondary", "sm")}>{t("addNote")}</button>
         </div>
       </form>
     );
   } else if (c.status === "spam") {
-    body = <p className="px-4 py-3 text-muted">This chat is in Spam. Move it out of Spam to reply.</p>;
+    body = <p className="px-4 py-3 text-muted">{t("inSpam")}</p>;
   } else if (actions.access === "claim") {
     body = (
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-        <p>Nobody is handling this chat yet.</p>
+        <p>{t("nobody")}</p>
         <div className="flex items-center gap-2">
           {switcher}
           <button type="button" className={buttonClass("primary", "sm")} onClick={() => dispatch({ type: "claim", id: c.id, by: me, at: at() })}>
-            Claim chat
+            {t("claim")}
           </button>
         </div>
       </div>
@@ -114,19 +117,15 @@ export function Composer({ c, actions, people, me, now, mode, setMode, replyRef,
     body = (
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
         <p className="text-muted">
-          {holder ? (
-            <>
-              <strong className="font-semibold text-text">{holder.name}</strong> is handling this chat. You can read it{actions.canWriteNotes ? " and add notes" : ""}.
-            </>
-          ) : (
-            "Nobody is handling this chat yet, and your role can't claim it."
-          )}
+          {holder
+            ? t.rich(actions.canWriteNotes ? "holderNotes" : "holderReadOnly", { name: <strong className="font-semibold text-text">{holder.name}</strong> })
+            : t("cantClaim")}
         </p>
         <div className="flex items-center gap-2">
           {switcher}
           {actions.canAskToCollaborate && (
             <button type="button" className={buttonClass("secondary", "sm")} onClick={() => dispatch({ type: "askCollab", id: c.id, by: me, at: at() })}>
-              Ask to collaborate
+              {t("askCollab")}
             </button>
           )}
         </div>
@@ -135,19 +134,19 @@ export function Composer({ c, actions, people, me, now, mode, setMode, replyRef,
   } else if (needsTemplate) {
     body = (
       <fieldset className="grid gap-2 p-3">
-        <legend className="px-1 pb-2 text-sm text-muted">{first} last wrote over 24 hours ago, so WhatsApp only allows an approved template until they reply.</legend>
-        {TEMPLATES.map((t) => (
-          <label key={t.name} className={`flex cursor-pointer gap-3 rounded-[var(--radius-control)] border p-3 ${template === t.name ? "border-primary bg-primary-soft" : "border-border"}`}>
-            <input type="radio" name={`tpl-${c.id}`} value={t.name} checked={template === t.name} onChange={() => setTemplate(t.name)} className="mt-1 accent-[var(--primary)]" />
+        <legend className="px-1 pb-2 text-sm text-muted">{t("windowClosed", { name: first })}</legend>
+        {TEMPLATES.map((tpl) => (
+          <label key={tpl.name} className={`flex cursor-pointer gap-3 rounded-[var(--radius-control)] border p-3 ${template === tpl.name ? "border-primary bg-primary-soft" : "border-border"}`}>
+            <input type="radio" name={`tpl-${c.id}`} value={tpl.name} checked={template === tpl.name} onChange={() => setTemplate(tpl.name)} className="mt-1 accent-[var(--primary)]" />
             <span className="grid gap-0.5">
-              <span className="font-medium">{t.label} <span className="text-sm font-normal text-muted">· {t.category} · {aed(t.costFils)} per message</span></span>
-              <span className="text-sm text-muted">{t.preview}</span>
+              <span className="font-medium">{t(`templates.${tpl.name}.label`)} <span className="text-sm font-normal text-muted">· {t("templateMeta", { category: t(`categories.${tpl.category}`), cost: fmt.aed(tpl.costFils) })}</span></span>
+              <span className="text-sm text-muted" dir="auto">{t(`templates.${tpl.name}.preview`)}</span>
             </span>
           </label>
         ))}
         <div className="flex items-center justify-between gap-2 pt-1">
           {switcher}
-          <button type="button" className={buttonClass("primary", "sm")} onClick={() => setNotSent(true)}>Send template</button>
+          <button type="button" className={buttonClass("primary", "sm")} onClick={() => setNotSent(true)}>{t("sendTemplate")}</button>
         </div>
       </fieldset>
     );
@@ -159,7 +158,7 @@ export function Composer({ c, actions, people, me, now, mode, setMode, replyRef,
           setNotSent(true);
         }}
       >
-        <label htmlFor={`reply-${c.id}`} className="sr-only">Reply to {first}</label>
+        <label htmlFor={`reply-${c.id}`} className="sr-only">{t("replyTo", { name: first })}</label>
         <textarea
           ref={replyRef}
           id={`reply-${c.id}`}
@@ -168,20 +167,20 @@ export function Composer({ c, actions, people, me, now, mode, setMode, replyRef,
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && (e.ctrlKey || e.metaKey) && !c.phoneReply && draft.trim() && setNotSent(true)}
-          placeholder={c.channel === "email" ? `Reply to ${first} by email` : `Reply to ${first} on WhatsApp`}
+          placeholder={c.channel === "email" ? t("placeholderEmail", { name: first }) : t("placeholderWhatsapp", { name: first })}
           className={field}
         />
         <div className="flex items-center justify-between gap-2 px-3 pb-3 pt-1">
           <span className="flex min-w-0 items-center gap-2">
             {switcher}
             {actions.access === "override" && holder && (
-              <span className="truncate text-xs text-muted" title={`You're replying as a manager. ${holder.name} stays in charge and is told you replied.`}>
-                As manager · {holder.name} stays in charge
+              <span className="truncate text-xs text-muted" title={t("asManagerTitle", { name: holder.name })}>
+                {t("asManager", { name: holder.name })}
               </span>
             )}
           </span>
-          <button type="submit" disabled={!draft.trim() || !!c.phoneReply} title="Send (Ctrl + Enter)" className={buttonClass("primary", "sm")}>
-            Send
+          <button type="submit" disabled={!draft.trim() || !!c.phoneReply} title={t("sendTitle")} className={buttonClass("primary", "sm")}>
+            {t("send")}
           </button>
         </div>
       </form>
@@ -195,12 +194,12 @@ export function Composer({ c, actions, people, me, now, mode, setMode, replyRef,
           <p className="flex gap-2">
             <WarningCircle size={20} className="shrink-0 text-warn" aria-hidden="true" />
             <span>
-              <strong className="font-semibold">{phoneAuthor.name}</strong> replied from the WhatsApp app while this reply was waiting. Check it so {first} doesn&apos;t get two answers.
+              {t.rich("phoneReplied", { name: <strong className="font-semibold">{phoneAuthor.name}</strong>, customer: first })}
             </span>
           </p>
           <div className="flex flex-wrap gap-2 ps-7">
-            <a href={`#last-${c.id}`} onClick={() => dispatch({ type: "dismissPhoneReply", id: c.id })} className={buttonClass("secondary", "sm")}>Review reply</a>
-            <button type="button" className={buttonClass("ghost", "sm")} onClick={() => dispatch({ type: "dismissPhoneReply", id: c.id })}>Send anyway</button>
+            <a href={`#last-${c.id}`} onClick={() => dispatch({ type: "dismissPhoneReply", id: c.id })} className={buttonClass("secondary", "sm")}>{t("reviewReply")}</a>
+            <button type="button" className={buttonClass("ghost", "sm")} onClick={() => dispatch({ type: "dismissPhoneReply", id: c.id })}>{t("sendAnyway")}</button>
           </div>
         </div>
       )}
@@ -208,7 +207,7 @@ export function Composer({ c, actions, people, me, now, mode, setMode, replyRef,
       {notSent && !noting && (
         <p role="status" className="mx-auto flex w-full max-w-3xl gap-2 px-1 text-sm text-muted">
           <Info size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
-          Sample chat, so nothing was sent. Replies go out once your {c.channel === "email" ? "Outlook mailbox" : "WhatsApp number"} is connected.
+          {c.channel === "email" ? t("notSentEmail") : t("notSentWhatsapp")}
         </p>
       )}
     </div>

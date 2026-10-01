@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { ChatsCircle, CheckSquare, Gear, House, Handshake, SignOut, UsersThree } from "@phosphor-icons/react";
+import { useT } from "@/i18n/client";
+import type { TFor } from "@/i18n/types";
 
 interface Props {
   /** Where the app lives: `/w/<slug>` for real workspaces, `/preview/<person>` for the design preview. */
@@ -20,16 +22,17 @@ interface Props {
 }
 
 /* Five to six destinations, each with an icon AND a label. Nothing is icon-only. */
-function navItems(base: string) {
+function navItems(base: string, t: TFor<"nav">) {
   return [
-    { href: base, label: "Home", Icon: House, match: (p: string) => p === base },
-    { href: `${base}/inbox`, label: "Inbox", Icon: ChatsCircle, match: (p: string) => p.startsWith(`${base}/inbox`) },
-    { href: `${base}/customers`, label: "Customers", Icon: UsersThree, match: (p: string) => p.startsWith(`${base}/customers`) },
-    { href: `${base}/deals`, label: "Deals", Icon: Handshake, match: (p: string) => p.startsWith(`${base}/deals`) },
-    { href: `${base}/tasks`, label: "Tasks", Icon: CheckSquare, match: (p: string) => p.startsWith(`${base}/tasks`) },
+    { key: "home", href: base, label: t("home"), Icon: House, match: (p: string) => p === base },
+    { key: "inbox", href: `${base}/inbox`, label: t("inbox"), Icon: ChatsCircle, match: (p: string) => p.startsWith(`${base}/inbox`) },
+    { key: "customers", href: `${base}/customers`, label: t("customers"), Icon: UsersThree, match: (p: string) => p.startsWith(`${base}/customers`) },
+    { key: "deals", href: `${base}/deals`, label: t("deals"), Icon: Handshake, match: (p: string) => p.startsWith(`${base}/deals`) },
+    { key: "tasks", href: `${base}/tasks`, label: t("tasks"), Icon: CheckSquare, match: (p: string) => p.startsWith(`${base}/tasks`) },
     {
+      key: "settings",
       href: `${base}/settings`,
-      label: "Settings",
+      label: t("settings"),
       Icon: Gear,
       match: (p: string) => ["settings", "members", "teams", "roles", "whatsapp", "account"].some((s) => p.startsWith(`${base}/${s}`)),
     },
@@ -38,9 +41,11 @@ function navItems(base: string) {
 
 export function AppShell({ base, workspaceName, memberName, roleName, signOut, footer, banner, children }: Props) {
   const path = usePathname();
-  const items = navItems(base);
+  const t = useT("nav");
+  const common = useT("common");
+  const items = navItems(base, t);
   // Phones get the five most-used destinations; Tasks is reachable from Home.
-  const mobile = items.filter((i) => i.label !== "Tasks");
+  const mobile = items.filter((i) => i.key !== "tasks");
   // Work screens with their own panes (the inbox) fill the window instead of sitting in a page column.
   const fullBleed = path.startsWith(`${base}/inbox`);
   const rail = fullBleed;
@@ -49,11 +54,11 @@ export function AppShell({ base, workspaceName, memberName, roleName, signOut, f
   return (
     <div className={`min-h-dvh lg:grid ${rail ? "lg:grid-cols-[64px_1fr]" : "lg:grid-cols-[256px_1fr]"}`}>
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-50 focus:rounded focus:bg-surface focus:p-3">
-        Skip to content
+        {common("skipToContent")}
       </a>
 
       {/* Desktop side menu. In the Inbox it shrinks to an icon rail so the conversation gets the room (decided 2026-09-30). */}
-      <aside className="hidden border-e border-border bg-surface lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col" aria-label="Main">
+      <aside className="hidden border-e border-border bg-surface lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col" aria-label={t("main")}>
         <div className={`flex items-center gap-3 ${rail ? "h-14 justify-center" : "px-5 py-5"}`}>
           <span className="bg-hero grid size-9 shrink-0 place-items-center rounded-full font-serif text-lg text-white" aria-hidden={!rail} title={rail ? workspaceName : undefined}>
             {initial}
@@ -81,13 +86,13 @@ export function AppShell({ base, workspaceName, memberName, roleName, signOut, f
         </nav>
         {rail ? (
           <div className="mt-auto grid justify-items-center gap-2 pb-4">
-            <span className="grid size-9 place-items-center rounded-full bg-primary-soft text-sm font-semibold text-primary" title={`${memberName}, ${roleName}`}>
+            <span className="grid size-9 place-items-center rounded-full bg-primary-soft text-sm font-semibold text-primary" title={common("nameRole", { name: memberName, role: roleName })}>
               {memberName.trim().charAt(0).toUpperCase()}
-              <span className="sr-only">{memberName}, {roleName}</span>
+              <span className="sr-only">{common("nameRole", { name: memberName, role: roleName })}</span>
             </span>
             {signOut && (
               <form action={signOut}>
-                <button type="submit" className="grid size-11 place-items-center rounded-full text-muted hover:bg-surface-2 hover:text-text" aria-label="Sign out" title="Sign out">
+                <button type="submit" className="grid size-11 place-items-center rounded-full text-muted hover:bg-surface-2 hover:text-text" aria-label={t("signOut")} title={t("signOut")}>
                   <SignOut size={20} aria-hidden="true" />
                 </button>
               </form>
@@ -103,7 +108,7 @@ export function AppShell({ base, workspaceName, memberName, roleName, signOut, f
             {signOut && (
               <form action={signOut}>
                 <button type="submit" className="flex min-h-11 items-center gap-2 text-sm text-muted hover:text-text">
-                  <SignOut size={20} aria-hidden="true" /> Sign out
+                  <SignOut size={20} aria-hidden="true" /> {t("signOut")}
                 </button>
               </form>
             )}
@@ -126,7 +131,7 @@ export function AppShell({ base, workspaceName, memberName, roleName, signOut, f
 
       {/* Phone bottom bar: five destinations */}
       <nav
-        aria-label="Main"
+        aria-label={t("main")}
         className="fixed inset-x-0 bottom-0 z-10 grid grid-cols-5 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden"
       >
         {mobile.map(({ href, label, Icon, match }) => {

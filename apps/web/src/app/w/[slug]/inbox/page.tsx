@@ -3,8 +3,11 @@ import { CONVERSATION_PERMISSIONS, type ConversationPermission, type Scope } fro
 import { Inbox } from "@/components/inbox/inbox";
 import { buildSampleInbox } from "@/components/inbox/sample-data";
 import { loadWorkspace } from "@/lib/workspace";
+import { getT } from "@/i18n/server";
 
-export const metadata = { title: "Inbox" };
+export async function generateMetadata() {
+  return { title: (await getT("nav"))("inbox") };
+}
 
 type Scopes = Partial<Record<ConversationPermission, Scope>>;
 const ALL: Scopes = Object.fromEntries(CONVERSATION_PERMISSIONS.map((k) => [k, "all"]));

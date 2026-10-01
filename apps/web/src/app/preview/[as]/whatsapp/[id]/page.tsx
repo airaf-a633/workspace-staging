@@ -3,8 +3,11 @@ import { SettingsFrame } from "@/components/settings-frame";
 import { NumberDetail } from "@/components/whatsapp/number-views";
 import { sampleNumbers } from "@/components/whatsapp/numbers";
 import { PREVIEW_TEAMS, previewMembers, previewNow, previewScope } from "@/lib/preview";
+import { getT } from "@/i18n/server";
 
-export const metadata = { title: "WhatsApp number" };
+export async function generateMetadata() {
+  return { title: (await getT("numbers"))("metaTitle") };
+}
 
 export default async function PreviewNumber(props: PageProps<"/preview/[as]/whatsapp/[id]">) {
   const { as, id } = await props.params;

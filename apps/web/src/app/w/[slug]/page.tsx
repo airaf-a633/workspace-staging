@@ -1,6 +1,7 @@
 import { SetupChecklist } from "@/components/setup-checklist";
 import { loadWorkspace } from "@/lib/workspace";
 import { setupSteps, type TeamShape } from "@/lib/setup";
+import { getT } from "@/i18n/server";
 
 /*
  * Home before WhatsApp connects: the five-step setup checklist (PRODUCT_DECISIONS §14).
@@ -14,18 +15,19 @@ export default async function WorkspaceHome(props: PageProps<"/w/[slug]">) {
   const shape = (ws?.team_shape ?? null) as TeamShape;
   const { count: memberCount } = await supabase.from("members").select("id", { count: "exact", head: true }).eq("workspace_id", workspace.id).eq("status", "active");
   const firstName = me.display_name.split(" ")[0];
-  const steps = setupSteps({ shape, memberCount: memberCount ?? 0, connected: false, base: `/w/${slug}` });
+  const t = await getT("home");
+  const steps = setupSteps(await getT("setup"), await getT("common"), { shape, memberCount: memberCount ?? 0, connected: false, base: `/w/${slug}` });
 
   return (
     <>
       <header className="grid gap-2">
-        <h1 className="display text-4xl sm:text-5xl">Welcome, {firstName}</h1>
-        <p className="text-muted">Let&apos;s get {workspace.name} ready. Skip anything you don&apos;t need; you can come back any time.</p>
+        <h1 className="display text-4xl sm:text-5xl">{t("welcome", { name: firstName })}</h1>
+        <p className="text-muted">{t("welcomeBody", { workspace: workspace.name })}</p>
       </header>
       <SetupChecklist steps={steps} />
       {shape === "delivery" && (
         <p className="rounded-[var(--radius-panel)] bg-surface-2 p-4 text-sm">
-          <strong className="font-medium">Orders &amp; Delivery.</strong> You said you deliver orders. This add-on handles dispatch, a rider page and end-of-day cash. It becomes available after launch.
+          {t.rich("deliveryNote", { title: <strong className="font-medium">{t("deliveryTitle")}</strong> })}
         </p>
       )}
     </>

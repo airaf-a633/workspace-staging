@@ -6,8 +6,12 @@ import { Card, Notice } from "@/components/ui/surface";
 import { SectionHeader, SettingsFrame } from "@/components/settings-frame";
 import { can, loadWorkspace } from "@/lib/workspace";
 import { createRole } from "./actions";
+import { errorText, permissionLabel, roleLabel } from "@/i18n/labels";
+import { getT } from "@/i18n/server";
 
-const LABEL: Record<string, string> = { none: "—", own: "Own", team: "Team", all: "All" };
+export async function generateMetadata() {
+  return { title: (await getT("rolesPage"))("metaTitle") };
+}
 
 export default async function Roles(props: PageProps<"/w/[slug]/roles">) {
   const { slug } = await props.params;
@@ -22,13 +26,16 @@ export default async function Roles(props: PageProps<"/w/[slug]/roles">) {
   ]);
   const scope = new Map(grants?.map((g) => [`${g.role_id}:${g.permission}`, g.scope]));
   const custom = roles?.filter((r) => !r.template_key) ?? [];
+  const t = await getT("rolesPage");
+  const tAll = await getT();
+  const error = errorText(tAll, "rolesPage", sp.error, { permission: permissionLabel(tAll, String(sp.perm ?? "")) });
 
   return (
     <SettingsFrame base={`/w/${slug}`} active="roles" isOwner>
-      <SectionHeader title="Roles" description="The six built-in roles are fixed. Make a custom role by copying one, then change what it can do." />
-      {typeof sp.error === "string" && <Notice tone="error" title={sp.error} />}
+      <SectionHeader title={t("title")} description={t("description")} />
+      {error && <Notice tone="error" title={error} />}
 
-      <Card title="Custom roles">
+      <Card title={t("custom")}>
         {custom.length > 0 ? (
           <ul className="divide-y divide-border">
             {custom.map((r) => (
@@ -38,40 +45,36 @@ export default async function Roles(props: PageProps<"/w/[slug]/roles">) {
             ))}
           </ul>
         ) : (
-          <p className="text-muted">None yet. Most businesses don&apos;t need one.</p>
+          <p className="text-muted">{t("noneYet")}</p>
         )}
         <form action={createRole} className="grid gap-3 border-t border-border pt-4 sm:max-w-sm">
           <input type="hidden" name="slug" value={slug} />
-          <TextInput label="New role name" name="name" placeholder="e.g. Branch lead" required />
-          <SelectInput label="Start from" name="from" defaultValue="agent">
-            <option value="sales_manager">Sales manager</option>
-            <option value="support_manager">Support manager</option>
-            <option value="ops_manager">Operations manager</option>
-            <option value="agent">Agent</option>
-            <option value="viewer">Viewer</option>
+          <TextInput label={t("newName")} name="name" placeholder={t("newPlaceholder")} required />
+          <SelectInput label={t("startFrom")} name="from" defaultValue="agent">
+            {(["sales_manager", "support_manager", "ops_manager", "agent", "viewer"] as const).map((k) => <option key={k} value={k}>{tAll(`roles.${k}`)}</option>)}
           </SelectInput>
-          <Submit pending="Creating…">Create role</Submit>
+          <Submit pending={tAll("onboarding.creating")}>{t("create")}</Submit>
         </form>
       </Card>
 
-      <Card title="What each role can do" description="All = the whole workspace. Team = their teams. Own = what they hold or own.">
+      <Card title={t("matrixTitle")} description={t("matrixHelp")}>
         <div className="-mx-6 overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
             <thead>
               <tr className="border-b border-border">
-                <th scope="col" className="sticky start-0 bg-surface px-6 py-2 text-start font-medium">Permission</th>
-                {roles?.map((r) => <th key={r.id} scope="col" className="px-3 py-2 text-start font-medium whitespace-nowrap">{r.name}</th>)}
+                <th scope="col" className="sticky start-0 bg-surface px-6 py-2 text-start font-medium">{t("permission")}</th>
+                {roles?.map((r) => <th key={r.id} scope="col" className="px-3 py-2 text-start font-medium whitespace-nowrap">{roleLabel(tAll, r.name)}</th>)}
               </tr>
             </thead>
             <tbody>
               {perms?.map((p) => (
                 <tr key={p.key} className="border-b border-border last:border-0">
                   <th scope="row" className="sticky start-0 bg-surface px-6 py-2 text-start font-normal">
-                    {p.description}{p.owner_only && <span className="text-muted"> (owner only)</span>}
+                    {permissionLabel(tAll, p.key)}{p.owner_only && <span className="text-muted"> {t("ownerOnly")}</span>}
                   </th>
                   {roles?.map((r) => {
                     const s = scope.get(`${r.id}:${p.key}`) ?? "none";
-                    return <td key={r.id} className={`px-3 py-2 ${s === "none" ? "text-muted" : ""}`}>{LABEL[s]}</td>;
+                    return <td key={r.id} className={`px-3 py-2 ${s === "none" ? "text-muted" : ""}`}>{s === "none" ? "—" : t(`cell.${s as "own" | "team" | "all"}`)}</td>;
                   })}
                 </tr>
               ))}
