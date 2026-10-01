@@ -48,6 +48,43 @@ Decided 2026-10-01. The preview shows all of it with scripted answers; no AI mod
 - **Agent names:** the owner can name agents (e.g. "Noor"). A named agent is always marked as AI, to staff and to customers.
 - **Voice:** voice input for Ask AI at launch (+1 credit per spoken question). The preview uses the browser's speech recognition; the real app uses the transcription model.
 
+## Decided in the third round: knowledge, customer-facing AI and edge cases (2026-10-01)
+
+### Business knowledge and the receptionist
+
+- **Who keeps knowledge current:** the owner and managers edit it. AI proposes new FAQ entries from questions staff answered more than once, and the owner approves them before AI uses them.
+- **When AI doesn't know:** it replies "Our team will reply when we open at {time}", marks the chat for the morning and offers the question as a new FAQ entry.
+- **AI label for customers:** every AI-sent WhatsApp reply starts with a first line: "🤖 {Business} assistant (AI)". If the owner named the agent, the line becomes "🤖 Noor, {Business} assistant (AI)".
+- **What the receptionist may send:**
+  - text;
+  - the location and opening hours;
+  - catalogue photos with prices;
+  - order status, only to the number that placed the order.
+
+  Each can be switched off per workspace, down to text-only.
+- **Prices:** AI quotes catalogue prices only. It never promises discounts or delivery dates. If a customer quotes a wrong AI price back, the exact message goes to the owner and staff decide case by case. The business isn't bound by it.
+
+### Quality
+
+- **Feedback:** a thumbs-down on any AI output, with an optional reason (wrong fact, wrong tone, wrong language). The owner gets a weekly list and can turn wrong facts into knowledge fixes.
+- **Agent stats** in Settings › AI, per agent, this month: drafts approved as-is, edited and skipped, plus credits used.
+
+### Edge cases
+
+- **A person and AI at once:** if anyone on the team replied in the last 30 minutes (inbox or phone app), AI stays quiet in that chat.
+- **Sensitive messages** (health complaints, legal threats, payment disputes, abuse): AI never answers. It tags the chat Sensitive and alerts the owner and the team's manager straight away, even after hours.
+- **Other languages:** AI replies in the customer's language inside the 24-hour window, and staff see a translation. Templates fall back to English.
+- **Someone leaves:** their pending AI drafts are cancelled. Automations they created move to the owner and keep running, with a note saying where they came from.
+
+### Frontend still to build for these
+
+- the thumbs-down with a reason on every AI output;
+- agent stats in Settings › AI;
+- per-workspace switches for what the receptionist may send;
+- FAQ suggestions waiting for approval;
+- the Sensitive tag and its alert in the inbox;
+- the AI label preview in Settings.
+
 ## What's not built yet
 
 - No real model, credit metering, scheduling or audit log. The preview's answers are scripted from the sample data (`lib/ai-sample.ts`, `components/ai/*`).
