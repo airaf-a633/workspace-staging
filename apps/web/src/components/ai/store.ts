@@ -17,10 +17,12 @@ export interface Recipe {
 interface State {
   recipes: Recipe[];
   spent: number;
+  /** Names the owner gave agents ("Noor"). Customers still see them marked as AI. */
+  names: Partial<Record<string, string>>;
 }
 
 const KEY = "preview-ai";
-const EMPTY: State = { recipes: [], spent: 0 };
+const EMPTY: State = { recipes: [], spent: 0, names: {} };
 const listeners = new Set<() => void>();
 let cache: State | null = null;
 
@@ -63,6 +65,11 @@ export function addRecipe(key: Recipe["key"]) {
   const s = read();
   if (s.recipes.some((r) => r.key === key)) return write({ ...s, recipes: s.recipes.map((r) => (r.key === key ? { ...r, on: true } : r)) });
   write({ ...s, recipes: [...s.recipes, { id: `${key}-${Date.now()}`, key, on: true, createdAt: Date.now() }] });
+}
+
+export function nameAgent(agent: string, name: string) {
+  const s = read();
+  write({ ...s, names: { ...s.names, [agent]: name.trim().slice(0, 30) || undefined } });
 }
 
 export function toggleRecipe(id: string) {

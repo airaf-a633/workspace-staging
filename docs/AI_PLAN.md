@@ -28,34 +28,25 @@ Decided 2026-10-01. The preview shows all of it with scripted answers; no AI mod
 - **Settings › AI:** agents on or off, automations, business knowledge (hours, prices from the store, FAQ, tone), credits, privacy.
 - **Meta's rule (since 15 January 2026):** general-purpose AI chatbots are banned on the WhatsApp Business Platform. Business-specific assistants are allowed. So the receptionist answers only from the workspace's own business knowledge and hands anything else to a person.
 
-## Decisions I need from you
+## Decided in the second round (2026-10-01)
 
 ### Backend
 
-1. **Which AI model and provider?** The privacy policy already names Anthropic. Options:
-   - one provider for everything;
-   - a cheap, fast model for tagging and translation, and a stronger one for Ask AI and agents.
-
-   I recommend the second; the cost difference is large at volume.
-2. **Data residency for AI.** Our database is in Frankfurt, but the model provider may process data in the US. Is a zero-retention agreement enough for your UAE customers, or do some need EU or UAE processing? This decides providers and price.
-3. **How AI finds the right records:**
-   - search over the workspace's chats and records at the moment someone asks; or
-   - a pre-built index per workspace (faster, more storage, needs deleting when a customer is erased under PDPL).
-
-   I recommend starting with on-the-moment search, adding the index later.
-4. **Where agents run:** the Fly.io worker on a schedule (sales follow-up each morning, triage on every new chat). Is once a morning right for briefings and follow-ups, or should they run several times a day? This changes credit use.
-5. **Who pays for agents' credits?** Agent runs cost credits too. Do they come from the plan's monthly credits (simple, but can surprise the owner) or a separate agent allowance?
-6. **Automation limits:** how many active recipes per plan, and what happens when credits run out: pause AI only, or pause the automations as well?
-7. **Audit:** I suggest logging every AI action (who asked, what it saw, what changed) in the audit log, kept as long as other audit entries. Is that OK given the storage cost?
-8. **Customer opt-out:** if a customer says "I want a human", should after-hours AI stop for that customer for good?
+- **Models:** two tiers from one provider. A fast, cheap model for tagging, translation and transcripts; a stronger one for Ask AI and agents.
+- **Data region:** any region, with zero retention and no training on customer data. Stated in the privacy policy.
+- **Agent credits:** paid from the plan's monthly credits. The owner sets a monthly cap per agent; at the cap the agent pauses and says so.
+- **Schedule:** triage runs on every new chat. Sales follow-up and the daily briefing run once a morning at 08:00 Dubai time.
+- **Finding information:** search the workspace's records and recent chats at the moment someone asks. A search index comes later if answers are slow. Erasing a customer (PDPL) stays simple.
+- **Audit log:** every AI action is logged (who asked, what changed or was sent), without the full prompt text.
+- **Automation limits:** active recipes are capped at Starter 3, Growth 10, Business 30. When credits run out, recipes with an AI step pause and the owner is told.
+- **"I want a human":** when a customer asks for a person, after-hours AI stops for that customer for good. It's marked on their profile, and staff can switch it back on.
 
 ### Frontend
 
-1. **Voice:** should people be able to talk to Ask AI on the phone (voice in, text out)? It's useful in shops, but it means an extra transcription cost.
-2. **Agent names:** keep functional names ("Sales follow-up"), or let the owner name them ("Noor, our assistant")? Names feel friendlier, but customers may mistake them for staff.
-3. **Approve in bulk:** should "Approve all 5 follow-ups" exist, or one at a time only (safer, slower)?
-4. **Home placement:** agents sit above "Needs you now" today. Should they go below it, so customers waiting always come first?
-5. **Arabic AI replies:** AI writes to customers in the customer's language. Should staff always see a translation of what AI suggested (as in Lina's chat), or only on request?
+- **Bulk approval:** allowed, through a review screen that lists every draft before one Send button.
+- **Home order:** agents sit below "Needs you now". Waiting customers come first.
+- **Agent names:** the owner can name agents (e.g. "Noor"). A named agent is always marked as AI, to staff and to customers.
+- **Voice:** voice input for Ask AI at launch (+1 credit per spoken question). The preview uses the browser's speech recognition; the real app uses the transcription model.
 
 ## What's not built yet
 

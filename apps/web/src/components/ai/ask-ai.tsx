@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ArrowUp, Check, Lightning, Sparkle, X } from "@phosphor-icons/react";
+import { ArrowUp, Check, Lightning, Microphone, Sparkle, X } from "@phosphor-icons/react";
 import { buttonClass } from "@/components/ui/button";
-import { useFormat, useT } from "@/i18n/client";
+import { useFormat, useLocale, useT } from "@/i18n/client";
 import type { AiWorld } from "@/lib/ai-sample";
 import { AiTag } from "./ai-tag";
 import { addRecipe, spend, useAiState, type Recipe } from "./store";
@@ -61,6 +61,36 @@ export function AskAi({ world, open, onClose }: { world: AiWorld | null; open: b
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const seq = useRef(0);
+  const locale = useLocale();
+  const [listening, setListening] = useState(false);
+  const [voiceNote, setVoiceNote] = useState<string | null>(null);
+
+  /**
+   * Hold-free voice input (decided 2026-10-01: at launch). The preview uses the browser's own speech
+   * recognition where it exists; the real app sends audio to the transcription model (+1 credit).
+   */
+  function listen() {
+    type Rec = { lang: string; interimResults: boolean; onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void; onend: () => void; onerror: () => void; start: () => void };
+    const w = window as unknown as { SpeechRecognition?: new () => Rec; webkitSpeechRecognition?: new () => Rec };
+    const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
+    if (!Ctor) {
+      setVoiceNote(t("voiceUnsupported"));
+      return;
+    }
+    const rec = new Ctor();
+    rec.lang = locale === "ar" ? "ar-AE" : "en-GB";
+    rec.interimResults = true;
+    rec.onresult = (e) => setText(Array.from(e.results).map((r) => r[0].transcript).join(" "));
+    rec.onend = () => setListening(false);
+    rec.onerror = () => {
+      setListening(false);
+      setVoiceNote(t("voiceError"));
+    };
+    setVoiceNote(null);
+    setListening(true);
+    spend(1);
+    rec.start();
+  }
   const { spent } = useAiState();
 
   useEffect(() => {
@@ -183,11 +213,21 @@ export function AskAi({ world, open, onClose }: { world: AiWorld | null; open: b
                 placeholder={t("placeholder")}
                 className="min-w-0 flex-1 resize-none bg-transparent text-base placeholder:text-muted focus:outline-none"
               />
+              <button
+                type="button"
+                onClick={listen}
+                aria-pressed={listening}
+                className={`grid size-9 shrink-0 place-items-center rounded-full ${listening ? "animate-pulse bg-fail text-white" : "text-ai hover:bg-ai-soft"}`}
+                aria-label={listening ? t("listening") : t("voice")}
+                title={listening ? t("listening") : t("voice")}
+              >
+                <Microphone size={18} weight={listening ? "fill" : "regular"} aria-hidden="true" />
+              </button>
               <button type="submit" disabled={!text.trim() || thinking} className="grid size-9 shrink-0 place-items-center rounded-full bg-ai text-white disabled:opacity-40" aria-label={t("send")}>
                 <ArrowUp size={18} weight="bold" aria-hidden="true" />
               </button>
             </div>
-            <p className="text-xs text-muted">{t("footer", { count: ASK_COST })}</p>
+            <p className="text-xs text-muted" role={voiceNote ? "status" : undefined}>{voiceNote ?? (listening ? t("listening") : t("footer", { count: ASK_COST }))}</p>
           </form>
         )}
       </aside>

@@ -173,8 +173,6 @@ export async function ManagerHome({
         {setup && <SetupChip {...setup} />}
       </header>
 
-      {briefings}
-
       <section aria-labelledby="needs" className="grid gap-3">
         <div className="flex items-baseline justify-between gap-3">
           <h2 id="needs" className="text-lg font-semibold">{t("needsNow")}</h2>
@@ -196,6 +194,9 @@ export async function ManagerHome({
           </div>
         )}
       </section>
+
+      {/* Agents come after people waiting (decided 2026-10-01). */}
+      {briefings}
 
       <section aria-labelledby="numbers" className="grid gap-3">
         <div className="flex items-baseline justify-between gap-3">

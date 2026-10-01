@@ -9,6 +9,7 @@ import { useFormat, useT } from "@/i18n/client";
 import type { AiWorld } from "@/lib/ai-sample";
 import { AiTag } from "./ai-tag";
 import type { AgentKey } from "./ai-settings";
+import { useAiState } from "./store";
 
 /** Which agents report to which role (decided 2026-10-01). Each works with that person's own permissions. */
 const FOR: Record<RoleTemplateKey, AgentKey[]> = {
@@ -42,6 +43,7 @@ function Card({ agent, world }: { agent: AgentKey; world: AiWorld }) {
   const t = useT("briefings");
   const ai = useT("aiSettings");
   const [open, setOpen] = useState(agent === "briefing");
+  const { names } = useAiState();
   const headline =
     agent === "sales" ? t("sales.headline", { count: world.quietDeals.length })
     : agent === "triage" ? t("triage.headline", { count: world.unclaimed.length })
@@ -52,7 +54,7 @@ function Card({ agent, world }: { agent: AgentKey; world: AiWorld }) {
     <article className="grid content-start gap-3 rounded-[var(--radius-panel)] bg-surface p-4 shadow-[var(--shadow-1)] ring-1 ring-ai/25">
       <header className="flex items-start justify-between gap-3">
         <div className="grid gap-1">
-          <p className="flex flex-wrap items-center gap-2 text-sm text-muted">{ai(`agents.${agent}.name`)} <AiTag /></p>
+          <p className="flex flex-wrap items-center gap-2 text-sm text-muted">{names[agent] ? <><bdi className="font-medium text-text">{names[agent]}</bdi> · {ai(`agents.${agent}.name`)}</> : ai(`agents.${agent}.name`)} <AiTag /></p>
           <p className="font-medium">{headline}</p>
         </div>
         <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className={buttonClass("ghost", "sm", "!px-2")} aria-label={open ? t("hide") : t("show")}>
@@ -64,15 +66,48 @@ function Card({ agent, world }: { agent: AgentKey; world: AiWorld }) {
   );
 }
 
+/** "Khalifa" for a person, the full name for a business ("Al Noor Trading", never "Al"). */
+const greetName = (n: string) => (/trading|llc|clinic|group|company|co|est\.?$/i.test(n) ? n : n.split(" ")[0]);
+
 /** One drafted follow-up per quiet quote: approve, edit or skip. Nothing is sent without a click. */
 function SalesDrafts({ world }: { world: AiWorld }) {
   const t = useT("briefings");
   const [state, setState] = useState<Record<string, "sent" | "skipped" | "editing" | undefined>>({});
   const [drafts, setDrafts] = useState<Record<string, string>>(() =>
-    Object.fromEntries(world.quietDeals.map((d) => [d.id, t("sales.draft", { name: d.customer.split(" ")[0], title: d.title })])),
+    Object.fromEntries(world.quietDeals.map((d) => [d.id, t("sales.draft", { name: greetName(d.customer), title: d.title })])),
   );
+  const pending = world.quietDeals.filter((d) => !state[d.id] || state[d.id] === "editing");
+  const [reviewing, setReviewing] = useState(false);
+  const sendAll = () => {
+    setState((s) => ({ ...s, ...Object.fromEntries(pending.map((d) => [d.id, "sent" as const])) }));
+    setReviewing(false);
+  };
+  if (reviewing) {
+    return (
+      <div className="grid gap-3 border-t border-border pt-3 text-sm">
+        <p className="font-medium">{t("sales.reviewTitle", { count: pending.length })}</p>
+        <ol className="grid gap-2">
+          {pending.map((d) => (
+            <li key={d.id} className="grid gap-1 rounded-[var(--radius-control)] bg-ai-soft/60 px-3 py-2">
+              <bdi className="font-medium">{d.customer}</bdi>
+              <span dir="auto">{drafts[d.id]}</span>
+            </li>
+          ))}
+        </ol>
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={() => setReviewing(false)} className={buttonClass("ghost", "sm")}>{t("sales.back")}</button>
+          <button type="button" onClick={sendAll} className={buttonClass("primary", "sm")}>{t("sales.sendAll", { count: pending.length })}</button>
+        </div>
+      </div>
+    );
+  }
   return (
     <ul className="grid gap-3">
+      {pending.length > 1 && (
+        <li className="flex justify-end">
+          <button type="button" onClick={() => setReviewing(true)} className={buttonClass("secondary", "sm")}>{t("sales.approveAll", { count: pending.length })}</button>
+        </li>
+      )}
       {world.quietDeals.map((d) => {
         const s = state[d.id];
         return (

@@ -5,7 +5,7 @@ import { Lightning, Trash } from "@phosphor-icons/react";
 import { buttonClass } from "@/components/ui/button";
 import { useFormat, useT } from "@/i18n/client";
 import { AiTag } from "./ai-tag";
-import { removeRecipe, toggleRecipe, useAiState } from "./store";
+import { nameAgent, removeRecipe, toggleRecipe, useAiState } from "./store";
 
 export const AGENTS = ["sales", "triage", "receptionist", "briefing"] as const;
 export type AgentKey = (typeof AGENTS)[number];
@@ -50,7 +50,7 @@ export function AiSettings({ isOwner, credits }: { isOwner: boolean; credits: { 
   const fmt = useFormat();
   const [agents, setAgents] = useState(START);
   const [tone, setTone] = useState("friendly");
-  const { recipes, spent } = useAiState();
+  const { recipes, spent, names } = useAiState();
   const used = credits.total - credits.left + spent;
   const card = "rounded-[var(--radius-panel)] bg-surface shadow-[var(--shadow-1)] ring-1 ring-border";
 
@@ -66,12 +66,25 @@ export function AiSettings({ isOwner, credits }: { isOwner: boolean; credits: { 
                 <span className="flex flex-wrap items-center gap-2 font-medium">{t(`agents.${k}.name`)} <AiTag /></span>
                 <span className="text-sm text-muted">{t(`agents.${k}.does`)}</span>
                 <span className="text-xs text-muted">{t(`agents.${k}.for`)} · {agents[k] ? t("agents.runs", { count: RUNS[k] }) : t("agents.off")}</span>
+                {isOwner && (
+                  <label className="mt-1 flex flex-wrap items-center gap-2 text-sm">
+                    <span className="text-muted">{t("agents.nameLabel")}</span>
+                    <input
+                      defaultValue={names[k] ?? ""}
+                      onBlur={(e) => nameAgent(k, e.target.value)}
+                      maxLength={30}
+                      dir="auto"
+                      placeholder={t("agents.namePlaceholder")}
+                      className="min-h-9 w-44 rounded-[var(--radius-control)] border border-input bg-surface px-2.5 text-sm"
+                    />
+                  </label>
+                )}
               </span>
               <Toggle on={agents[k]} disabled={!isOwner} label={t(`agents.${k}.name`)} onChange={() => setAgents((a) => ({ ...a, [k]: !a[k] }))} />
             </li>
           ))}
         </ul>
-        <p className="text-xs text-muted">{t("agents.approval")}</p>
+        <p className="text-xs text-muted">{t("agents.approval")} {t("agents.nameRule")}</p>
       </Section>
 
       <Section title={t("recipes.title")} description={t("recipes.description")}>
