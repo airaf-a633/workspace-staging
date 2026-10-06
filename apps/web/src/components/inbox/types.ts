@@ -1,4 +1,5 @@
 import type { Scope, ConversationPermission } from "@app/domain";
+import type { ChannelKey } from "@/components/channels/catalog";
 
 /** Shapes follow the M2 data model (docs/milestones/M2-plan.md) so real rows can replace the sample later. */
 
@@ -19,7 +20,8 @@ export interface Team {
 export interface ViewerInfo {
   memberId: string;
   teamIds: string[];
-  scopes: Partial<Record<ConversationPermission, Scope>>;
+  /** Conversation permissions, plus numbers.manage for reconnecting a broken channel. */
+  scopes: Partial<Record<ConversationPermission | "numbers.manage", Scope>>;
 }
 
 export type MediaType = "photo" | "video" | "voice" | "document" | "location" | "contact" | "sticker" | "unsupported";
@@ -72,6 +74,16 @@ export interface Message {
   deleted?: boolean;
   imported?: boolean;
   replyTo?: { author: string; text: string };
+  /** Email: who else it went to, and the earlier mail it quotes (folded away until asked for). */
+  email?: { to?: string; cc?: string[]; quoted?: string };
+  /** Instagram and Messenger: the customer answered or mentioned one of your stories. */
+  story?: { kind: "reply" | "mention"; caption: string };
+  /** Voice: a phone call rather than a message. */
+  call?: { direction: "in" | "out"; missed?: boolean; duration?: string; recording?: string; voicemail?: string };
+  /** Slack and Discord: replies inside this message's thread. */
+  thread?: { replies: number; lastName: string; lastText: string };
+  /** WhatsApp: sent as an approved template (outside the 24-hour window). */
+  template?: string;
   /** AI translation of a customer message into each app language, shown on request. */
   translation?: { en?: string; ar?: string };
   reaction?: string;
@@ -108,14 +120,44 @@ export interface Order {
   source: "Shopify" | "WooCommerce" | "Orders pack";
 }
 
-export interface Contact {
+/** One way to reach a contact: the channel, and their handle there (number, address, @name). */
+export interface Identity {
+  ch: ChannelKey;
+  handle: string;
+}
+
+/** Relay thinks another contact is the same person; a person confirms before anything merges (decided 2026-10-07). */
+export interface MergeSuggestion {
   name: string;
-  phone: string;
+  ch: ChannelKey;
+  handle: string;
+  reason: "sameEmail" | "samePhone" | "sameName";
+}
+
+/** An earlier conversation with the same contact, shown in the side panel. */
+export interface PastConversation {
+  id: string;
+  ch: ChannelKey;
+  at: number;
+  summary: string;
+  /** Opens in this inbox when it's one of the loaded conversations. */
+  conversationId?: string;
+}
+
+export interface Contact {
+  /** Shared by every conversation with this person, across channels. */
+  id: string;
+  name: string;
+  phone?: string;
   email?: string;
   company?: string;
+  /** City and country, as the customer gave it or the channel reported it. */
+  location?: string;
   language: string;
   tags: string[];
-  possibleDuplicate?: string;
+  identities: Identity[];
+  merge?: MergeSuggestion;
+  past?: PastConversation[];
   deals: Deal[];
   tasks: Task[];
   orders: Order[];
@@ -123,8 +165,15 @@ export interface Contact {
 
 export interface Conversation {
   id: string;
-  channel: "whatsapp" | "email";
+  channel: ChannelKey;
+  /** The connected inbox it arrived in (one WhatsApp number, one email address, one Instagram account…). */
+  inboxId: string;
   contact: Contact;
+  labels?: string[];
+  /** Email: the thread's subject. Slack and Discord: the channel it was posted in. */
+  subject?: string;
+  /** Website chat: where the visitor is and whether they're still on the site. */
+  visitor?: { page: string; browser: string; online: boolean };
   teamId: string;
   holderId: string | null;
   /** People who have held the chat, in order. The last one is the holder. */
@@ -144,10 +193,30 @@ export interface Conversation {
   sensitive?: "payment" | "legal" | "health" | "abuse";
 }
 
+/** A connected channel account: Chatwoot calls these inboxes, and so does the sidebar. */
+export interface ChannelInbox {
+  id: string;
+  channel: ChannelKey;
+  /** The name the business gave it. */
+  name: string;
+  /** The number, address, page or handle customers write to. */
+  address: string;
+  /** Why it can't send right now. Shown in the inbox, on the owner's home and in the reply box. */
+  broken?: "tokenExpired" | "domainBounced" | "numberFlagged";
+}
+
+export interface Label {
+  id: string;
+  name: string;
+  color: string;
+}
+
 export interface InboxData {
   now: number;
   people: Person[];
   teams: Team[];
+  inboxes: ChannelInbox[];
+  labels: Label[];
   viewer: ViewerInfo;
   conversations: Conversation[];
   /** Real data from the database (not the sample chats). */

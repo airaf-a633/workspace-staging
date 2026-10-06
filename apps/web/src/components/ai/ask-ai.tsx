@@ -255,7 +255,7 @@ function Answer({ intent, recipe, world, onAsk, onNavigate }: { intent: Intent; 
           {world.quietDeals.map((d) => (
             <li key={d.id}>
               <Link href={`${world.base}/deals?deal=${d.id}`} onClick={onNavigate} className="grid rounded-[var(--radius-control)] border border-border px-3 py-2 text-sm hover:bg-surface-2">
-                <span className="flex justify-between gap-2 font-medium"><bdi>{d.customer}</bdi>{d.fils !== null && <span className="tabular-nums text-muted">{fmt.aed(d.fils)}</span>}</span>
+                <span className="flex justify-between gap-2 font-medium"><bdi>{d.customer}</bdi>{d.fils !== null && <span className="tabular-nums text-muted">{fmt.money(d.fils)}</span>}</span>
                 <span className="text-muted">{t("answers.quietRow", { title: d.title, days: d.quietDays, owner: d.owner })}</span>
               </Link>
             </li>

@@ -1,10 +1,15 @@
 import {
   AddressBook,
+  ArrowBendDownRight,
   DeviceMobile,
   FileText,
   Image as ImageIcon,
   MapPin,
   Microphone,
+  PhoneIncoming,
+  PhoneOutgoing,
+  PhoneX,
+  Play,
   Question,
   Smiley,
   VideoCamera,
@@ -79,6 +84,36 @@ function MediaCard({ media }: { media: Media }) {
   );
 }
 
+/** A phone call in the thread: who called, how long, the recording, and a voicemail written out. */
+function CallCard({ m }: { m: Message }) {
+  const o = useT("omni");
+  const { time } = useFormat();
+  const call = m.call!;
+  const Icon = call.missed ? PhoneX : call.direction === "in" ? PhoneIncoming : PhoneOutgoing;
+  const title = call.missed ? o("message.call.missed") : o(`message.call.${call.direction}`);
+  return (
+    <div className={`grid w-full max-w-md gap-2 rounded-[var(--radius-panel)] border bg-surface px-4 py-3 ${call.direction === "out" ? "justify-self-end" : "justify-self-start"} ${call.missed ? "border-fail/40" : "border-border"}`}>
+      <p className="flex items-center gap-2 text-sm font-medium">
+        <Icon size={18} className={call.missed ? "text-fail" : "text-muted"} aria-hidden="true" />
+        {title}
+        {call.duration && <span className="font-normal tabular-nums text-muted">· {call.duration}</span>}
+        <span className="ms-auto text-xs font-normal tabular-nums text-muted">{time(m.at)}</span>
+      </p>
+      {call.recording && (
+        <button type="button" className="flex min-h-9 items-center gap-2 rounded-[var(--radius-control)] bg-surface-2 px-3 text-sm text-muted hover:text-text">
+          <Play size={14} weight="fill" aria-hidden="true" /> {o("message.call.recording", { time: call.recording })}
+        </button>
+      )}
+      {call.voicemail && (
+        <div className="grid gap-1 rounded-[var(--radius-control)] bg-surface-2 px-3 py-2 text-sm">
+          <span className="text-xs font-medium text-muted">{o("message.call.voicemail")}</span>
+          <span dir="auto">{call.voicemail}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /**
  * One item in a thread. `first` and `last` place it inside a run of messages from the same sender
  * (grouped within 5 minutes): the author's name shows on the first, the time and ticks on the last.
@@ -86,8 +121,11 @@ function MediaCard({ media }: { media: Media }) {
 export function MessageItem({ m, people, teams, customer, first = true, last = true }: { m: Message; people: Person[]; teams: Team[]; customer: string; first?: boolean; last?: boolean }) {
   const author = people.find((p) => p.id === m.authorId);
   const t = useT("message");
+  const o = useT("omni");
   const tAll = useT();
   const { time } = useFormat();
+
+  if (m.call) return <CallCard m={m} />;
 
   if (m.kind === "event") {
     return (
@@ -112,10 +150,15 @@ export function MessageItem({ m, people, teams, customer, first = true, last = t
   const failed = m.status === "failed";
   const box = out ? "justify-self-end bg-primary-soft" : "justify-self-start bg-surface shadow-[var(--shadow-1)]";
   const ring = failed ? "ring-1 ring-fail" : phone ? "ring-1 ring-primary" : "";
-  const flags = [phone ? t("flags.phone") : null, m.imported ? t("flags.imported") : null, m.edited ? t("flags.edited") : null].filter(Boolean).join(" · ");
+  const flags = [
+    phone ? t("flags.phone") : null,
+    m.template ? o("message.template", { name: m.template }) : null,
+    m.imported ? t("flags.imported") : null,
+    m.edited ? t("flags.edited") : null,
+  ].filter(Boolean).join(" · ");
 
   return (
-    <div className={`relative grid max-w-[80%] gap-1 rounded-[var(--radius-panel)] px-3.5 py-2.5 ${box} ${ring}`}>
+    <div className={`relative grid gap-1 rounded-[var(--radius-panel)] px-3.5 py-2.5 ${m.email ? "max-w-[92%]" : "max-w-[80%]"} ${box} ${ring}`}>
       {out && first && (
         <p className="flex items-center gap-1 text-xs font-medium text-primary">
           {phone && <DeviceMobile size={14} aria-hidden="true" />}
@@ -133,9 +176,35 @@ export function MessageItem({ m, people, teams, customer, first = true, last = t
         <p className="italic text-muted">{t("deleted", { name: customer })}</p>
       ) : (
         <>
+          {m.email && first && (m.email.to || m.email.cc?.length) && (
+            <p className="flex flex-wrap gap-x-3 text-xs text-muted" dir="ltr">
+              {m.email.to && <span>{o("message.to", { to: m.email.to })}</span>}
+              {!!m.email.cc?.length && <span>{o("message.cc", { cc: m.email.cc.join(", ") })}</span>}
+            </p>
+          )}
+          {m.story && (
+            <p className="flex items-center gap-2 rounded-[8px] bg-bg/70 px-2.5 py-1.5 text-xs text-muted">
+              <ImageIcon size={14} aria-hidden="true" />
+              <span>{o(`message.story.${m.story.kind}`)}</span>
+              <span className="truncate" dir="auto">“{m.story.caption}”</span>
+            </p>
+          )}
           {m.subject && <p className="font-semibold" dir="auto">{m.subject}</p>}
           {m.media && <MediaCard media={m.media} />}
           {m.text && <p className="whitespace-pre-line" dir="auto">{m.text}</p>}
+          {m.email?.quoted && (
+            <details className="text-sm">
+              <summary className="w-fit cursor-pointer list-none text-xs font-medium text-muted hover:text-text [&::-webkit-details-marker]:hidden">{o("message.showQuoted")}</summary>
+              <blockquote className="mt-1.5 whitespace-pre-line border-s-2 border-border ps-3 text-muted" dir="auto">{m.email.quoted}</blockquote>
+            </details>
+          )}
+          {m.thread && (
+            <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted">
+              <ArrowBendDownRight size={14} className="shrink-0 rtl:-scale-x-100" aria-hidden="true" />
+              <span className="shrink-0 font-medium text-primary">{o("message.thread", { count: m.thread.replies })}</span>
+              <span className="truncate" dir="auto">{o("message.threadLast", { name: m.thread.lastName, text: m.thread.lastText })}</span>
+            </p>
+          )}
           {m.kind === "in" && <TranslateMessage translation={m.translation} />}
         </>
       )}

@@ -4,10 +4,12 @@ import type { Translator } from "./translate";
 
 /**
  * Dates, times, money and sizes in the person's language. 24-hour Dubai time ("14:05", "Yesterday",
- * "Mon 28 Sep"), Western digits in Arabic too, money as "AED 1,250.00". Built from parts so the server
+ * "Mon 28 Sep"), Western digits in Arabic too, money as "$1,250.00". Built from parts so the server
  * and the browser print the same thing.
  */
 const TZ = "Asia/Dubai";
+/** Relay went global on 2026-10-07; amounts show in US dollars until workspaces pick their own currency. */
+const CURRENCY: "usd" | "aed" = "usd";
 
 export function makeFormat(locale: Locale, t: Translator) {
   const loc = intlLocale(locale);
@@ -87,12 +89,10 @@ export function makeFormat(locale: Locale, t: Translator) {
     fileSize(bytes: number) {
       return bytes >= 1_048_576 ? t("time.mb", { n: (bytes / 1_048_576).toFixed(1) }) : t("time.kb", { n: String(Math.max(1, Math.round(bytes / 1024))) });
     },
-    /** "AED 1,250.00" */
-    aed: (amount: number) => t("money.aed", { amount: formatAed(toFils(amount), loc) }),
-    /** "AED 1,250" for whole amounts on cards. */
-    aedWhole: (amount: number) => t("money.aed", { amount: nf.format(Math.round(amount)) }),
-    /** "$1,250" for whole amounts on the public site, which speaks to a global audience. */
-    usdWhole: (amount: number) => t("money.usd", { amount: nf.format(Math.round(amount)) }),
+    /** "$1,250.00", from minor units (cents). One workspace currency for now; per-workspace currency comes with billing. */
+    money: (amount: number) => t(`money.${CURRENCY}`, { amount: formatAed(toFils(amount), loc) }),
+    /** "$1,250" for whole amounts on cards. */
+    moneyWhole: (amount: number) => t(`money.${CURRENCY}`, { amount: nf.format(Math.round(amount)) }),
   };
 }
 

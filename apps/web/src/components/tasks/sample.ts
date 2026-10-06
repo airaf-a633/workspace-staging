@@ -51,7 +51,7 @@ export function buildTasks(data: InboxData, customers: Customer[]): BoardTask[] 
   const { now, people, teams } = data;
   const id = (n: string) => people.find((p) => p.name === n)?.id ?? "";
   const team = (needle: string) => teams.find((t) => t.name.toLowerCase().includes(needle))?.id ?? teams[0]?.id ?? "";
-  const calendarOf = (ownerId: string): BoardTask["calendar"] => (ownerId === id("Sara") ? "Outlook" : ownerId === id("Priya") ? "Google" : null);
+  const calendarOf = (ownerId: string): BoardTask["calendar"] => (ownerId === id("Marcus") ? "Outlook" : ownerId === id("Kenji") ? "Google" : null);
 
   const fromCustomers: BoardTask[] = customers.flatMap((c) =>
     c.tasks.map((t) => ({
@@ -83,17 +83,17 @@ export function buildTasks(data: InboxData, customers: Customer[]): BoardTask[] 
   });
 
   const extra: BoardTask[] = [
-    t({ id: "x1", text: "Arrange courier for order #QE-2240", ownerId: id("Priya"), teamId: team("mall"), due: at(now, -2), comments: [{ byId: id("Omar"), text: "Customer is home after 17:00.", at: now - 2 * DAY }] }),
-    t({ id: "x2", text: "Send revised quote with 3-year warranty", ownerId: id("Sara"), customerName: "Al Noor Trading", teamId: team("deira"), due: at(now, 0, "16:00"), hasTime: true }),
-    t({ id: "x3", text: "Call about the MacBook colours", ownerId: id("Sara"), customerId: "khalifa", customerName: "Khalifa Al Mazrouei", teamId: team("mall"), due: at(now, 1, "11:00"), hasTime: true }),
-    t({ id: "x4", text: "Check the warranty claim with Lenovo", ownerId: id("Omar"), customerId: "rahul", customerName: "Rahul Menon", teamId: team("mall"), due: at(now, 0, "14:00"), hasTime: true }),
-    t({ id: "x5", text: "Courier replacement earbuds to Mirdif", ownerId: id("Omar"), customerId: "noura", customerName: "Noura Al Ketbi", teamId: team("mall"), due: at(now, 1) }),
-    t({ id: "x6", text: "Check stock of ThinkPad E14", ownerId: id("Priya"), teamId: team("deira"), due: at(now, ((0 - dubaiWeekday(now) + 7) % 7) || 7), repeat: "weekly" }),
-    t({ id: "x7", text: "Weekly check-in with the managers", ownerId: id("Khalid"), teamId: team("general"), due: at(now, 2, "10:00"), hasTime: true, repeat: "weekly", calendar: "Google" }),
-    t({ id: "x8", text: "Ask Hana to follow up on George", ownerId: id("Hana"), customerId: "george", customerName: "George Mathew", teamId: team("deira"), due: at(now, 0, "13:00"), hasTime: true }),
-    t({ id: "x9", text: "Print price tags for the new phones", ownerId: id("Hana"), teamId: team("deira"), due: at(now, 12) }),
-    t({ id: "d1", text: "Send invoice to Mariam", ownerId: id("Sara"), customerId: "mariam", customerName: "Mariam Al Suwaidi", teamId: team("deira"), due: at(now, -1), done: true, doneAt: now - DAY }),
-    t({ id: "d2", text: "Tell Deepak the Friday opening hours", ownerId: id("Hana"), customerId: "deepak", customerName: "Deepak Nair", teamId: team("deira"), due: at(now, -1), done: true, doneAt: now - 30 * 3600_000 }),
+    t({ id: "x1", text: "Book a courier for order #NW-4840", ownerId: id("Kenji"), teamId: team("support"), due: at(now, -2), comments: [{ byId: id("Priya"), text: "Customer is home after 17:00.", at: now - 2 * DAY }] }),
+    t({ id: "x2", text: "Send revised quote with a 3-year warranty", ownerId: id("Marcus"), customerName: "Kinfolk Studios", teamId: team("sales"), due: at(now, 0, "16:00"), hasTime: true }),
+    t({ id: "x3", text: "Call about the brass finish", ownerId: id("Marcus"), customerId: "olivia", customerName: "Olivia Bennett", teamId: team("sales"), due: at(now, 1, "11:00"), hasTime: true }),
+    t({ id: "x4", text: "Order a replacement fan unit for Rahul", ownerId: id("Priya"), customerId: "rahul", customerName: "Rahul Menon", teamId: team("support"), due: at(now, 0, "14:00"), hasTime: true }),
+    t({ id: "x5", text: "Call Grace back about order #NW-4802", ownerId: id("Leo"), customerId: "grace", customerName: "Grace Kim", teamId: team("support"), due: at(now, 0, "15:00"), hasTime: true }),
+    t({ id: "x6", text: "Check stock of the Aura floor lamp", ownerId: id("Kenji"), teamId: team("sales"), due: at(now, ((0 - dubaiWeekday(now) + 7) % 7) || 7), repeat: "weekly" }),
+    t({ id: "x7", text: "Weekly check-in with the managers", ownerId: id("Elena"), teamId: team("general"), due: at(now, 2, "10:00"), hasTime: true, repeat: "weekly", calendar: "Google" }),
+    t({ id: "x8", text: "Reply to George about Breeze filters", ownerId: id("Leo"), customerId: "george", customerName: "George Mathew", teamId: team("support"), due: at(now, 0, "13:00"), hasTime: true }),
+    t({ id: "x9", text: "Write the Android 15 pairing fix for the help center", ownerId: id("Priya"), teamId: team("support"), due: at(now, 4) }),
+    t({ id: "d1", text: "Send invoice to Mariam", ownerId: id("Marcus"), customerId: "mariam", customerName: "Mariam Haddad", teamId: team("sales"), due: at(now, -1), done: true, doneAt: now - DAY }),
+    t({ id: "d2", text: "Tell Deepak the shipping times to Singapore", ownerId: id("Leo"), customerId: "deepak", customerName: "Deepak Nair", teamId: team("sales"), due: at(now, -1), done: true, doneAt: now - 30 * 3600_000 }),
   ];
 
   return [...fromCustomers, ...extra];

@@ -2,8 +2,11 @@
 
 import { Fragment, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, CaretDown, ChatsCircle, DotsThree, EnvelopeSimple, MagnifyingGlass, SidebarSimple, X } from "@phosphor-icons/react";
-import { HANDOFF_NOTE_MIN, conversationActions, handoffNoteError, replyAccess, windowOpen, type Viewer } from "@app/domain";
+import { ArrowLeft, CaretDown, ChatsCircle, DotsThree, MagnifyingGlass, SidebarSimple, X } from "@phosphor-icons/react";
+import { HANDOFF_NOTE_MIN, conversationActions, handoffNoteError, replyAccess, type Viewer } from "@app/domain";
+import { ChannelMark } from "@/components/channels/channel-mark";
+import { replyRule } from "@/components/channels/rules";
+import { InboxNav, parseSource, sourceKey, type Source } from "./inbox-nav";
 import { buttonClass } from "@/components/ui/button";
 import { Badge } from "@/components/ui/surface";
 import { Composer, type ComposerMode } from "./composer";
@@ -15,13 +18,12 @@ import { MessageItem, mediaLabel } from "./message";
 import { AiButton, ChatSummary } from "@/components/ai/chat-ai";
 import { AiTag } from "@/components/ai/ai-tag";
 import { lastActivity, reducer, stamp, type InboxAction } from "./store";
-import type { Conversation, InboxData, Message, Person } from "./types";
+import type { ChannelInbox, Conversation, InboxData, Message, Person } from "./types";
 
-type Filter = "mine" | "teams" | "unassigned" | "all" | "spam";
+type Tab = "mine" | "unassigned" | "all";
+const TABS: Tab[] = ["mine", "unassigned", "all"];
 const REPLY_TARGET_MIN = 30;
 const GROUP_MS = 5 * 60_000;
-
-const VIEWS: Filter[] = ["mine", "teams", "unassigned", "all", "spam"];
 
 /* Keys stay Latin letters in Arabic too: they're the physical keys. */
 const SHORTCUTS: [string, keyof typeof import("@/i18n/messages/en").en.inbox.shortcuts][] = [
@@ -41,15 +43,17 @@ function lastReal(c: Conversation) {
 }
 
 /** Only states that need someone get a label in the list (decided 2026-09-30). */
-function attention(c: Conversation, now: number, t: TFor<"inbox">, fmt: Format): { label: string; tone: "warn" | "fail" } | null {
+function attention(c: Conversation, inbox: ChannelInbox | undefined, now: number, t: TFor<"inbox">, o: TFor<"omni">, fmt: Format): { label: string; tone: "warn" | "fail" } | null {
   if (c.status !== "open") return null;
   if (c.sensitive) return { label: t("flags.sensitive"), tone: "fail" };
+  if (inbox?.broken) return { label: o("nav.disconnected"), tone: "fail" };
   const last = lastReal(c);
   if (last?.status === "failed") return { label: t("flags.notDelivered"), tone: "fail" };
   if (!c.holderId && last?.kind === "in" && c.lastCustomerAt !== null && now - c.lastCustomerAt > REPLY_TARGET_MIN * 60_000) {
     return { label: t("flags.waiting", { time: fmt.waitedFor(c.lastCustomerAt, now) }), tone: "warn" };
   }
-  if (c.channel === "whatsapp" && c.holderId && !windowOpen(c.lastCustomerAt, now)) return { label: t("flags.windowClosed"), tone: "warn" };
+  const rule = replyRule(c.channel, c.lastCustomerAt, now).kind;
+  if (c.holderId && (rule === "template" || rule === "closed")) return { label: t("flags.windowClosed"), tone: "warn" };
   return null;
 }
 
@@ -78,7 +82,7 @@ function Trail({ ids, people }: { ids: string[]; people: Person[] }) {
   );
 }
 
-export function Inbox({ data, onOpen }: { data: InboxData; onOpen?: (conversationId: string) => Promise<void> }) {
+export function Inbox({ data, onOpen, connectHref }: { data: InboxData; onOpen?: (conversationId: string) => Promise<void>; connectHref?: string }) {
   const { now, people, teams } = data;
   const viewer: Viewer = data.viewer;
   const me = viewer.memberId;
@@ -86,7 +90,8 @@ export function Inbox({ data, onOpen }: { data: InboxData; onOpen?: (conversatio
 
   const params = useSearchParams();
   const selectedId = params.get("c");
-  const [filter, setFilter] = useState<Filter>("mine");
+  const [source, setSource] = useState<Source>({ kind: "all" });
+  const [tab, setTab] = useState<Tab>("mine");
   const [showResolved, setShowResolved] = useState(false);
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
@@ -99,14 +104,13 @@ export function Inbox({ data, onOpen }: { data: InboxData; onOpen?: (conversatio
   const [sampleNote, setSampleNote] = useState(!data.live);
 
   const t = useT("inbox");
+  const o = useT("omni");
   const tAll = useT();
   const fmt = useFormat();
   const searchRef = useRef<HTMLInputElement>(null);
   const replyRef = useRef<HTMLTextAreaElement>(null);
   const noteRef = useRef<HTMLTextAreaElement>(null);
 
-  const canSeeAll = viewer.scopes["conversations.view"] === "all";
-  const views = VIEWS.filter((f) => f !== "all" || canSeeAll);
   const visible = conversations.filter((c) => replyAccess(viewer, c) !== "hidden");
   const byRecent = (a: Conversation, b: Conversation) => lastActivity(b) - lastActivity(a);
   const isMine = (c: Conversation) => c.holderId === me || c.collaboratorIds.includes(me);
@@ -116,26 +120,36 @@ export function Inbox({ data, onOpen }: { data: InboxData; onOpen?: (conversatio
     const digits = q.replace(/\D/g, "");
     return (
       c.contact.name.toLowerCase().includes(q) ||
-      (digits.length >= 3 && c.contact.phone.replace(/\D/g, "").includes(digits)) ||
+      (digits.length >= 3 && c.contact.identities.some((i) => i.handle.replace(/\D/g, "").includes(digits))) ||
       c.messages.some((m) => (m.text ?? m.subject ?? "").toLowerCase().includes(q))
     );
   };
 
-  const inFilter = (c: Conversation, f: Filter) => {
-    if (f === "spam") return c.status === "spam";
+  const spam = source.kind === "spam";
+  const inSource = (c: Conversation, s: Source) => {
+    if (s.kind === "spam") return c.status === "spam";
     if (c.status === "spam") return false;
-    if (f === "mine") return isMine(c) || (!c.holderId && replyAccess(viewer, c) === "claim");
-    if (f === "teams") return viewer.teamIds.includes(c.teamId);
-    if (f === "unassigned") return !c.holderId;
+    if (s.kind === "inbox") return c.inboxId === s.id;
+    if (s.kind === "team") return c.teamId === s.id;
+    if (s.kind === "label") return !!c.labels?.includes(s.id);
     return true;
   };
-  const statusOk = (c: Conversation) => filter === "spam" || (showResolved ? c.status === "resolved" : c.status === "open");
-  const list = visible.filter((c) => inFilter(c, filter) && statusOk(c) && matches(c)).sort(byRecent);
-  const openCount = (f: Filter) => visible.filter((c) => inFilter(c, f) && (f === "spam" || c.status === "open")).length;
+  const inTab = (c: Conversation, tb: Tab) =>
+    tb === "mine" ? isMine(c) || (!c.holderId && replyAccess(viewer, c) === "claim") : tb === "unassigned" ? !c.holderId : true;
+  const statusOk = (c: Conversation) => spam || (showResolved ? c.status === "resolved" : c.status === "open");
+  const list = visible.filter((c) => inSource(c, source) && (spam || inTab(c, tab)) && statusOk(c) && matches(c)).sort(byRecent);
+  const sourceCount = (s: Source) => visible.filter((c) => inSource(c, s) && c.status === "open").length;
+  const tabCount = (tb: Tab) => visible.filter((c) => inSource(c, source) && inTab(c, tb) && c.status === "open").length;
+  const inboxOf = (c: Conversation) => data.inboxes.find((i) => i.id === c.inboxId);
+  const sourceLabel = (s: Source) =>
+    s.kind === "all" ? o("nav.all") : s.kind === "spam" ? o("nav.spam")
+    : s.kind === "inbox" ? data.inboxes.find((i) => i.id === s.id)?.name ?? ""
+    : s.kind === "team" ? teams.find((x) => x.id === s.id)?.name ?? ""
+    : data.labels.find((l) => l.id === s.id)?.name ?? "";
 
   // "Mine" shows chats I hold first, then unassigned chats I can claim (decided 2026-09-29).
   const groups: [string | null, Conversation[]][] =
-    filter === "mine" && !showResolved
+    !spam && tab === "mine" && !showResolved
       ? [
           [t("groups.yours"), list.filter(isMine)],
           [t("groups.waiting"), list.filter((c) => !isMine(c))],
@@ -144,6 +158,7 @@ export function Inbox({ data, onOpen }: { data: InboxData; onOpen?: (conversatio
   const ordered = groups.flatMap(([, g]) => g);
 
   const selected = visible.find((c) => c.id === selectedId) ?? null;
+  const related = selected ? visible.filter((c) => c.contact.id === selected.contact.id && c.id !== selected.id) : [];
   const actions = selected ? conversationActions(viewer, selected) : null;
 
   function select(id: string | null) {
@@ -225,30 +240,57 @@ export function Inbox({ data, onOpen }: { data: InboxData; onOpen?: (conversatio
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  const currentLabel = t(`views.${filter}`);
+  // The section sidebar is a column on wide screens; with the customer panel open it waits for very wide ones.
+  const wide = selected && panelOpen;
+  const navShown = wide ? "hidden 2xl:flex" : "hidden xl:flex";
+  const cols = wide
+    ? "md:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)_320px] 2xl:grid-cols-[220px_300px_minmax(0,1fr)_320px]"
+    : "md:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[220px_320px_minmax(0,1fr)]";
 
   return (
-    <div className={`grid h-full min-h-0 grid-cols-1 md:grid-cols-[320px_minmax(0,1fr)] ${selected && panelOpen ? "xl:grid-cols-[320px_minmax(0,1fr)_320px]" : ""}`}>
+    <div className={`grid h-full min-h-0 grid-cols-1 ${cols}`}>
+      {/* Sections: conversations, each connected inbox, teams, labels */}
+      <aside className={`${navShown} min-h-0 flex-col border-e border-border bg-surface`}>
+        <p className="title flex h-14 shrink-0 items-center border-b border-border px-4 text-lg">{t("title")}</p>
+        <InboxNav source={source} onSource={setSource} inboxes={data.inboxes} teams={teams} labels={data.labels} count={sourceCount} connectHref={connectHref} />
+      </aside>
+
       {/* Conversation list */}
       <section aria-label={t("conversations")} className={`${selected ? "hidden md:flex" : "flex"} relative min-h-0 flex-col border-e border-border bg-surface`}>
         <h1 className="sr-only">{t("title")}</h1>
         <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border ps-4 pe-2">
-          <label className="relative flex min-w-0 items-center">
-            <span className="sr-only">{t("view")}</span>
+          <label className={`relative flex min-w-0 items-center ${wide ? "2xl:hidden" : "xl:hidden"}`}>
+            <span className="sr-only">{o("nav.showing")}</span>
             <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value as Filter)}
-              className="title min-h-11 max-w-full cursor-pointer appearance-none truncate bg-transparent pe-6 text-xl [field-sizing:content] focus-visible:outline-offset-4"
+              value={sourceKey(source)}
+              onChange={(e) => setSource(parseSource(e.target.value))}
+              className="title min-h-11 max-w-full cursor-pointer appearance-none truncate bg-transparent pe-6 text-lg [field-sizing:content] focus-visible:outline-offset-4"
             >
-              {views.map((f) => (
-                <option key={f} value={f}>{t("viewCount", { view: t(`views.${f}`), count: openCount(f) })}</option>
-              ))}
+              <optgroup label={o("nav.conversations")}>
+                <option value="all">{o("nav.all")}</option>
+                <option value="spam">{o("nav.spam")}</option>
+              </optgroup>
+              {data.inboxes.length > 0 && (
+                <optgroup label={o("nav.inboxes")}>
+                  {data.inboxes.map((i) => <option key={i.id} value={`inbox:${i.id}`}>{i.broken ? `${i.name} (${o("nav.disconnected")})` : i.name}</option>)}
+                </optgroup>
+              )}
+              {teams.length > 0 && (
+                <optgroup label={o("nav.teams")}>
+                  {teams.map((x) => <option key={x.id} value={`team:${x.id}`}>{x.name}</option>)}
+                </optgroup>
+              )}
+              {data.labels.length > 0 && (
+                <optgroup label={o("nav.labels")}>
+                  {data.labels.map((l) => <option key={l.id} value={`label:${l.id}`}>{l.name}</option>)}
+                </optgroup>
+              )}
             </select>
             <CaretDown size={16} className="pointer-events-none absolute end-0 text-muted" aria-hidden="true" />
-            <span className="sr-only">{t("showing", { view: currentLabel })}</span>
           </label>
+          <p className={`title hidden min-w-0 truncate text-lg ${wide ? "2xl:block" : "xl:block"}`}>{sourceLabel(source)}</p>
           <div className="ms-auto flex items-center gap-1">
-            {filter !== "spam" && (
+            {!spam && (
               <div role="group" aria-label={t("status")} className="inline-flex rounded-full bg-surface-2 p-0.5 text-sm">
                 {[false, true].map((r) => (
                   <button
@@ -275,6 +317,23 @@ export function Inbox({ data, onOpen }: { data: InboxData; onOpen?: (conversatio
             </button>
           </div>
         </div>
+
+        {!spam && (
+          <div role="group" aria-label={o("tabs.label")} className="flex shrink-0 gap-4 border-b border-border px-4">
+            {TABS.map((tb) => (
+              <button
+                key={tb}
+                type="button"
+                aria-pressed={tab === tb}
+                onClick={() => setTab(tb)}
+                className={`-mb-px flex min-h-10 items-center gap-1.5 border-b-2 text-sm font-medium transition-colors ${tab === tb ? "border-primary text-text" : "border-transparent text-muted hover:text-text"}`}
+              >
+                {o(`tabs.${tb}`)}
+                <span className="rounded-full bg-surface-2 px-1.5 text-xs tabular-nums text-muted">{tabCount(tb)}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {searching && (
           <div className="border-b border-border p-2">
@@ -311,7 +370,7 @@ export function Inbox({ data, onOpen }: { data: InboxData; onOpen?: (conversatio
         <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
           {ordered.length === 0 ? (
             <p className="p-8 text-center text-muted">
-              {query ? t("empty.search") : filter === "mine" ? t("empty.mine") : filter === "spam" ? t("empty.spam") : t("empty.other")}
+              {query ? t("empty.search") : spam ? t("empty.spam") : tab === "mine" ? t("empty.mine") : t("empty.other")}
             </p>
           ) : (
             groups.map(([title, g]) =>
@@ -320,7 +379,7 @@ export function Inbox({ data, onOpen }: { data: InboxData; onOpen?: (conversatio
                   {title && <h2 className="px-4 pb-1 pt-4 text-xs font-medium uppercase tracking-wide text-muted">{title}</h2>}
                   <ul className="px-2 pb-1">
                     {g.map((c) => {
-                      const flag = attention(c, now, t, fmt);
+                      const flag = attention(c, inboxOf(c), now, t, o, fmt);
                       const on = c.id === selectedId;
                       return (
                         <li key={c.id}>
@@ -331,8 +390,8 @@ export function Inbox({ data, onOpen }: { data: InboxData; onOpen?: (conversatio
                             className={`grid w-full min-w-0 grid-cols-[minmax(0,1fr)] gap-0.5 rounded-[var(--radius-control)] px-3 py-2.5 text-start transition-colors ${on ? "bg-primary-soft" : "hover:bg-surface-2"}`}
                           >
                             <span className="flex items-baseline justify-between gap-3">
-                              <span className={`flex min-w-0 items-center gap-1.5 ${c.unread ? "font-semibold" : "font-medium"}`}>
-                                {c.channel === "email" && <EnvelopeSimple size={16} className="shrink-0 text-muted" aria-label={t("email")} />}
+                              <span className={`flex min-w-0 items-center gap-2 ${c.unread ? "font-semibold" : "font-medium"}`}>
+                                <ChannelMark ch={c.channel} size={16} label={tAll(`channels.${c.channel}`)} />
                                 <bdi className="truncate">{c.contact.name}</bdi>
                               </span>
                               <span className={`shrink-0 text-xs tabular-nums ${c.unread ? "font-semibold text-primary" : "text-muted"}`}>{fmt.listTime(lastActivity(c), now)}</span>
@@ -387,6 +446,9 @@ export function Inbox({ data, onOpen }: { data: InboxData; onOpen?: (conversatio
           <Thread
             key={selected.id}
             c={selected}
+            inbox={inboxOf(selected)}
+            inboxes={data.inboxes}
+            canReconnect={data.viewer.scopes["numbers.manage"] === "all"}
             actions={actions}
             people={people}
             teams={data.teams}
@@ -414,12 +476,12 @@ export function Inbox({ data, onOpen }: { data: InboxData; onOpen?: (conversatio
       {selected && panelOpen && (
         <>
           <aside aria-label={t("customer")} className="hidden min-h-0 overflow-y-auto border-s border-border bg-surface xl:block">
-            <CustomerPanel c={selected} people={people} teams={teams} viewer={viewer} now={now} dispatch={dispatch} onClose={() => setPanelOpen(false)} />
+            <CustomerPanel c={selected} related={related} labels={data.labels} onOpenConversation={select} people={people} teams={teams} viewer={viewer} now={now} dispatch={dispatch} onClose={() => setPanelOpen(false)} />
           </aside>
           <div className="fixed inset-0 z-40 xl:hidden">
             <button type="button" aria-label={t("closeCustomerDetails")} onClick={() => setPanelOpen(false)} className="absolute inset-0 bg-black/40" />
             <aside aria-label={t("customer")} className="absolute inset-y-0 end-0 w-full max-w-sm overflow-y-auto bg-surface shadow-[var(--shadow-2)]">
-              <CustomerPanel c={selected} people={people} teams={teams} viewer={viewer} now={now} dispatch={dispatch} onClose={() => setPanelOpen(false)} />
+              <CustomerPanel c={selected} related={related} labels={data.labels} onOpenConversation={select} people={people} teams={teams} viewer={viewer} now={now} dispatch={dispatch} onClose={() => setPanelOpen(false)} />
             </aside>
           </div>
         </>
@@ -430,6 +492,10 @@ export function Inbox({ data, onOpen }: { data: InboxData; onOpen?: (conversatio
 
 interface ThreadProps {
   c: Conversation;
+  inbox: ChannelInbox | undefined;
+  inboxes: ChannelInbox[];
+  /** Owner only: reconnecting a channel is part of managing numbers and accounts. */
+  canReconnect: boolean;
   actions: NonNullable<ReturnType<typeof conversationActions>>;
   people: Person[];
   teams: InboxData["teams"];
@@ -466,9 +532,13 @@ function Thread(p: ThreadProps) {
   const count = c.messages.length;
   const first = c.contact.name.split(" ")[0];
   const t = useT("inbox");
+  const o = useT("omni");
+  const tAll = useT();
   const common = useT("common");
   const fmt = useFormat();
   const { sameDay } = fmt;
+  const { inbox } = p;
+  const { canReconnect } = p;
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
@@ -483,8 +553,8 @@ function Thread(p: ThreadProps) {
           </button>
           <div className="grid min-w-0 leading-tight">
             <h2 className="flex min-w-0 items-center gap-2 font-semibold">
+              <ChannelMark ch={c.channel} size={18} label={tAll(`channels.${c.channel}`)} />
               <bdi className="truncate">{c.contact.name}</bdi>
-              {c.channel === "email" && <span className="shrink-0 text-xs font-normal text-muted">{t("outlook")}</span>}
               {c.imported && <Badge>{t("imported")}</Badge>}
               {c.status === "resolved" && <Badge tone="done">{t("resolved")}</Badge>}
               {c.status === "spam" && <Badge tone="fail">{t("spam")}</Badge>}
@@ -492,18 +562,19 @@ function Thread(p: ThreadProps) {
             <p className="flex min-w-0 items-center gap-1 truncate text-xs text-muted">
               {c.trail.length > 0 ? <Trail ids={c.trail} people={people} /> : <span>{c.imported ? t("importedFromPhone") : t("unassigned")}</span>}
               {team && <span className="truncate">· {team.name}</span>}
+              {inbox && <span className="hidden truncate sm:inline">· {o("via", { inbox: inbox.name })}</span>}
             </p>
           </div>
         </div>
 
         <div className="flex shrink-0 items-center gap-1">
           {actions.canHandOver && c.status !== "spam" && (
-            <button type="button" onClick={() => p.setHanding(!p.handing)} aria-expanded={p.handing} className={buttonClass("secondary", "sm")} title={t("handOverTitle")}>
+            <button type="button" onClick={() => p.setHanding(!p.handing)} aria-expanded={p.handing} className={buttonClass("secondary", "sm", "max-sm:hidden")} title={t("handOverTitle")}>
               {t("handOver")}
             </button>
           )}
           {actions.canResolve && c.status !== "spam" && (
-            <button type="button" onClick={p.onToggleResolve} className={buttonClass("ghost", "sm", "hidden lg:inline-flex")} title={t("withKey", { action: c.status === "resolved" ? t("reopen") : t("resolve") })}>
+            <button type="button" onClick={p.onToggleResolve} className={buttonClass("ghost", "sm", "max-lg:hidden")} title={t("withKey", { action: c.status === "resolved" ? t("reopen") : t("resolve") })}>
               {c.status === "resolved" ? t("reopen") : t("resolve")}
             </button>
           )}
@@ -517,12 +588,17 @@ function Thread(p: ThreadProps) {
           >
             <SidebarSimple size={20} className="rotate-180 rtl:rotate-0" aria-hidden="true" />
           </button>
-          {(actions.canMarkSpam || actions.canResolve) && (
+          {(actions.canMarkSpam || actions.canResolve || actions.canHandOver) && (
             <details className="relative">
               <summary className={buttonClass("ghost", "sm", "!px-2 list-none [&::-webkit-details-marker]:hidden")} aria-label={common("moreActions")}>
                 <DotsThree size={22} weight="bold" aria-hidden="true" />
               </summary>
               <div className="absolute end-0 top-full z-20 mt-1 grid min-w-48 rounded-[var(--radius-control)] border border-border bg-surface p-1 shadow-[var(--shadow-2)]">
+                {actions.canHandOver && c.status !== "spam" && (
+                  <button type="button" onClick={() => p.setHanding(true)} className="min-h-11 rounded px-3 text-start hover:bg-surface-2 sm:hidden">
+                    {t("handOver")}
+                  </button>
+                )}
                 {actions.canResolve && c.status !== "spam" && (
                   <button type="button" onClick={p.onToggleResolve} className="min-h-11 rounded px-3 text-start hover:bg-surface-2 lg:hidden">
                     {c.status === "resolved" ? t("reopen") : t("resolve")}
@@ -543,6 +619,31 @@ function Thread(p: ThreadProps) {
           )}
         </div>
       </header>
+
+      {inbox?.broken && (
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 border-b border-fail/30 bg-fail-soft px-5 py-3 text-sm">
+          <p className="grid gap-0.5">
+            <strong className="font-semibold">{o(`broken.${inbox.broken}`, { inbox: inbox.name })}</strong>
+            <span>{o("broken.body")}</span>
+          </p>
+          {canReconnect ? (
+            <button type="button" className={buttonClass("secondary", "sm")}>{o("broken.reconnect")}</button>
+          ) : (
+            <span className="text-muted">{o("broken.askOwner")}</span>
+          )}
+        </div>
+      )}
+
+      {c.visitor && (
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-border bg-surface px-5 py-2 text-xs text-muted">
+          <span className="inline-flex items-center gap-1.5">
+            <span aria-hidden="true" className={`size-2 rounded-full ${c.visitor.online ? "bg-done" : "bg-border"}`} />
+            {c.visitor.online ? o("visitor.online") : o("visitor.left")}
+          </span>
+          <span dir="ltr" className="truncate">{o("visitor.page", { page: c.visitor.page })}</span>
+          <span>{c.visitor.browser}</span>
+        </p>
+      )}
 
       {p.confirmSpam && (
         <div role="alert" className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-fail-soft px-5 py-3">
@@ -573,6 +674,7 @@ function Thread(p: ThreadProps) {
               <p>{t("sensitive.body")}</p>
             </div>
           )}
+          {c.subject && c.channel === "email" && <h3 className="title mb-4 text-xl" dir="auto">{c.subject}</h3>}
           <ChatSummary key={c.id} conversationId={c.id} customer={c.contact.name} messageCount={c.messages.filter((m) => m.kind === "in" || m.kind === "out").length} />
           {pinned && (
             <div className="mb-6 grid gap-1 rounded-[var(--radius-panel)] bg-surface p-4 shadow-[var(--shadow-1)]">
@@ -610,6 +712,8 @@ function Thread(p: ThreadProps) {
 
       <Composer
         c={c}
+        inbox={inbox}
+        inboxes={p.inboxes}
         actions={actions}
         people={people}
         me={me}

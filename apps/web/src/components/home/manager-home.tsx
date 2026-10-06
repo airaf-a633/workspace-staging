@@ -28,12 +28,12 @@ export interface NeedRow {
 }
 
 /* Sample numbers until reports exist. Values are typed so each language formats them its own way. */
-type Value = { aed: number } | { min: number } | { n: number };
+type Value = { usd: number } | { min: number } | { n: number };
 type Hint = { up: number } | { target: number };
 type Stat = [keyof typeof en.home.stats, Value, Hint?];
 const NUMBERS: Record<RoleTemplateKey, Stat[]> = {
-  owner: [["revenue", { aed: 186_420 }, { up: 12 }], ["pipeline", { aed: 94_300 }], ["medianReply", { min: 6 }, { target: 30 }], ["unassigned", { n: 3 }]],
-  sales_manager: [["pipeline", { aed: 94_300 }], ["won", { aed: 71_850 }, { up: 8 }], ["leads", { n: 31 }], ["followUpsToday", { n: 4 }]],
+  owner: [["revenue", { usd: 48_620 }, { up: 12 }], ["pipeline", { usd: 25_700 }], ["medianReply", { min: 6 }, { target: 30 }], ["unassigned", { n: 3 }]],
+  sales_manager: [["pipeline", { usd: 25_700 }], ["won", { usd: 19_560 }, { up: 8 }], ["leads", { n: 31 }], ["followUpsToday", { n: 4 }]],
   support_manager: [["openChats", { n: 22 }], ["waitingCustomer", { n: 9 }], ["medianReply", { min: 6 }, { target: 30 }], ["overTarget", { n: 2 }]],
   ops_manager: [["tasksToday", { n: 9 }], ["ordersToFulfil", { n: 5 }], ["meetingsToday", { n: 2 }], ["overdueTasks", { n: 1 }]],
   agent: [["yourOpenChats", { n: 7 }], ["yourOpenDeals", { n: 3 }], ["yourFirstReply", { min: 4 }, { target: 30 }], ["followUpsToday", { n: 2 }]],
@@ -41,7 +41,7 @@ const NUMBERS: Record<RoleTemplateKey, Stat[]> = {
 };
 
 function value(v: Value, fmt: Format, time: TFor<"time">) {
-  return "aed" in v ? fmt.aedWhole(v.aed) : "min" in v ? time("minutes", { count: v.min }) : fmt.number(v.n);
+  return "usd" in v ? fmt.moneyWhole(v.usd) : "min" in v ? time("minutes", { count: v.min }) : fmt.number(v.n);
 }
 function hint(h: Hint, t: TFor<"home">, time: TFor<"time">) {
   return "up" in h ? t("upOnLastMonth", { pct: h.up }) : t("target", { time: time("minutes", { count: h.target }) });
@@ -59,6 +59,22 @@ export function needsFor(data: InboxData, inboxHref: string, tAll: Translator, f
   const t = (key: string, vars?: Record<string, string | number>) => tAll(`home.needs.${key}`, vars);
   const name = (id: string | null) => people.find((p) => p.id === id)?.name ?? tAll("common.someone");
   const rows: NeedRow[] = [];
+
+  // A broken channel stops every conversation on it, so the owner sees it first (decided 2026-10-07).
+  if (v.scopes["numbers.manage"] === "all") {
+    for (const inbox of data.inboxes.filter((i) => i.broken)) {
+      rows.push({
+        id: `inbox-${inbox.id}`,
+        name: inbox.name,
+        href: inboxHref,
+        tone: "fail",
+        rank: -1,
+        waitingSince: null,
+        meta: tAll(`channels.${inbox.channel}`),
+        items: [tAll(`omni.broken.${inbox.broken!}`, { inbox: inbox.name }), tAll("omni.broken.reconnect")],
+      });
+    }
+  }
 
   for (const c of data.conversations) {
     const access = replyAccess(v, c);
@@ -90,7 +106,7 @@ export function needsFor(data: InboxData, inboxHref: string, tAll: Translator, f
     }
     for (const d of c.contact.deals) {
       if (d.ownerId === v.memberId && d.stage === "quoted") {
-        items.push({ text: canSeeDealValue(v, d.ownerId) ? t("quoteValue", { value: fmt.aed(d.fils) }) : t("quote"), rank: 3, tone: "plain" });
+        items.push({ text: canSeeDealValue(v, d.ownerId) ? t("quoteValue", { value: fmt.money(d.fils) }) : t("quote"), rank: 3, tone: "plain" });
       }
     }
     if (items.length === 0) continue;
@@ -176,7 +192,7 @@ export async function ManagerHome({
       <section aria-labelledby="needs" className="grid gap-3">
         <div className="flex items-baseline justify-between gap-3">
           <h2 id="needs" className="text-lg font-semibold">{t("needsNow")}</h2>
-          <span className="text-sm text-muted">{needs.length === 0 ? t("allClear") : t("customers", { count: needs.length })}</span>
+          <span className="text-sm text-muted">{needs.length === 0 ? t("allClear") : t("customers", { count: needs.filter((n) => !n.id.startsWith("inbox-")).length })}</span>
         </div>
         {needs.length === 0 ? (
           <p className="rounded-[var(--radius-panel)] bg-surface p-6 text-muted shadow-[var(--shadow-1)]">{t("nothing")}</p>

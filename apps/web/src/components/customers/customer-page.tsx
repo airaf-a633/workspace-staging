@@ -155,7 +155,7 @@ export function CustomerPage({ c, duplicate, people, teams, viewer, now, base, c
                     <span className="font-medium"><bdi>{d.title}</bdi></span>
                     <Badge tone={STAGE[d.stage][1]}>{tAll(`stages.${d.stage}`)}</Badge>
                   </div>
-                  <span className="text-muted">{canSeeDealValue(viewer, d.ownerId) ? <span className="tabular-nums text-text">{fmt.aed(d.fils)}</span> : tAll("panel.valueHidden")} · {name(d.ownerId)}</span>
+                  <span className="text-muted">{canSeeDealValue(viewer, d.ownerId) ? <span className="tabular-nums text-text">{fmt.money(d.fils)}</span> : tAll("panel.valueHidden")} · {name(d.ownerId)}</span>
                 </div>
               ))}
             </section>
@@ -171,7 +171,7 @@ export function CustomerPage({ c, duplicate, people, teams, viewer, now, base, c
           {c.orders.length > 0 && (
             <section className="grid gap-1 border-t border-border pt-4 text-sm">
               <h2 className="text-xs font-medium uppercase tracking-wide text-muted">{t("orders")}</h2>
-              <p><span className="tabular-nums">{fmt.aed(ordersTotal)}</span> <span className="text-muted">{t("ordersAcross", { count: c.orders.length })}</span></p>
+              <p><span className="tabular-nums">{fmt.money(ordersTotal)}</span> <span className="text-muted">{t("ordersAcross", { count: c.orders.length })}</span></p>
             </section>
           )}
         </aside>

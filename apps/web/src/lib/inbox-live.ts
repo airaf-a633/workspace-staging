@@ -1,6 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Conversation, InboxData, Media, MediaType, Message, Person, Team, ViewerInfo } from "@/components/inbox/types";
+import type { ChannelInbox, Conversation, InboxData, Media, MediaType, Message, Person, Team, ViewerInfo } from "@/components/inbox/types";
 
 /**
  * The real inbox (M2.3): the conversations this person may see (row-level security decides), mapped
@@ -23,6 +23,8 @@ const MAX_MESSAGES = 2000;
 
 interface Row {
   id: string;
+  contact_id: string;
+  whatsapp_account_id: string;
   team_id: string | null;
   holder_member_id: string | null;
   status: Conversation["status"];
@@ -61,11 +63,21 @@ export async function loadLiveInbox(
 ): Promise<InboxData | null> {
   const { data: convs } = await supabase
     .from("conversations")
-    .select("id, team_id, holder_member_id, status, unread_count, last_customer_message_at, imported, contacts(name, profile_name, wa_id)")
+    .select("id, contact_id, whatsapp_account_id, team_id, holder_member_id, status, unread_count, last_customer_message_at, imported, contacts(name, profile_name, wa_id)")
     .eq("workspace_id", workspaceId)
     .order("last_message_at", { ascending: false, nullsFirst: false })
     .limit(300);
   if (!convs || convs.length === 0) return null;
+
+  // Each connected number is one inbox in the sidebar (WhatsApp is the only real channel so far).
+  const { data: accounts } = await supabase.from("whatsapp_accounts").select("id, display_phone, verified_name, status").eq("workspace_id", workspaceId);
+  const inboxes: ChannelInbox[] = (accounts ?? []).map((a) => ({
+    id: a.id,
+    channel: "whatsapp",
+    name: a.verified_name ?? "WhatsApp",
+    address: a.display_phone,
+    broken: a.status === "disconnected" ? "tokenExpired" : undefined,
+  }));
 
   const ids = convs.map((c) => c.id);
   const { data: msgs } = await supabase
@@ -123,9 +135,12 @@ export async function loadLiveInbox(
     return {
       id: c.id,
       channel: "whatsapp",
+      inboxId: c.whatsapp_account_id,
       contact: {
+        id: c.contact_id,
         name: contactName,
         phone: c.contacts?.wa_id ? `+${c.contacts.wa_id}` : "",
+        identities: c.contacts?.wa_id ? [{ ch: "whatsapp", handle: `+${c.contacts.wa_id}` }] : [],
         language: "English",
         tags: [],
         deals: [],
@@ -145,5 +160,5 @@ export async function loadLiveInbox(
     };
   });
 
-  return { now: Date.now(), people, teams, viewer, conversations, live: true };
+  return { now: Date.now(), people, teams, viewer, conversations, inboxes, labels: [], live: true };
 }

@@ -16,7 +16,7 @@ const RUNS: Record<AgentKey, number> = { sales: 6, triage: 23, receptionist: 0, 
 /** Sample quality stats this month: drafts approved as written / edited / skipped (decided 2026-10-01). */
 const STATS: Partial<Record<AgentKey, [number, number, number]>> = { sales: [14, 6, 3], triage: [41, 5, 2] };
 const SENDS = ["location", "photos", "orders"] as const;
-const FAQ_SUGGESTIONS = ["parking", "installments"] as const;
+const FAQ_SUGGESTIONS = ["returns", "installments"] as const;
 const USAGE = [["suggest", 214], ["translate", 96], ["summary", 88], ["ask", 142], ["agents", 120]] as const;
 
 function Toggle({ on, onChange, label, disabled }: { on: boolean; onChange: () => void; label: string; disabled?: boolean }) {

@@ -205,3 +205,25 @@ _Decided with the founder in question rounds starting 2026-09-27. Each line is a
 - Re-plan the engineering plan by milestones for the founder + Claude, with the private beta at the core milestone.
 - Set final prices (placeholders now) after talking to the deposit-paying leads.
 - Choose the inbound email provider for the Gmail capture address.
+
+## Relay pivot (2026-10-07)
+
+The product is now **Relay**. It is for a global market and is omnichannel, with 18 channels; see `apps/web/src/components/channels/catalog.ts`. The new identity is Geist type, a flat Petrol accent and the "arcs" mark.
+
+The omnichannel inbox (step 2) is built on these decisions:
+
+- **Demo business:** Northwind Home, a global online consumer brand selling home goods and small electronics, priced in USD.
+- **Sidebar:** Chatwoot style. Conversations come first, then one entry per connected inbox (each number or address), then teams and labels.
+- **Per-channel rules are real, not cosmetic:**
+  - Email has a subject, CC and quoted threads.
+  - WhatsApp has the 24-hour window and templates.
+  - Instagram shows story replies.
+  - Voice shows call logs and recordings.
+  - Slack and Discord have threads.
+- **Conversation side panel:** contact details with all their channels, previous conversations across channels, linked deals, orders and tasks, and the AI summary and copilot.
+- **Same person on two channels:** Relay suggests "looks like the same person" and an agent confirms the merge. There is never a silent auto-merge.
+- **Reply via:** an agent can answer on another of the contact's known channels from the composer. This starts a linked conversation, which is useful when the WhatsApp 24-hour window has closed.
+- **Broken channel** (expired token, bounced domain, flagged number), shown in three places:
+  - a banner in that inbox with Reconnect;
+  - an item on the owner's home under "Needs you now";
+  - a composer that says it can't send there and offers another channel.

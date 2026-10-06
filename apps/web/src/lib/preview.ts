@@ -6,27 +6,26 @@ import { buildDeals } from "@/components/deals/sample";
 import { buildTasks } from "@/components/tasks/sample";
 
 /**
- * The made-up Qamar Electronics workspace behind /preview (public, no login, no database).
- * Same people, teams and role templates as supabase/seed.sql, so the preview behaves like
- * signing in as each seed user. Nothing here is saved.
+ * The made-up Northwind Home workspace behind /preview (public, no login, no database): a global online
+ * brand with Sales and Support teams and thirteen connected channels (decided 2026-10-07). Nothing here is saved.
  */
 
-export const PREVIEW_WORKSPACE = { name: "Qamar Electronics" };
+export const PREVIEW_WORKSPACE = { name: "Northwind Home" };
 
 export const PREVIEW_TEAMS = [
   { id: "t-general", name: "General", isDefault: true, isBranch: false },
-  { id: "t-deira", name: "Deira shop", isDefault: false, isBranch: true },
-  { id: "t-mall", name: "Dubai Mall shop", isDefault: false, isBranch: true },
+  { id: "t-sales", name: "Sales", isDefault: false, isBranch: false },
+  { id: "t-support", name: "Support", isDefault: false, isBranch: false },
 ];
 
 /** What each person sees is described in the language files (preview.people.<key>). */
 export const PREVIEW_PEOPLE = [
-  { key: "khalid", name: "Khalid", template: "owner", teams: ["t-general"] },
-  { key: "sara", name: "Sara", template: "sales_manager", teams: ["t-deira"] },
-  { key: "omar", name: "Omar", template: "support_manager", teams: ["t-mall"] },
-  { key: "priya", name: "Priya", template: "ops_manager", teams: ["t-deira", "t-mall"] },
-  { key: "hana", name: "Hana", template: "agent", teams: ["t-deira"] },
-  { key: "aisha", name: "Aisha", template: "viewer", teams: ["t-mall"] },
+  { key: "elena", name: "Elena", template: "owner", teams: ["t-general"] },
+  { key: "marcus", name: "Marcus", template: "sales_manager", teams: ["t-sales"] },
+  { key: "priya", name: "Priya", template: "support_manager", teams: ["t-support"] },
+  { key: "kenji", name: "Kenji", template: "ops_manager", teams: ["t-sales", "t-support"] },
+  { key: "leo", name: "Leo", template: "agent", teams: ["t-sales", "t-support"] },
+  { key: "amara", name: "Amara", template: "viewer", teams: ["t-support"] },
 ] as const satisfies readonly { key: string; name: string; template: RoleTemplateKey; teams: string[] }[];
 
 export type PreviewKey = (typeof PREVIEW_PEOPLE)[number]["key"];

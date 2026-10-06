@@ -11,7 +11,7 @@ import { setupSteps } from "@/lib/setup";
 /* Workspace creation and the setup checklist it shapes (PRODUCT_DECISIONS §14), without saving anything. */
 export function PreviewOnboarding() {
   const [step, setStep] = useState<"create" | "checklist">("create");
-  const [name, setName] = useState("Qamar Electronics");
+  const [name, setName] = useState("Northwind Home");
   const [shape, setShape] = useState<TeamShapeValue | null>(null);
   const t = useT("onboarding");
   const setup = useT("setup");
@@ -59,7 +59,7 @@ export function PreviewOnboarding() {
         <p className="rounded-[var(--radius-control)] bg-surface-2 p-3 text-sm">{home.rich("deliveryNote", { title: <strong className="font-medium">{home("deliveryTitle")}</strong> })}</p>
       )}
       <div className="flex flex-wrap gap-2">
-        <Link href="/preview/khalid" className={buttonClass("primary")}>{t("seeOwnerHome")}</Link>
+        <Link href="/preview/elena" className={buttonClass("primary")}>{t("seeOwnerHome")}</Link>
         <button type="button" onClick={() => setStep("create")} className={buttonClass("ghost")}>{common("back")}</button>
       </div>
     </div>

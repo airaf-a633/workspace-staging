@@ -14,7 +14,7 @@ export function PreviewBar({ current, people }: { current: string; people: { key
   const common = useT("common");
 
   function switchTo(key: string) {
-    // Keep the same screen, swap the person: /preview/priya/inbox -> /preview/sara/inbox
+    // Keep the same screen, swap the person: /preview/priya/inbox -> /preview/marcus/inbox
     router.push(path.replace(`/preview/${current}`, `/preview/${key}`) + window.location.search);
   }
 

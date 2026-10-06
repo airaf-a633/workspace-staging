@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { CaretDown, EnvelopeSimple, MagnifyingGlass, Plus, WhatsappLogo, X } from "@phosphor-icons/react";
+import { CaretDown, MagnifyingGlass, Plus, X } from "@phosphor-icons/react";
+import { ChannelMark } from "@/components/channels/channel-mark";
 import { canSeeDealValue, type Viewer } from "@app/domain";
 import { buttonClass } from "@/components/ui/button";
 import { Badge } from "@/components/ui/surface";
@@ -223,7 +224,7 @@ export function CustomerList({ customers: initial, people, teams, viewer, now, b
                       <td className="px-3 py-3 text-muted">
                         {c.lastContact ? (
                           <span className="inline-flex items-center gap-1.5">
-                            {c.lastContact.channel === "email" ? <EnvelopeSimple size={16} aria-label={tAll("timeline.channel.email")} /> : <WhatsappLogo size={16} aria-label={tAll("timeline.channel.whatsapp")} />}
+                            <ChannelMark ch={c.lastContact.channel} size={16} label={tAll(`channels.${c.lastContact.channel}`)} />
                             {fmt.ago(c.lastContact.at, now)}
                           </span>
                         ) : tAll("common.never")}
@@ -232,7 +233,7 @@ export function CustomerList({ customers: initial, people, teams, viewer, now, b
                         {deal ? (
                           <span className="inline-flex flex-wrap items-center gap-2">
                             <Badge tone={STAGE[deal.stage][1]}>{tAll(`stages.${deal.stage}`)}</Badge>
-                            {canSeeDealValue(viewer, deal.ownerId) && <span className="tabular-nums text-muted">{fmt.aed(deal.fils)}</span>}
+                            {canSeeDealValue(viewer, deal.ownerId) && <span className="tabular-nums text-muted">{fmt.money(deal.fils)}</span>}
                           </span>
                         ) : <span className="text-muted">{tAll("common.none")}</span>}
                       </td>

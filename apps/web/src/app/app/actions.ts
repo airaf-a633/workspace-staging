@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient, getUser } from "@/lib/supabase/server";
 
-/** "Qamar Electronics" -> "qamar-electronics-4f2a" (suffix avoids clashes without asking the user). */
+/** "Northwind Home" -> "northwind-home-4f2a" (suffix avoids clashes without asking the user). */
 function slugify(name: string): string {
   const base = name
     .toLowerCase()

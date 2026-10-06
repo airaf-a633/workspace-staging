@@ -1,5 +1,6 @@
 import type { Deal, Order, Task } from "@/components/inbox/types";
 import type { Line } from "@/i18n/labels";
+import type { ChannelKey } from "@/components/channels/catalog";
 
 /** Shapes follow the planned contacts model (PRODUCT_DECISIONS §5, §18) so real rows can replace the sample later. */
 
@@ -33,7 +34,7 @@ export interface Customer {
   teamId: string;
   source: string;
   createdAt: number;
-  lastContact: { at: number; channel: "whatsapp" | "email" } | null;
+  lastContact: { at: number; channel: ChannelKey } | null;
   /** The inbox conversation for "Open chat". */
   conversationId?: string;
   /** Another customer that is probably the same person (merging is manual). */

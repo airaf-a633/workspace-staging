@@ -21,7 +21,7 @@ export default async function PreviewSignUp() {
       {/* Not a form: whatever is typed here never leaves the page (and never lands in a URL). */}
       <div className="grid gap-4">
         <TextInput label={t("yourName")} name="name" autoComplete="off" defaultValue="Khalid" />
-        <TextInput label={t("workEmail")} name="email" type="email" autoComplete="off" dir="ltr" defaultValue="khalid@qamar.test" />
+        <TextInput label={t("workEmail")} name="email" type="email" autoComplete="off" dir="ltr" defaultValue="elena@northwind.test" />
         <TextInput label={t("password")} name="password" type="password" autoComplete="off" dir="ltr" help={preview("passwordHelp")} />
         <Link href="/preview/onboarding" className={buttonClass("primary", "md", "w-full")}>{t("signUp.submit")}</Link>
       </div>

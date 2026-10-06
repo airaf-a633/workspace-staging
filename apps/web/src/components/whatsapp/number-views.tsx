@@ -88,7 +88,7 @@ export async function NumberDetail({ n, teams, base, isOwner, now, people }: { n
   const warn = left <= DISCONNECT_DAYS - REMIND_FROM_DAY;
   const cost = estimatedCostFils(n);
   const control = "min-h-11 w-full rounded-[var(--radius-control)] border border-input bg-surface px-3 text-base disabled:opacity-100";
-  const usageHelp = { service: t("usage.free"), utility: t("usage.each", { cost: fmt.aed(RATE_FILS.utility) }), marketing: t("usage.each", { cost: fmt.aed(RATE_FILS.marketing) }) };
+  const usageHelp = { service: t("usage.free"), utility: t("usage.each", { cost: fmt.money(RATE_FILS.utility) }), marketing: t("usage.each", { cost: fmt.money(RATE_FILS.marketing) }) };
 
   return (
     <div className="grid gap-8">
@@ -179,7 +179,7 @@ export async function NumberDetail({ n, teams, base, isOwner, now, people }: { n
           ))}
         </dl>
         <p className="border-t border-border pt-4 text-sm">
-          {t.rich("estimated", { cost: <strong className="font-semibold tabular-nums">{fmt.aed(cost)}</strong> })}
+          {t.rich("estimated", { cost: <strong className="font-semibold tabular-nums">{fmt.money(cost)}</strong> })}
         </p>
         {n.cardOnMeta ? (
           <p className="text-sm text-muted">{t("cardOnFile")}</p>

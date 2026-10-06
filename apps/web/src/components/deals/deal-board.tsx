@@ -102,7 +102,7 @@ export function DealBoard({ deals: initial, people, teams, viewer, now, base, in
             </span>
           </span>
           <span className="line-clamp-2 text-sm text-muted"><bdi>{d.title}</bdi></span>
-          {money(d) && <span className="text-sm font-medium tabular-nums">{fmt.aed(d.fils)}</span>}
+          {money(d) && <span className="text-sm font-medium tabular-nums">{fmt.money(d.fils)}</span>}
           {need && (
             <span className={`mt-1 flex items-center gap-1.5 text-xs font-medium ${need.tone === "warn" ? "text-warn" : "text-muted"}`}>
               <span aria-hidden="true" className={`size-1.5 rounded-full ${need.tone === "warn" ? "bg-warn" : "bg-muted"}`} />
@@ -159,7 +159,7 @@ export function DealBoard({ deals: initial, people, teams, viewer, now, base, in
               >
                 <h2 className="flex items-baseline justify-between gap-2 px-1 text-sm">
                   <span className="font-semibold">{tAll(`stages.${stage}`)} <span className="font-normal text-muted">· {fmt.number(col.length)}</span></span>
-                  {allMoney && col.length > 0 && <span className="tabular-nums text-muted">{fmt.aed(total)}</span>}
+                  {allMoney && col.length > 0 && <span className="tabular-nums text-muted">{fmt.money(total)}</span>}
                 </h2>
                 {col.length === 0 ? <p className="px-1 pb-2 text-sm text-muted">{t("emptyStage")}</p> : <ul className="grid gap-2">{col.map(card)}</ul>}
               </section>
@@ -178,7 +178,7 @@ export function DealBoard({ deals: initial, people, teams, viewer, now, base, in
                   <span className="truncate text-sm text-muted"><bdi>{d.title}</bdi></span>
                 </span>
                 <Badge tone={STAGE[d.stage][1]}>{tAll(`stages.${d.stage}`)}</Badge>
-                <span className="w-28 text-end text-sm tabular-nums">{d.stage === "won" ? (money(d) ? fmt.aed(d.fils) : t("hidden")) : valueLabel(tAll, "lostReason", d.lostReason)}</span>
+                <span className="w-28 text-end text-sm tabular-nums">{d.stage === "won" ? (money(d) ? fmt.money(d.fils) : t("hidden")) : valueLabel(tAll, "lostReason", d.lostReason)}</span>
                 <span className="w-24 text-end text-sm text-muted">{d.closedAt ? fmt.ago(d.closedAt, now) : ""}</span>
               </button>
             </li>
@@ -270,7 +270,7 @@ function DealSheet(p: {
         <dl className="grid gap-3 text-sm">
           <div className="flex items-center justify-between gap-3">
             <dt className="text-muted">{t("value")}</dt>
-            <dd>{p.money ? <span className="font-semibold tabular-nums">{fmt.aed(d.fils)}</span> : <span className="text-muted">{t("hiddenForRole")}</span>}</dd>
+            <dd>{p.money ? <span className="font-semibold tabular-nums">{fmt.money(d.fils)}</span> : <span className="text-muted">{t("hiddenForRole")}</span>}</dd>
           </div>
           {isOpen && p.canEdit && (
             <div className="flex items-center justify-between gap-3">
@@ -297,8 +297,8 @@ function DealSheet(p: {
                   ? t.rich("asksValue", {
                       name: <strong className="font-semibold">{name(d.approval.byId)}</strong>,
                       pct: d.approval.pct,
-                      from: <span className="tabular-nums">{fmt.aed(d.fils)}</span>,
-                      to: <span className="tabular-nums">{fmt.aed(discounted)}</span>,
+                      from: <span className="tabular-nums">{fmt.money(d.fils)}</span>,
+                      to: <span className="tabular-nums">{fmt.money(discounted)}</span>,
                     })
                   : t.rich("asks", { name: <strong className="font-semibold">{name(d.approval.byId)}</strong>, pct: d.approval.pct })}
                 <span className="mt-1 block text-muted" dir="auto">{t("quote", { text: d.approval.note })}</span>

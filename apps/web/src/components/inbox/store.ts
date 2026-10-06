@@ -16,7 +16,10 @@ export type InboxAction =
   | { type: "askCollab"; id: string; by: string; at: number }
   | { type: "dismissPhoneReply"; id: string }
   | { type: "addTask"; id: string; by: string; text: string; at: number }
-  | { type: "toggleTask"; id: string; taskId: string };
+  | { type: "toggleTask"; id: string; taskId: string }
+  /** Merge the suggested contact into this one: every conversation with the person gains the channel. */
+  | { type: "merge"; contactId: string }
+  | { type: "dismissMerge"; contactId: string };
 
 export interface Ctx {
   people: Person[];
@@ -30,7 +33,16 @@ const event = (e: ChatEvent, at: number): Message => ({ id: nextId(), kind: "eve
 /** Events are stored as who-did-what ids, so the reducer needs no names; screens word them per language. */
 export function reducer() {
   return (state: Conversation[], a: InboxAction): Conversation[] =>
-    state.map((c) => {
+    a.type === "merge" || a.type === "dismissMerge"
+      ? state.map((c) => {
+          if (c.contact.id !== a.contactId || !c.contact.merge) return c;
+          const { merge, ...contact } = c.contact;
+          if (a.type === "dismissMerge") return { ...c, contact };
+          const identities = contact.identities.some((i) => i.ch === merge.ch && i.handle === merge.handle) ? contact.identities : [...contact.identities, { ch: merge.ch, handle: merge.handle }];
+          const email = contact.email ?? (merge.ch === "email" ? merge.handle : undefined);
+          return { ...c, contact: { ...contact, email, identities } };
+        })
+      : state.map((c) => {
       if (c.id !== a.id) return c;
       switch (a.type) {
         case "open":
@@ -70,6 +82,7 @@ export function reducer() {
         case "toggleTask":
           return { ...c, contact: { ...c.contact, tasks: c.contact.tasks.map((t) => (t.id === a.taskId ? { ...t, done: !t.done } : t)) } };
       }
+      return c;
     });
 }
 

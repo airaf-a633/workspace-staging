@@ -19,7 +19,7 @@ export function ManagerHomesPreview() {
   const t = useT("homesDemo");
   const tAll = useT();
   const fmt = useFormat();
-  const value = (v: Value) => ("usd" in v ? fmt.usdWhole(v.usd) : "min" in v ? tAll("time.minutes", { count: v.min }) : fmt.number(v.n));
+  const value = (v: Value) => ("usd" in v ? fmt.moneyWhole(v.usd) : "min" in v ? tAll("time.minutes", { count: v.min }) : fmt.number(v.n));
   return (
     <div className="overflow-hidden rounded-[var(--radius-panel)] border border-border bg-surface shadow-[var(--shadow-2)]">
       <div role="tablist" aria-label={t("label")} className="flex flex-wrap gap-1 border-b border-border p-2">
