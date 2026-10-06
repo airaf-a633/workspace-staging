@@ -60,7 +60,7 @@ const MIN = 60_000;
 const HOUR = 60;
 const DAY = 24 * HOUR;
 
-export function buildSampleInbox(members: RealMember[], realTeams: RealTeam[], viewer: ViewerInfo, now = Date.now()): InboxData {
+export function buildSampleInbox(members: RealMember[], realTeams: RealTeam[], viewer: ViewerInfo, tz: string, now = Date.now()): InboxData {
   const people: Person[] = members.map((m) => ({ id: m.id, name: m.name, role: m.role, canReply: m.canReply }));
   const ids = {} as Record<PersonKey, string>;
   for (const s of SAMPLE_PEOPLE) {
@@ -601,5 +601,5 @@ export function buildSampleInbox(members: RealMember[], realTeams: RealTeam[], v
     },
   ];
 
-  return { now, people, teams, viewer, conversations, inboxes: SAMPLE_INBOXES, labels: SAMPLE_LABELS };
+  return { now, tz, people, teams, viewer, conversations, inboxes: SAMPLE_INBOXES, labels: SAMPLE_LABELS };
 }

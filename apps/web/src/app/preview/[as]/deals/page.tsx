@@ -1,6 +1,6 @@
 import { DealBoard } from "@/components/deals/deal-board";
 import { previewDeals } from "@/lib/preview";
-import { getT } from "@/i18n/server";
+import { getT, getTimeZone } from "@/i18n/server";
 
 export async function generateMetadata() {
   return { title: (await getT("nav"))("deals") };
@@ -8,8 +8,9 @@ export async function generateMetadata() {
 
 export default async function PreviewDeals(props: PageProps<"/preview/[as]/deals">) {
   const { as } = await props.params;
+  const tz = await getTimeZone();
   const sp = await props.searchParams;
-  const { data, deals } = previewDeals(as);
+  const { data, deals } = previewDeals(as, tz);
   return (
     <DealBoard
       deals={deals}

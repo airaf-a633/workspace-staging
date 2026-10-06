@@ -6,9 +6,9 @@ import { ArrowsClockwise, CalendarBlank, CaretDown, ChatText, Clock, Plus } from
 import { covers, type Viewer } from "@app/domain";
 import { buttonClass } from "@/components/ui/button";
 import type { Person } from "@/components/inbox/types";
-import { useFormat, useT } from "@/i18n/client";
+import { useFormat, useT, useTimeZone } from "@/i18n/client";
 import { valueLabel } from "@/i18n/labels";
-import { dubaiDay, dueAt, nextDue, snoozeTo, whenOf, type BoardTask, type When } from "./sample";
+import { daysToWeekEnd, dueAt, nextDue, pickedDate, snoozeTo, whenOf, type BoardTask, type When } from "./sample";
 
 type View = "mine" | "team" | "all";
 const ORDER: When[] = ["overdue", "today", "tomorrow", "week", "later", "none"];
@@ -38,6 +38,7 @@ export function TaskList({ tasks: initial, people, customers, viewer, now, base 
   const tr = useT("tasks");
   const tAll = useT();
   const fmt = useFormat();
+  const tz = useTimeZone();
   const name = (id: string) => people.find((p) => p.id === id)?.name ?? tAll("common.someone");
   const ref = (t: BoardTask) => ({ teamId: t.teamId, holderId: t.ownerId });
   const canManage = (t: BoardTask) => covers(viewer, "tasks.manage", ref(t));
@@ -64,7 +65,7 @@ export function TaskList({ tasks: initial, people, customers, viewer, now, base 
       update(t.id, { done: false, doneAt: undefined });
       return;
     }
-    const next = nextDue(t);
+    const next = nextDue(t, tz);
     const createdId = next ? `${t.id}-r${tasks.length}` : null;
     setTasks((all) => [
       ...all.map((x) => (x.id === t.id ? { ...x, done: true, doneAt: Date.now() } : x)),
@@ -83,16 +84,14 @@ export function TaskList({ tasks: initial, people, customers, viewer, now, base 
   function add(e: React.FormEvent) {
     e.preventDefault();
     if (!draft.text.trim()) return;
-    const days = { today: 0, tomorrow: 1, week: 7 - ((new Date(dubaiDay(now) + 4 * 3600_000).getUTCDay() + 6) % 7) } as Record<string, number>;
+    const days = { today: 0, tomorrow: 1, week: daysToWeekEnd(now, tz) } as Record<string, number>;
     let due: number | null = null;
     let hasTime = false;
     if (draft.when === "date" && draft.date) {
-      const [y, m, d] = draft.date.split("-").map(Number);
-      const midnight = Date.UTC(y, m - 1, d) - 4 * 3600_000;
-      due = midnight + (draft.time ? (Number(draft.time.slice(0, 2)) * 60 + Number(draft.time.slice(3))) * 60_000 : 9 * 3600_000);
+      due = pickedDate(draft.date, draft.time, tz);
       hasTime = !!draft.time;
     } else if (draft.when in days) {
-      ({ due, hasTime } = dueAt(days[draft.when], draft.time || null, now));
+      ({ due, hasTime } = dueAt(days[draft.when], draft.time || null, now, tz));
     }
     const c = customers.find((x) => x.id === draft.customerId);
     const task: BoardTask = {
@@ -115,7 +114,7 @@ export function TaskList({ tasks: initial, people, customers, viewer, now, base 
 
   const dueLabel = (t: BoardTask) => {
     if (t.due === null) return null;
-    const w = whenOf(t, now);
+    const w = whenOf(t, now, tz);
     const day = w === "today" || w === "tomorrow" ? "" : fmt.listTime(t.due, now);
     const clock = t.hasTime ? fmt.time(t.due) : "";
     return [day, clock].filter(Boolean).join(fmt.locale === "ar" ? "، " : ", ") || null;
@@ -125,7 +124,7 @@ export function TaskList({ tasks: initial, people, customers, viewer, now, base 
 
   const row = (t: BoardTask) => {
     const editable = canManage(t);
-    const w = whenOf(t, now);
+    const w = whenOf(t, now, tz);
     const label = dueLabel(t);
     const expanded = open === t.id;
     return (
@@ -170,7 +169,7 @@ export function TaskList({ tasks: initial, people, customers, viewer, now, base 
                     key={k}
                     type="button"
                     onClick={(e) => {
-                      update(t.id, snoozeTo(k, now));
+                      update(t.id, snoozeTo(k, now, tz));
                       e.currentTarget.closest("details")?.removeAttribute("open");
                     }}
                     className="min-h-10 rounded px-3 text-start text-sm hover:bg-surface-2"
@@ -215,12 +214,12 @@ export function TaskList({ tasks: initial, people, customers, viewer, now, base 
 
   const groups: [string, BoardTask[], boolean][] =
     view === "mine"
-      ? ORDER.map((w) => [tr(`when.${w}`), openTasks.filter((t) => whenOf(t, now) === w), w === "overdue"] as [string, BoardTask[], boolean])
+      ? ORDER.map((w) => [tr(`when.${w}`), openTasks.filter((t) => whenOf(t, now, tz) === w), w === "overdue"] as [string, BoardTask[], boolean])
       : [...new Set(openTasks.map((t) => t.ownerId))]
           .sort((a, b) => (a === me ? -1 : b === me ? 1 : name(a).localeCompare(name(b), fmt.locale)))
           .map((owner) => {
             const list = openTasks.filter((t) => t.ownerId === owner);
-            const late = list.filter((t) => whenOf(t, now) === "overdue").length;
+            const late = list.filter((t) => whenOf(t, now, tz) === "overdue").length;
             const who = owner === me ? tAll("common.you") : name(owner);
             return [late ? tr("personLate", { name: who, open: list.length, late }) : tr("person", { name: who, open: list.length }), list, late > 0] as [string, BoardTask[], boolean];
           });
@@ -300,7 +299,7 @@ export function TaskList({ tasks: initial, people, customers, viewer, now, base 
 
       {undo && (
         <div role="status" className="fixed inset-x-0 bottom-20 z-30 mx-auto flex w-fit max-w-[90vw] items-center gap-4 rounded-full bg-text px-5 py-2.5 text-sm text-bg shadow-[var(--shadow-2)] lg:bottom-6">
-          <span>{undo.created ? tr("doneNext", { text: undo.before.text, when: fmt.listTime(nextDue(undo.before) ?? now, now) }) : tr("doneToast", { text: undo.before.text })}</span>
+          <span>{undo.created ? tr("doneNext", { text: undo.before.text, when: fmt.listTime(nextDue(undo.before, tz) ?? now, now) }) : tr("doneToast", { text: undo.before.text })}</span>
           <button type="button" onClick={undoComplete} className="font-semibold underline-offset-2 hover:underline">{tr("undo")}</button>
         </div>
       )}

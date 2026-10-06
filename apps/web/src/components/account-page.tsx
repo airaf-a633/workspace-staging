@@ -1,4 +1,5 @@
 import { LanguageSwitch } from "@/components/language-switch";
+import { TimeZonePicker } from "@/components/time-zone-picker";
 import { SectionHeader, SettingsFrame, ListSurface } from "@/components/settings-frame";
 import { SetupChecklist } from "@/components/setup-checklist";
 import { getT } from "@/i18n/server";
@@ -6,7 +7,7 @@ import type { SetupStep } from "@/lib/setup";
 
 const LATER = ["billing", "security", "data", "theme"] as const;
 
-/** Settings › Account, shared by the real workspace and the preview. Language is the one personal setting live now. */
+/** Settings › Account, shared by the real workspace and the preview. Language and time zone are the personal settings live now. */
 export async function AccountPage({ base, workspaceName, isOwner, steps, saveLanguageToProfile }: { base: string; workspaceName: string; isOwner: boolean; steps: SetupStep[]; saveLanguageToProfile: boolean }) {
   const t = await getT("account");
   const setup = await getT("setup");
@@ -22,6 +23,13 @@ export async function AccountPage({ base, workspaceName, isOwner, steps, saveLan
             <span className="text-sm text-muted">{t("language.description")}</span>
           </span>
           <LanguageSwitch saveToProfile={saveLanguageToProfile} />
+        </li>
+        <li className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-5 py-4">
+          <span className="grid">
+            <span className="font-medium">{t("timeZone.title")}</span>
+            <span className="text-sm text-muted">{t("timeZone.description")}</span>
+          </span>
+          <TimeZonePicker />
         </li>
       </ListSurface>
       {isOwner && <SetupChecklist steps={steps} title={setup("accountTitle")} />}

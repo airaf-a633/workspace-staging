@@ -1,5 +1,6 @@
 import { canSeeDealValue, covers, type RoleTemplateKey } from "@app/domain";
 import { previewDeals, previewPerson, previewTasks } from "@/lib/preview";
+import { startOfDay as dayStart } from "@/i18n/zone";
 
 /**
  * What the preview's AI "knows" for one person: plain facts it can answer from, already cut down to that
@@ -24,10 +25,10 @@ export interface AiWorld {
 
 const DAY = 86_400_000;
 
-export function previewAiWorld(as: string): AiWorld {
+export function previewAiWorld(as: string, tz: string): AiWorld {
   const me = previewPerson(as);
-  const { data, deals } = previewDeals(as);
-  const { tasks } = previewTasks(as);
+  const { data, deals } = previewDeals(as, tz);
+  const { tasks } = previewTasks(as, tz);
   const name = (id: string) => data.people.find((p) => p.id === id)?.name ?? "";
   const ref = (teamId: string, holderId: string) => ({ teamId, holderId });
   const canDeals = (me.scopes["deals.view"] ?? "none") !== "none";
@@ -53,7 +54,7 @@ export function previewAiWorld(as: string): AiWorld {
     .map((c) => ({ id: c.id, customer: c.contact.name, waitingMin: Math.round((data.now - c.lastCustomerAt!) / 60_000) }))
     .sort((a, b) => b.waitingMin - a.waitingMin);
 
-  const startOfDay = Math.floor((data.now + 4 * 3600_000) / DAY) * DAY - 4 * 3600_000;
+  const startOfDay = dayStart(data.now, tz);
   const mine = tasks.filter((t) => t.ownerId === me.id && !t.done);
   return {
     base: `/preview/${as}`,

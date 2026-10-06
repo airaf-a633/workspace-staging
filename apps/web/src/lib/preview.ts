@@ -51,19 +51,20 @@ export function previewScope(key: string, permission: string): Scope {
   return (previewPerson(key).scopes[permission] ?? "none") as Scope;
 }
 
-export function previewInbox(key: string) {
+export function previewInbox(key: string, tz: string) {
   const me = previewPerson(key);
   return buildSampleInbox(
     previewMembers(),
     PREVIEW_TEAMS.map(({ id, name, isDefault }) => ({ id, name, isDefault })),
     { memberId: me.id, teamIds: me.teams, scopes: me.scopes },
+    tz,
   );
 }
 
 /** Customers the viewer may see (contacts.view: the viewer role sees its own teams only). */
-export function previewCustomers(key: string) {
+export function previewCustomers(key: string, tz: string) {
   const me = previewPerson(key);
-  const data = previewInbox(key);
+  const data = previewInbox(key, tz);
   const scope = me.scopes["contacts.view"] ?? "none";
   const all = buildCustomers(data);
   const customers = scope === "all" ? all : scope === "team" ? all.filter((c) => me.teams.includes(c.teamId)) : [];
@@ -76,14 +77,14 @@ export function previewNow() {
 }
 
 /** Every sample deal; the board filters by the viewer's deals.view scope itself. */
-export function previewDeals(key: string) {
-  const data = previewInbox(key);
+export function previewDeals(key: string, tz: string) {
+  const data = previewInbox(key, tz);
   return { data, deals: buildDeals(data, buildCustomers(data)) };
 }
 
 /** Every sample task; the list filters by the viewer's tasks.manage scope itself. */
-export function previewTasks(key: string) {
-  const data = previewInbox(key);
+export function previewTasks(key: string, tz: string) {
+  const data = previewInbox(key, tz);
   const customers = buildCustomers(data);
-  return { data, tasks: buildTasks(data, customers), customers: previewCustomers(key).customers.map((c) => ({ id: c.id, name: c.name })) };
+  return { data, tasks: buildTasks(data, customers), customers: previewCustomers(key, tz).customers.map((c) => ({ id: c.id, name: c.name })) };
 }

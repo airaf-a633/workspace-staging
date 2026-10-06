@@ -6,6 +6,7 @@ import { canSeeDealValue, replyAccess, windowOpen, type RoleTemplateKey } from "
 import type { InboxData } from "@/components/inbox/types";
 import { getFormat, getT } from "@/i18n/server";
 import { valueLabel } from "@/i18n/labels";
+import { wallClock } from "@/i18n/zone";
 import type { en } from "@/i18n/messages/en";
 import type { Format, TFor, Translator } from "@/i18n/types";
 
@@ -50,8 +51,8 @@ function hint(h: Hint, t: TFor<"home">, time: TFor<"time">) {
 
 const SHOWN = 5;
 
-function greeting(now: number, t: TFor<"home">, name: string) {
-  const h = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Dubai", hour: "numeric", hourCycle: "h23" }).format(now));
+function greeting(now: number, tz: string, t: TFor<"home">, name: string) {
+  const { h } = wallClock(now, tz);
   return t(h < 12 ? "morning" : h < 17 ? "afternoon" : "evening", { name });
 }
 
@@ -185,7 +186,7 @@ export async function ManagerHome({
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="grid gap-1">
           <p className="text-sm text-muted">{date}</p>
-          <h1 className="display text-4xl sm:text-5xl">{greeting(data.now, t, firstName)}</h1>
+          <h1 className="display text-4xl sm:text-5xl">{greeting(data.now, data.tz, t, firstName)}</h1>
         </div>
         {setup && <SetupChip {...setup} />}
       </header>

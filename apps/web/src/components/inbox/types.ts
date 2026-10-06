@@ -213,6 +213,8 @@ export interface Label {
 
 export interface InboxData {
   now: number;
+  /** The viewer's time zone: "today", due dates and greetings follow it. */
+  tz: string;
   people: Person[];
   teams: Team[];
   inboxes: ChannelInbox[];

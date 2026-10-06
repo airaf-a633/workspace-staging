@@ -1,23 +1,23 @@
 import { fils as toFils, formatAed } from "@app/domain";
 import { intlLocale, type Locale } from "./config";
 import type { Translator } from "./translate";
+import { DEFAULT_TZ } from "./zone";
 
 /**
- * Dates, times, money and sizes in the person's language. 24-hour Dubai time ("14:05", "Yesterday",
+ * Dates, times, money and sizes in the person's language and time zone. 24-hour clock ("14:05", "Yesterday",
  * "Mon 28 Sep"), Western digits in Arabic too, money as "$1,250.00". Built from parts so the server
  * and the browser print the same thing.
  */
-const TZ = "Asia/Dubai";
 /** Relay went global on 2026-10-07; amounts show in US dollars until workspaces pick their own currency. */
 const CURRENCY: "usd" | "aed" = "usd";
 
-export function makeFormat(locale: Locale, t: Translator) {
+export function makeFormat(locale: Locale, t: Translator, tz: string = DEFAULT_TZ) {
   const loc = intlLocale(locale);
-  const clock = new Intl.DateTimeFormat(loc, { timeZone: TZ, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
-  const dayParts = new Intl.DateTimeFormat(loc, { timeZone: TZ, weekday: "short", day: "numeric", month: "short", year: "numeric" });
-  const longDay = new Intl.DateTimeFormat(loc, { timeZone: TZ, weekday: "long" });
-  const shortDate = new Intl.DateTimeFormat(loc, { timeZone: TZ, day: "numeric", month: "short" });
-  const longDate = new Intl.DateTimeFormat(loc, { timeZone: TZ, weekday: "long", day: "numeric", month: "long" });
+  const clock = new Intl.DateTimeFormat(loc, { timeZone: tz, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  const dayParts = new Intl.DateTimeFormat(loc, { timeZone: tz, weekday: "short", day: "numeric", month: "short", year: "numeric" });
+  const longDay = new Intl.DateTimeFormat(loc, { timeZone: tz, weekday: "long" });
+  const shortDate = new Intl.DateTimeFormat(loc, { timeZone: tz, day: "numeric", month: "short" });
+  const longDate = new Intl.DateTimeFormat(loc, { timeZone: tz, weekday: "long", day: "numeric", month: "long" });
   const nf = new Intl.NumberFormat(loc);
   const list = new Intl.ListFormat(loc, { style: "long", type: "conjunction" });
 
@@ -41,6 +41,8 @@ export function makeFormat(locale: Locale, t: Translator) {
 
   return {
     locale,
+    /** The IANA zone these times are shown in. */
+    tz,
     time,
     date,
     /** "12 Oct" */

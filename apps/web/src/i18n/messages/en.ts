@@ -217,6 +217,11 @@ export const en = {
       description: "For menus, buttons and dates. Customer messages always show as written.",
       saved: "Language saved.",
     },
+    timeZone: {
+      title: "Your time zone",
+      description: "Times and dates show in this zone. Reports, business hours and reply targets use the workspace's zone.",
+      automatic: "Automatic ({zone})",
+    },
   },
 
   setup: {

@@ -1,6 +1,7 @@
 import type { Conversation, InboxData } from "@/components/inbox/types";
 import type { Line } from "@/i18n/labels";
 import type { Customer, TimelineItem } from "./types";
+import { dayDiff } from "@/i18n/zone";
 
 /**
  * Sample customers for the preview, built from the same sample chats as the inbox so every screen agrees,
@@ -8,9 +9,6 @@ import type { Customer, TimelineItem } from "./types";
  */
 
 const DAY = 86_400_000;
-const DUBAI = 4 * 3600_000;
-/** Same calendar day in the workspace's time zone (UTC+4 until workspaces pick their own). */
-const sameDay = (a: number, b: number) => Math.floor((a + DUBAI) / DAY) === Math.floor((b + DUBAI) / DAY);
 const EXTRA_FIELDS: Record<string, Partial<Customer>> = {
   mariam: { type: "Business", source: "Instagram ad", duplicateOf: "m-haddad" },
   lukas: { type: "Business", source: "Email" },
@@ -51,7 +49,7 @@ function fromConversation(c: Conversation, data: InboxData): Customer {
     if (m.kind !== "in" && m.kind !== "out") continue;
     const text = m.deleted ? undefined : m.subject ?? m.text;
     const line: Line | undefined = m.deleted ? { key: "inbox.snippet.deleted" } : !text && m.media ? { key: `message.media.${m.media.type}` } : undefined;
-    if (run && sameDay(run.last, m.at)) {
+    if (run && dayDiff(run.last, m.at, data.tz) === 0) {
       run.last = m.at;
       run.count++;
       run.text = text;

@@ -60,6 +60,7 @@ export async function loadLiveInbox(
   people: Person[],
   teams: Team[],
   viewer: ViewerInfo,
+  tz: string,
 ): Promise<InboxData | null> {
   const { data: convs } = await supabase
     .from("conversations")
@@ -160,5 +161,5 @@ export async function loadLiveInbox(
     };
   });
 
-  return { now: Date.now(), people, teams, viewer, conversations, inboxes, labels: [], live: true };
+  return { now: Date.now(), tz, people, teams, viewer, conversations, inboxes, labels: [], live: true };
 }

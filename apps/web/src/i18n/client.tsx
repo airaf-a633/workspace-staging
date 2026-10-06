@@ -6,11 +6,11 @@ import { createTranslator, scoped, type ScopedT, type Translator } from "./trans
 import { makeFormat } from "./format";
 import type { Messages } from "./messages/en";
 
-const I18n = createContext<{ locale: Locale; messages: Messages } | null>(null);
+const I18n = createContext<{ locale: Locale; messages: Messages; tz: string } | null>(null);
 
-/** Set once in the root layout with the request's language and its messages. */
-export function I18nProvider({ locale, messages, children }: { locale: Locale; messages: Messages; children: ReactNode }) {
-  const value = useMemo(() => ({ locale, messages }), [locale, messages]);
+/** Set once in the root layout with the request's language, its messages and the person's time zone. */
+export function I18nProvider({ locale, messages, tz, children }: { locale: Locale; messages: Messages; tz: string; children: ReactNode }) {
+  const value = useMemo(() => ({ locale, messages, tz }), [locale, messages, tz]);
   return <I18n.Provider value={value}>{children}</I18n.Provider>;
 }
 
@@ -38,7 +38,11 @@ export function useT(ns?: string): unknown {
 }
 
 export function useFormat() {
-  const { locale } = useI18n();
+  const { locale, tz } = useI18n();
   const t = useTranslator();
-  return useMemo(() => makeFormat(locale, t), [locale, t]);
+  return useMemo(() => makeFormat(locale, t, tz), [locale, t, tz]);
+}
+
+export function useTimeZone() {
+  return useI18n().tz;
 }

@@ -6,7 +6,7 @@ import { loadWorkspace } from "@/lib/workspace";
 import { LiveRefresh } from "@/components/inbox/live-refresh";
 import { loadLiveInbox } from "@/lib/inbox-live";
 import { markConversationRead } from "./actions";
-import { getT } from "@/i18n/server";
+import { getT, getTimeZone } from "@/i18n/server";
 
 export async function generateMetadata() {
   return { title: (await getT("nav"))("inbox") };
@@ -38,10 +38,11 @@ export default async function InboxPage(props: PageProps<"/w/[slug]/inbox">) {
   const mine = real.find((m) => m.id === me.id)!;
 
   const teamRows = (teams ?? []).map((t) => ({ id: t.id, name: t.name, isDefault: t.is_default }));
+  const tz = await getTimeZone();
   const viewer = { memberId: me.id, teamIds: (links ?? []).filter((l) => l.member_id === me.id).map((l) => l.team_id), scopes: mine.scopes };
   // Real chats once the first one exists; the sample chats until then (decided 2026-10-02).
-  const live = await loadLiveInbox(supabase, workspace.id, real.map(({ id, name, role, canReply }) => ({ id, name, role, canReply })), teamRows, viewer);
-  const data = live ?? buildSampleInbox(real, teamRows, viewer);
+  const live = await loadLiveInbox(supabase, workspace.id, real.map(({ id, name, role, canReply }) => ({ id, name, role, canReply })), teamRows, viewer, tz);
+  const data = live ?? buildSampleInbox(real, teamRows, viewer, tz);
 
   return (
     <Suspense>
