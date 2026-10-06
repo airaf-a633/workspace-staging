@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { PERMISSIONS, ROLE_TEMPLATES } from "@app/domain";
+import { PERMISSIONS, ROLE_TEMPLATES, scopeFor } from "@app/domain";
 import { Card } from "@/components/ui/surface";
 import { SectionHeader, SettingsFrame } from "@/components/settings-frame";
 import { previewScope } from "@/lib/preview";
@@ -34,9 +34,10 @@ export default async function PreviewRoles(props: PageProps<"/preview/[as]/roles
                   <th scope="row" className="sticky start-0 bg-surface px-6 py-2 text-start font-normal">
                     {permissionLabel(tAll, p.key)}{p.ownerOnly && <span className="text-muted"> {t("ownerOnly")}</span>}
                   </th>
-                  {p.scopes.map((s, i) => (
-                    <td key={i} className={`px-3 py-2 ${s === "none" ? "text-muted" : s === "all" ? "font-medium text-primary" : ""}`}>{s === "none" ? "—" : t(`cell.${s}`)}</td>
-                  ))}
+                  {ROLE_TEMPLATES.map((r) => {
+                    const s = scopeFor(p, r.key);
+                    return <td key={r.key} className={`px-3 py-2 ${s === "none" ? "text-muted" : s === "all" ? "font-medium text-primary" : ""}`}>{s === "none" ? "—" : t(`cell.${s}`)}</td>;
+                  })}
                 </tr>
               ))}
             </tbody>

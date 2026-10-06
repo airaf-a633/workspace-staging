@@ -1,13 +1,17 @@
 import type { Scope } from "./conversationAccess";
 
 /**
- * The permission catalogue and the six built-in role templates, copied from
+ * The permission catalogue and the built-in role templates, copied from
  * supabase/migrations/20260927000001_foundations.sql (the source of truth).
  * roleTemplates.test.ts fails if this copy drifts from the migration.
+ *
+ * Admin (supabase/migrations/20261007000001_admin_role.sql) holds exactly the owner's scopes, so it has no
+ * column of its own: what an admin can't do is about owners themselves, enforced by the database.
  */
 
 export const ROLE_TEMPLATES = [
   { key: "owner", name: "Owner" },
+  { key: "admin", name: "Admin" },
   { key: "sales_manager", name: "Sales manager" },
   { key: "support_manager", name: "Support manager" },
   { key: "ops_manager", name: "Operations manager" },
@@ -20,7 +24,7 @@ export interface PermissionInfo {
   key: string;
   description: string;
   ownerOnly: boolean;
-  /** Scope per template, in ROLE_TEMPLATES order. */
+  /** Scope per template column: owner (and admin), sales, support, operations, agent, viewer. */
   scopes: readonly [Scope, Scope, Scope, Scope, Scope, Scope];
 }
 
@@ -68,7 +72,13 @@ export const PERMISSIONS: readonly PermissionInfo[] = [
   { key: "orders.create", description: "Create orders from chat (Orders pack)", ownerOnly: false, scopes: ["all", "none", "none", "all", "own", "none"] },
 ];
 
+const COLUMN: Record<RoleTemplateKey, number> = { owner: 0, admin: 0, sales_manager: 1, support_manager: 2, ops_manager: 3, agent: 4, viewer: 5 };
+
+/** One permission's scope for one template. */
+export function scopeFor(p: PermissionInfo, template: RoleTemplateKey): Scope {
+  return p.scopes[COLUMN[template]] ?? "none";
+}
+
 export function templateScopes(template: RoleTemplateKey): Record<string, Scope> {
-  const i = ROLE_TEMPLATES.findIndex((t) => t.key === template);
-  return Object.fromEntries(PERMISSIONS.map((p) => [p.key, p.scopes[i] ?? "none"]));
+  return Object.fromEntries(PERMISSIONS.map((p) => [p.key, scopeFor(p, template)]));
 }

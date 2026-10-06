@@ -227,3 +227,15 @@ The omnichannel inbox (step 2) is built on these decisions:
   - a banner in that inbox with Reconnect;
   - an item on the owner's home under "Needs you now";
   - a composer that says it can't send there and offers another channel.
+
+### Time zones and channels (2026-10-07)
+
+- **Time zones:** each person sees times in their own zone. It's set in their profile and detected from the browser at sign-up. Reports, business hours and SLAs use the workspace's zone.
+- **Channels page:**
+  - Connected inboxes come first, with health and quick settings.
+  - Below them, the catalogue of all 18 channels, grouped into Messaging, Social, Web, Work and Developer.
+- **Connect flows:**
+  - WhatsApp, website chat, email, Instagram and Messenger each get their own step-by-step flow.
+  - Website chat's flow includes a live widget preview and the install code.
+  - Email's flow covers forwarding and SMTP.
+  - The other 13 channels share one "connect with your account" flow.

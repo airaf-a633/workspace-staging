@@ -119,6 +119,7 @@ export const en = {
 
   roles: {
     owner: "Owner",
+    admin: "Admin",
     sales_manager: "Sales manager",
     support_manager: "Support manager",
     ops_manager: "Operations manager",
@@ -591,6 +592,7 @@ export const en = {
       kenji: "Today's tasks, orders and shipping. Holds Mariam's chat.",
       leo: "His own chats and deals in Sales and Support.",
       amara: "Reads Support's chats and reports. Can't reply.",
+      noah: "Runs the workspace with Elena: channels, people, settings and billing. Can't change an owner.",
     },
   },
 
@@ -890,8 +892,8 @@ export const en = {
     matrixTitle: "What each role can do",
     matrixHelp: "All = the whole workspace. Team = their teams. Own = what they hold or own.",
     permission: "Permission",
-    ownerOnly: "(owner only)",
-    ownerOnlyLabel: "Owner only",
+    ownerOnly: "(owner and admin)",
+    ownerOnlyLabel: "Owner and admin only",
     cell: { own: "Own", team: "Team", all: "All" },
     allRoles: "All roles",
     editDescription: "Choose how far each permission reaches. Owner-only permissions can't be given to other roles.",
@@ -907,7 +909,7 @@ export const en = {
       needName: "Name the role.",
       ownerCreate: "Only the owner can create roles.",
       onlyCustom: "Only custom roles can be changed, and only by the owner.",
-      ownerOnlyPerm: "{permission} is owner-only.",
+      ownerOnlyPerm: "{permission} is for the owner and admins only.",
       saveFailed: "Couldn't save. Try again.",
       inUse: "Move the members using this role to another role first.",
       deleteCustom: "Only custom roles can be deleted.",

@@ -21,6 +21,7 @@ export const PREVIEW_TEAMS = [
 /** What each person sees is described in the language files (preview.people.<key>). */
 export const PREVIEW_PEOPLE = [
   { key: "elena", name: "Elena", template: "owner", teams: ["t-general"] },
+  { key: "noah", name: "Noah", template: "admin", teams: ["t-general"] },
   { key: "marcus", name: "Marcus", template: "sales_manager", teams: ["t-sales"] },
   { key: "priya", name: "Priya", template: "support_manager", teams: ["t-support"] },
   { key: "kenji", name: "Kenji", template: "ops_manager", teams: ["t-sales", "t-support"] },

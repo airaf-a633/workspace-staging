@@ -33,6 +33,7 @@ type Hint = { up: number } | { target: number };
 type Stat = [keyof typeof en.home.stats, Value, Hint?];
 const NUMBERS: Record<RoleTemplateKey, Stat[]> = {
   owner: [["revenue", { usd: 48_620 }, { up: 12 }], ["pipeline", { usd: 25_700 }], ["medianReply", { min: 6 }, { target: 30 }], ["unassigned", { n: 3 }]],
+  admin: [["revenue", { usd: 48_620 }, { up: 12 }], ["pipeline", { usd: 25_700 }], ["medianReply", { min: 6 }, { target: 30 }], ["unassigned", { n: 3 }]],
   sales_manager: [["pipeline", { usd: 25_700 }], ["won", { usd: 19_560 }, { up: 8 }], ["leads", { n: 31 }], ["followUpsToday", { n: 4 }]],
   support_manager: [["openChats", { n: 22 }], ["waitingCustomer", { n: 9 }], ["medianReply", { min: 6 }, { target: 30 }], ["overTarget", { n: 2 }]],
   ops_manager: [["tasksToday", { n: 9 }], ["ordersToFulfil", { n: 5 }], ["meetingsToday", { n: 2 }], ["overdueTasks", { n: 1 }]],

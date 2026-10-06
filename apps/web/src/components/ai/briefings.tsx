@@ -15,6 +15,7 @@ import { AiFeedback } from "./feedback";
 /** Which agents report to which role (decided 2026-10-01). Each works with that person's own permissions. */
 const FOR: Record<RoleTemplateKey, AgentKey[]> = {
   owner: ["briefing", "sales", "triage", "receptionist"],
+  admin: ["briefing", "sales", "triage", "receptionist"],
   sales_manager: ["sales", "briefing"],
   support_manager: ["triage", "receptionist", "briefing"],
   ops_manager: ["briefing"],

@@ -34,6 +34,6 @@ export default async function PreviewHome(props: PageProps<"/preview/[as]">) {
     }));
 
   // The sample business has connected WhatsApp and invited its team; hours, import and store are still open.
-  const setup = me.template === "owner" ? { done: 2, total: 5, href: `/preview/${as}/account` } : undefined;
+  const setup = me.template === "owner" || me.template === "admin" ? { done: 2, total: 5, href: `/preview/${as}/account` } : undefined;
   return <ManagerHome firstName={me.name} template={me.template} data={data} inboxHref={`/preview/${as}/inbox`} setup={setup} extraNeeds={approvals} briefings={<AgentBriefings world={previewAiWorld(as)} />} />;
 }
