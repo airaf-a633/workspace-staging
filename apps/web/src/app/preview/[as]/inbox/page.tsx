@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { Inbox } from "@/components/inbox/inbox";
-import { previewInbox } from "@/lib/preview";
+import { previewInbox, previewScope } from "@/lib/preview";
 import { getT, getTimeZone } from "@/i18n/server";
 
 export async function generateMetadata() {
@@ -12,7 +12,7 @@ export default async function PreviewInbox(props: PageProps<"/preview/[as]/inbox
   const tz = await getTimeZone();
   return (
     <Suspense>
-      <Inbox data={previewInbox(as, tz)} />
+      <Inbox data={previewInbox(as, tz)} connectHref={previewScope(as, "numbers.manage") !== "none" ? `/preview/${as}/channels#add` : undefined} />
     </Suspense>
   );
 }

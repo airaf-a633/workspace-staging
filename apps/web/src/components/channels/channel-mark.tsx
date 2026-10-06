@@ -11,7 +11,8 @@ export function ChannelMark({ ch, size = 18, label = true, className = "" }: { c
   return (
     <span
       className={`inline-grid shrink-0 place-items-center rounded-full text-white ${className}`}
-      style={{ width: size, height: size, background: c.color }}
+      // Near-black brand marks (X, TikTok, Apple) get a hairline so they still read on dark surfaces.
+      style={{ width: size, height: size, background: c.color, boxShadow: c.color === "#111518" ? "0 0 0 1px var(--border)" : undefined }}
       role={label ? "img" : undefined}
       aria-label={label ? name : undefined}
       aria-hidden={label ? undefined : true}

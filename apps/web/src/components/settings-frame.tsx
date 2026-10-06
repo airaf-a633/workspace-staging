@@ -2,11 +2,11 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { getT } from "@/i18n/server";
 
-export type SettingsSection = "members" | "teams" | "roles" | "whatsapp" | "ai" | "account";
+export type SettingsSection = "members" | "teams" | "roles" | "channels" | "ai" | "account";
 
 /**
  * Settings as one page with a side sub-menu (decided 2026-09-30). The sections keep their own URLs
- * (`/members`, `/teams`, `/roles`, `/whatsapp`, `/account`) so links and server actions stay the same.
+ * (`/members`, `/teams`, `/roles`, `/channels`, `/account`) so links and server actions stay the same.
  */
 export async function SettingsFrame({ base, active, isOwner, children }: { base: string; active: SettingsSection; isOwner: boolean; children: ReactNode }) {
   const t = await getT("settings");
@@ -15,7 +15,7 @@ export async function SettingsFrame({ base, active, isOwner, children }: { base:
     { key: "members", label: t("members"), href: `${base}/members` },
     { key: "teams", label: t("teams"), href: `${base}/teams` },
     ...(isOwner ? [{ key: "roles" as const, label: t("roles"), href: `${base}/roles` }] : []),
-    { key: "whatsapp", label: t("whatsapp"), href: `${base}/whatsapp` },
+    { key: "channels", label: t("channels"), href: `${base}/channels` },
     { key: "ai", label: t("ai"), href: `${base}/ai` },
     { key: "account", label: t("account"), href: `${base}/account` },
   ];

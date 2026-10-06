@@ -33,7 +33,7 @@ export default async function WhatsAppNumbers(props: PageProps<"/w/[slug]/whatsa
   const error = errorText(tAll, "numbers", sp.error);
 
   return (
-    <SettingsFrame base={`/w/${slug}`} active="whatsapp" isOwner={await can(workspace.id, "members.manage")}>
+    <SettingsFrame base={`/w/${slug}`} active="channels" isOwner={await can(workspace.id, "members.manage")}>
       <SectionHeader title={t("title")} description={isOwner ? t("descriptionBefore") : t("ownerOnly")} />
       {error && <Notice tone="error" title={error} />}
       {sp.connected && <Notice tone="success" title={t("connectedTitle")}>{t("connectedBody")}</Notice>}
