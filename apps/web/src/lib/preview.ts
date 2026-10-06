@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { ROLE_TEMPLATES, templateScopes, type RoleTemplateKey, type Scope } from "@app/domain";
 import { buildSampleInbox } from "@/components/inbox/sample-data";
-import { buildCustomers } from "@/components/customers/sample";
+import { buildCompanies, buildCustomers } from "@/components/customers/sample";
 import { buildDeals } from "@/components/deals/sample";
 import { buildTasks } from "@/components/tasks/sample";
 
@@ -87,4 +87,10 @@ export function previewTasks(key: string, tz: string) {
   const data = previewInbox(key, tz);
   const customers = buildCustomers(data);
   return { data, tasks: buildTasks(data, customers), customers: previewCustomers(key, tz).customers.map((c) => ({ id: c.id, name: c.name })) };
+}
+
+/** Companies with the people the viewer may see. */
+export function previewCompanies(key: string, tz: string) {
+  const { data, customers } = previewCustomers(key, tz);
+  return { data, customers, companies: buildCompanies(data, customers) };
 }

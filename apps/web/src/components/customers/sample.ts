@@ -1,6 +1,7 @@
-import type { Conversation, InboxData } from "@/components/inbox/types";
+import type { Conversation, Identity, InboxData } from "@/components/inbox/types";
+import type { ChannelKey } from "@/components/channels/catalog";
 import type { Line } from "@/i18n/labels";
-import type { Customer, TimelineItem } from "./types";
+import type { Company, Consent, CustomFieldDef, Customer, Lifecycle, TimelineItem } from "./types";
 import { dayDiff } from "@/i18n/zone";
 
 /**
@@ -9,10 +10,54 @@ import { dayDiff } from "@/i18n/zone";
  */
 
 const DAY = 86_400_000;
+
+/** The fields Northwind Home defined for every contact (Settings › Contacts and privacy). */
+export const CUSTOM_FIELDS: CustomFieldDef[] = [
+  { key: "tier", label: "Loyalty tier", type: "select", options: ["Bronze", "Silver", "Gold"] },
+  { key: "shopifyId", label: "Shopify customer ID", type: "text" },
+  { key: "birthday", label: "Birthday", type: "date" },
+];
+
+/** Companies (one per person, decided 2026-10-07). People are linked by company name; a shared email domain only suggests a link. */
+export const SAMPLE_COMPANIES = (now: number, ownerOf: (name: string) => string | null): Company[] => [
+  { id: "co-haddad", name: "Haddad Interiors", domain: "haddadinteriors.co.uk", industry: "Interior design", size: "11–50", location: "London, UK", ownerId: ownerOf("Marcus"), tags: ["Wholesale"], createdAt: now - 70 * DAY },
+  { id: "co-haus", name: "Haus & Licht GmbH", domain: "hausundlicht.de", industry: "Retail", size: "51–200", location: "Munich, Germany", ownerId: ownerOf("Kenji"), tags: ["Wholesale"], createdAt: now - 200 * DAY },
+  { id: "co-hearth", name: "Hearth & Co", domain: "hearthandco.pt", industry: "Retail", size: "11–50", location: "Porto, Portugal", ownerId: ownerOf("Marcus"), tags: ["Wholesale", "VIP"], createdAt: now - 320 * DAY },
+  { id: "co-bright", name: "Bright Dental Group", domain: "brightdental.ca", industry: "Healthcare", size: "201–500", location: "Toronto, Canada", ownerId: ownerOf("Leo"), tags: ["Wholesale"], createdAt: now - 120 * DAY },
+  { id: "co-kinfolk", name: "Kinfolk Studios", domain: "kinfolkstudios.com", industry: "Design studio", size: "1–10", location: "Copenhagen, Denmark", ownerId: ownerOf("Marcus"), tags: [], createdAt: now - 21 * DAY },
+];
+const COMPANY_BY_NAME: Record<string, string> = {
+  "Haddad Interiors": "co-haddad",
+  "Haus & Licht GmbH": "co-haus",
+  "Hearth & Co": "co-hearth",
+  "Bright Dental Group Inc.": "co-bright",
+};
+
+function lifecycleOf(orders: number, wonDeal: boolean): Lifecycle {
+  return orders > 1 ? "repeat" : orders === 1 || wonDeal ? "customer" : "lead";
+}
+
+/** Sample consent: opted in on the channels people bought through, unknown elsewhere. */
+function consentOf(identities: Identity[], createdAt: number): Partial<Record<ChannelKey, Consent>> {
+  const out: Partial<Record<ChannelKey, Consent>> = {};
+  for (const i of identities) {
+    out[i.ch] = i.ch === "email" || i.ch === "whatsapp" ? { status: "in", at: createdAt, source: "Checkout" } : { status: "unknown" };
+  }
+  return out;
+}
+
 const EXTRA_FIELDS: Record<string, Partial<Customer>> = {
-  mariam: { type: "Business", source: "Instagram ad", duplicateOf: "m-haddad" },
-  lukas: { type: "Business", source: "Email" },
-  ines: { type: "VIP", source: "Trade fair" },
+  mariam: {
+    type: "Business",
+    source: "Instagram ad",
+    duplicateOf: "m-haddad",
+    fields: { tier: "Gold", shopifyId: "7781 0042" },
+    pinned: { text: "Hotel opens on the 24th. Deliveries only on Thursdays, goods entrance at the back.", byId: "kenji", at: 0 },
+  },
+  lukas: { type: "Business", source: "Email", fields: { tier: "Silver" } },
+  ines: { type: "VIP", source: "Trade fair", lifecycle: "repeat", fields: { tier: "Gold" } },
+  george: { consent: { sms: { status: "out", at: 0, source: "Replied STOP" }, whatsapp: { status: "unknown" } } },
+  tom: { doNotContact: true },
   sofia: { source: "Instagram" },
   omar: { source: "Telegram" },
   nils: { source: "Discord" },
@@ -20,6 +65,11 @@ const EXTRA_FIELDS: Record<string, Partial<Customer>> = {
   deepak: { source: "Website chat" },
   yousef: { source: "Imported from phone" },
 };
+
+/** Sample consent overrides carry "at: 0"; give them a date a little in the past. */
+function withTime(c: Partial<Record<ChannelKey, Consent>> | undefined, now: number) {
+  return Object.fromEntries(Object.entries(c ?? {}).map(([k, v]) => [k, v.at === 0 ? { ...v, at: now - 12 * DAY } : v]));
+}
 
 function fromConversation(c: Conversation, data: InboxData): Customer {
   const name = (id: string | undefined | null) => data.people.find((p) => p.id === id)?.name ?? "";
@@ -76,6 +126,9 @@ function fromConversation(c: Conversation, data: InboxData): Customer {
   const real = c.messages.filter((m) => m.kind === "in" || m.kind === "out");
   const last = real[real.length - 1];
   const extra = EXTRA_FIELDS[c.id] ?? {};
+  const createdAt = (real[0]?.at ?? data.now) - 20 * DAY;
+  // Who did what to the contact itself: created, and later changes (the full log lives in the audit trail).
+  timeline.push({ id: `${c.id}-created`, at: createdAt, kind: "activity", title: { key: "timeline.created", vars: { channel: { t: `channels.${c.channel}` } } } });
   return {
     id: c.id,
     name: c.contact.name,
@@ -85,11 +138,18 @@ function fromConversation(c: Conversation, data: InboxData): Customer {
     language: c.contact.language,
     area: c.contact.location,
     type: extra.type ?? "Individual",
+    lifecycle: extra.lifecycle ?? lifecycleOf(c.contact.orders.length, c.contact.deals.some((d) => d.stage === "won")),
+    companyId: c.contact.company ? COMPANY_BY_NAME[c.contact.company] : undefined,
+    identities: c.contact.identities,
+    consent: { ...consentOf(c.contact.identities, createdAt), ...withTime(extra.consent, data.now) },
+    doNotContact: extra.doNotContact,
+    fields: extra.fields ?? {},
+    pinned: extra.pinned ? { ...extra.pinned, byId: data.people.find((p) => p.name.toLowerCase() === extra.pinned!.byId)?.id ?? "", at: data.now - 2 * DAY } : undefined,
     tags: c.contact.tags,
     ownerId: c.holderId ?? c.contact.deals[0]?.ownerId ?? null,
     teamId: c.teamId,
     source: extra.source ?? "Shopify",
-    createdAt: (real[0]?.at ?? data.now) - 20 * DAY,
+    createdAt,
     lastContact: last ? { at: last.at, channel: c.channel } : null,
     conversationId: c.status === "spam" ? undefined : c.id,
     duplicateOf: extra.duplicateOf,
@@ -116,6 +176,11 @@ export function buildCustomers(data: InboxData): Customer[] {
       language: "English",
       area: "London, UK",
       type: "Business",
+      lifecycle: "lead",
+      companyId: "co-haddad",
+      identities: [{ ch: "email", handle: "m.haddad@haddadinteriors.co.uk" }],
+      consent: { email: { status: "unknown" } },
+      fields: {},
       tags: ["Wholesale"],
       ownerId: byName("Marcus"),
       teamId: team("sales"),
@@ -137,6 +202,10 @@ export function buildCustomers(data: InboxData): Customer[] {
       language: "English",
       area: "Edinburgh, UK",
       type: "VIP",
+      lifecycle: "repeat",
+      identities: [{ ch: "whatsapp", handle: "+44 7700 900877" }, { ch: "instagram", handle: "@olivia.bennett" }],
+      consent: { whatsapp: { status: "in", at: now - 400 * DAY, source: "Checkout" }, instagram: { status: "unknown" } },
+      fields: { tier: "Gold", birthday: "1988-11-03" },
       tags: ["VIP"],
       ownerId: byName("Marcus"),
       teamId: team("sales"),
@@ -153,14 +222,19 @@ export function buildCustomers(data: InboxData): Customer[] {
       ],
     },
     {
-      id: "bright",
-      name: "Bright Dental Group",
+      id: "amelia",
+      name: "Amelia Ross",
       company: "Bright Dental Group Inc.",
       email: "purchasing@brightdental.ca",
       phone: "+1 416 555 0122",
       language: "English",
       area: "Toronto, Canada",
       type: "Business",
+      lifecycle: "lead",
+      companyId: "co-bright",
+      identities: [{ ch: "email", handle: "purchasing@brightdental.ca" }, { ch: "voice", handle: "+1 416 555 0122" }],
+      consent: { email: { status: "in", at: now - 120 * DAY, source: "Website form" } },
+      fields: {},
       tags: ["Wholesale"],
       ownerId: byName("Leo"),
       teamId: team("sales"),
@@ -182,6 +256,10 @@ export function buildCustomers(data: InboxData): Customer[] {
       language: "English",
       area: "Pune, India",
       type: "Individual",
+      lifecycle: "churned",
+      identities: [{ ch: "whatsapp", handle: "+91 98201 33456" }],
+      consent: { whatsapp: { status: "out", at: now - 30 * DAY, source: "Asked to stop" } },
+      fields: { tier: "Bronze" },
       tags: ["Warranty"],
       ownerId: null,
       teamId: team("support"),
@@ -195,6 +273,31 @@ export function buildCustomers(data: InboxData): Customer[] {
     },
   ];
 
+  // Same email domain as a company, not yet linked: a person confirms (decided 2026-10-07).
+  quiet.push({
+    id: "tomas",
+    name: "Tomás Silva",
+    email: "tomas@hearthandco.pt",
+    language: "English",
+    area: "Porto, Portugal",
+    type: "Individual",
+    lifecycle: "lead",
+    companySuggestion: "co-hearth",
+    identities: [{ ch: "email", handle: "tomas@hearthandco.pt" }],
+    consent: { email: { status: "unknown" } },
+    fields: {},
+    tags: [],
+    ownerId: null,
+    teamId: team("sales"),
+    source: "Website form",
+    createdAt: now - 3 * DAY,
+    lastContact: { at: now - 3 * DAY, channel: "email" },
+    deals: [],
+    tasks: [],
+    orders: [],
+    timeline: [{ id: "ts-1", at: now - 3 * DAY, kind: "email", title: { key: "timeline.emailSubject", vars: { subject: "Catalogue for our new store" } }, body: "Could you send your trade catalogue? We open a second store in Lisbon in spring." }],
+  });
+
   return [...fromChats, ...quiet].sort((a, b) => (b.lastContact?.at ?? 0) - (a.lastContact?.at ?? 0));
 }
 
@@ -206,3 +309,9 @@ export const SEGMENTS = [
   { key: "open-deal", test: (c: Customer) => c.deals.some((d) => d.stage === "new" || d.stage === "quoted" || d.stage === "negotiating") },
   { key: "quiet", test: (c: Customer, now: number) => !c.lastContact || now - c.lastContact.at > 30 * DAY },
 ] as const;
+
+/** Companies with their people, built from the same sample customers. */
+export function buildCompanies(data: InboxData, customers: Customer[]) {
+  const ownerOf = (name: string) => data.people.find((p) => p.name === name)?.id ?? null;
+  return SAMPLE_COMPANIES(data.now, ownerOf).map((co) => ({ ...co, people: customers.filter((c) => c.companyId === co.id) }));
+}

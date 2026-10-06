@@ -239,3 +239,26 @@ The omnichannel inbox (step 2) is built on these decisions:
   - Website chat's flow includes a live widget preview and the install code.
   - Email's flow covers forwarding and SMTP.
   - The other 13 channels share one "connect with your account" flow.
+
+### Contacts (2026-10-07, step 4)
+
+**Areas:**
+- **One person, every channel:** all of a contact's identities in one place, with merged history and merge suggestions.
+- Segments and CSV import.
+- Companies.
+- Privacy tools.
+- Activity and notes.
+- Custom fields and tags.
+- Ownership and lifecycle.
+- Bulk actions.
+
+**Companies:** each contact belongs to at most one company. The company page lists its people, plus all their conversations, deals and orders. Matching by email domain is suggested, and a person confirms it.
+
+**Import:** a review step. Exact matches on email or phone update the existing contact. Likely matches are listed so a person can merge them or keep them apart. Nothing is overwritten silently.
+
+**Privacy, at production level:**
+- Marketing consent per channel, with date and source. Campaigns respect it.
+- A global "do not contact" flag.
+- One-click export of everything held about a person.
+- Erase on request (owner or admin, with a typed confirmation). The audit log records that it happened, without the data.
+- Workspace retention rules that auto-delete conversations after N months.

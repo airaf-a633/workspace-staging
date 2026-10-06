@@ -46,7 +46,8 @@ export function makeFormat(locale: Locale, t: Translator, tz: string = DEFAULT_T
     time,
     date,
     /** "12 Oct" */
-    shortDate: (at: number) => shortDate.format(at),
+    // Some ICU versions print "Sept"; the decided English style is three letters.
+    shortDate: (at: number) => (locale === "en" ? shortDate.format(at).replace("Sept", "Sep") : shortDate.format(at)),
     /** "Thursday 1 October", for page headers. */
     longDate: (at: number) => longDate.format(at),
     /** "Thursday" */
