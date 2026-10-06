@@ -262,3 +262,18 @@ The omnichannel inbox (step 2) is built on these decisions:
 - One-click export of everything held about a person.
 - Erase on request (owner or admin, with a typed confirmation). The audit log records that it happened, without the data.
 - Workspace retention rules that auto-delete conversations after N months.
+
+### Reports and SLAs (2026-10-07, step 5)
+
+**Build order:** Reports, then SLAs, then Help Center, then Campaigns.
+
+**Reports cover four areas:**
+- **Conversations:** volume by channel, team and hour; first reply and resolution times; open backlog.
+- **Team and agents:** workload, reply times, ratings and handovers for each person.
+- **Satisfaction (CSAT):** ratings and comments by channel, team and agent.
+- **Sales and campaigns:** pipeline, won value, and campaign delivery, replies and conversions.
+
+**SLAs are policies, matched by team, channel and VIP:**
+- Examples: VIP first reply within 15 minutes; email within 4 hours.
+- The clock only counts business hours.
+- A warning shows at 80% of the target. Breaches are flagged in the inbox and in reports.
