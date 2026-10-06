@@ -89,7 +89,7 @@ export function AppShell({ base, workspaceName, memberName, roleName, signOut, f
       {/* Desktop side menu. In the Inbox it shrinks to an icon rail so the conversation gets the room (decided 2026-09-30). */}
       <aside className="hidden border-e border-border bg-surface lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col" aria-label={t("main")}>
         <div className={`flex items-center gap-3 ${rail ? "h-14 justify-center" : "px-5 py-5"}`}>
-          <span className="bg-hero grid size-9 shrink-0 place-items-center rounded-full font-serif text-lg text-white" aria-hidden={!rail} title={rail ? workspaceName : undefined}>
+          <span className="bg-primary grid size-9 shrink-0 place-items-center rounded-[var(--radius-control)] font-semibold text-lg text-white" aria-hidden={!rail} title={rail ? workspaceName : undefined}>
             {initial}
           </span>
           {rail ? <span className="sr-only">{workspaceName}</span> : <p className="title truncate text-lg" title={workspaceName}>{workspaceName}</p>}

@@ -91,6 +91,8 @@ export function makeFormat(locale: Locale, t: Translator) {
     aed: (amount: number) => t("money.aed", { amount: formatAed(toFils(amount), loc) }),
     /** "AED 1,250" for whole amounts on cards. */
     aedWhole: (amount: number) => t("money.aed", { amount: nf.format(Math.round(amount)) }),
+    /** "$1,250" for whole amounts on the public site, which speaks to a global audience. */
+    usdWhole: (amount: number) => t("money.usd", { amount: nf.format(Math.round(amount)) }),
   };
 }
 

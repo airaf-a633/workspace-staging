@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, ChatsCircle, House, Gear, UserPlus } from "@phosphor-icons/react/dist/ssr";
+import { RelayLogo } from "@/components/brand/logo";
 import { LanguageSwitch } from "@/components/language-switch";
 import { roleLabel } from "@/i18n/labels";
 import { getT } from "@/i18n/server";
@@ -20,15 +21,15 @@ export default async function PreviewIndex() {
 
   return (
     <main className="force-light min-h-dvh bg-bg text-text">
-      <section className="bg-hero drift rounded-b-[2.5rem] text-white">
-        <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-20 pt-10">
+      <section className="border-b border-border bg-surface">
+        <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-14 pt-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <Link href="/" className="font-serif text-2xl tracking-tight">{meta("name")}</Link>
-            <LanguageSwitch tone="glass" />
+            <Link href="/" aria-label={meta("name")}><RelayLogo size={26} /></Link>
+            <LanguageSwitch />
           </div>
-          <div className="grid max-w-3xl gap-5 pt-10">
-            <h1 className="display text-5xl sm:text-6xl">{t("index.title")}</h1>
-            <p className="text-lg text-white/85">{t("index.intro")}</p>
+          <div className="grid max-w-3xl gap-4 pt-8">
+            <h1 className="display text-4xl sm:text-5xl">{t("index.title")}</h1>
+            <p className="text-lg text-muted">{t("index.intro")}</p>
           </div>
         </div>
       </section>
@@ -42,7 +43,7 @@ export default async function PreviewIndex() {
               <li key={p.key}>
                 <div className="grid h-full content-start gap-4 rounded-[var(--radius-panel)] border border-border bg-surface p-6 shadow-[var(--shadow-1)]">
                   <div className="flex items-center gap-3">
-                    <span className="bg-hero grid size-12 place-items-center rounded-full font-serif text-xl text-white" aria-hidden="true">{p.name[0]}</span>
+                    <span className="bg-primary grid size-12 place-items-center rounded-full font-semibold text-xl text-white" aria-hidden="true">{p.name[0]}</span>
                     <div>
                       <p className="title text-2xl">{p.name}</p>
                       <p className="text-sm text-muted">{roleLabel(tAll, m.role)}</p>

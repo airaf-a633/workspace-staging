@@ -4,12 +4,12 @@ import { useState } from "react";
 import { useFormat, useT } from "@/i18n/client";
 
 /* Four homes over one set of sample data. A working preview, not a picture. Words: homesDemo.<role>; stats: home.stats. */
-type Value = { aed: number } | { min: number } | { n: number };
+type Value = { usd: number } | { min: number } | { n: number };
 const HOMES = {
-  owner: { who: "Khalid", numbers: [["revenue", { aed: 186_420 }], ["pipeline", { aed: 94_300 }], ["medianReply", { min: 6 }], ["unassigned", { n: 3 }]] },
-  sales: { who: "Sara", numbers: [["pipeline", { aed: 94_300 }], ["won", { aed: 71_850 }], ["leads", { n: 31 }], ["followUpsToday", { n: 4 }]] },
-  support: { who: "Omar", numbers: [["openChats", { n: 22 }], ["waitingCustomer", { n: 9 }], ["medianReply", { min: 6 }], ["overTarget", { n: 2 }]] },
-  ops: { who: "Priya", numbers: [["tasksToday", { n: 9 }], ["ordersToFulfil", { n: 5 }], ["meetingsToday", { n: 2 }], ["overdueTasks", { n: 1 }]] },
+  owner: { who: "Elena", numbers: [["revenue", { usd: 48_620 }], ["pipeline", { usd: 25_700 }], ["medianReply", { min: 6 }], ["unassigned", { n: 3 }]] },
+  sales: { who: "Marcus", numbers: [["pipeline", { usd: 25_700 }], ["won", { usd: 19_560 }], ["leads", { n: 31 }], ["followUpsToday", { n: 4 }]] },
+  support: { who: "Priya", numbers: [["openChats", { n: 22 }], ["waitingCustomer", { n: 9 }], ["medianReply", { min: 6 }], ["overTarget", { n: 2 }]] },
+  ops: { who: "Kenji", numbers: [["tasksToday", { n: 9 }], ["ordersToFulfil", { n: 5 }], ["meetingsToday", { n: 2 }], ["overdueTasks", { n: 1 }]] },
 } as const satisfies Record<string, { who: string; numbers: readonly (readonly [string, Value])[] }>;
 type Role = keyof typeof HOMES;
 
@@ -19,7 +19,7 @@ export function ManagerHomesPreview() {
   const t = useT("homesDemo");
   const tAll = useT();
   const fmt = useFormat();
-  const value = (v: Value) => ("aed" in v ? fmt.aedWhole(v.aed) : "min" in v ? tAll("time.minutes", { count: v.min }) : fmt.number(v.n));
+  const value = (v: Value) => ("usd" in v ? fmt.usdWhole(v.usd) : "min" in v ? tAll("time.minutes", { count: v.min }) : fmt.number(v.n));
   return (
     <div className="overflow-hidden rounded-[var(--radius-panel)] border border-border bg-surface shadow-[var(--shadow-2)]">
       <div role="tablist" aria-label={t("label")} className="flex flex-wrap gap-1 border-b border-border p-2">

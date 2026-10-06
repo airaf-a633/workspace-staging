@@ -7,9 +7,8 @@ import { LanguageSwitch } from "@/components/language-switch";
 import { useT } from "@/i18n/client";
 
 const LINKS = [
-  ["/#how", "how"],
-  ["/demo", "demo"],
-  ["/#pricing", "pricing"],
+  ["/#channels", "channels"],
+  ["/preview", "demo"],
   ["/#questions", "questions"],
 ] as const;
 
@@ -37,7 +36,7 @@ export function MobileMenu() {
         <span className="sr-only sm:not-sr-only">{t("menu")}</span>
       </button>
       {open && (
-        <nav id="site-menu" aria-label={t("nav.label")} className="glass-light absolute inset-x-0 top-full mt-2 rounded-3xl shadow-[var(--shadow-2)]">
+        <nav id="site-menu" aria-label={t("nav.label")} className="absolute inset-x-0 top-full mt-2 rounded-[var(--radius-panel)] border border-border bg-surface shadow-[var(--shadow-2)]">
           <ul className="grid px-5 py-2">
             {LINKS.map(([href, key]) => (
               <li key={href}>

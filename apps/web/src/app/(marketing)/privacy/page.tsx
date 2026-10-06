@@ -9,7 +9,7 @@ import { EnglishOnlyNotice } from "@/components/marketing/english-only";
 
 export const metadata: Metadata = {
   title: "Privacy policy",
-  description: "How Workspace collects, uses and protects personal data.",
+  description: "How Relay collects, uses and protects personal data.",
 };
 
 const UPDATED = "28 September 2026";
@@ -37,7 +37,7 @@ export default function PrivacyPolicy() {
       <section className="grid gap-3">
         <h2 className="text-xl font-semibold">1. Who we are</h2>
         <p>
-          Workspace (&ldquo;we&rdquo;, &ldquo;us&rdquo;) is a business messaging and customer management service operated by{" "}
+          Relay (&ldquo;we&rdquo;, &ldquo;us&rdquo;) is a business messaging and customer management service operated by{" "}
           <strong>[COMPANY LEGAL NAME]</strong>, a company registered in <strong>[FREE ZONE], United Arab Emirates</strong>, licence number{" "}
           <strong>[LICENCE NUMBER]</strong>, with its address at <strong>[REGISTERED ADDRESS]</strong>.
         </p>
@@ -50,13 +50,13 @@ export default function PrivacyPolicy() {
         <h2 className="text-xl font-semibold">2. Two roles: our customers and their customers</h2>
         <ul className="list-disc ps-6">
           <li>
-            <strong>Businesses that use Workspace</strong> (&ldquo;our customers&rdquo;) and their staff: we decide how their account data is used,
+            <strong>Businesses that use Relay</strong> (&ldquo;our customers&rdquo;) and their staff: we decide how their account data is used,
             so for that data we are the <strong>controller</strong>.
           </li>
           <li>
             <strong>People who message those businesses</strong> (&ldquo;end customers&rdquo;): the business decides why and how their messages and
             details are used. We process that data <strong>only on the business&apos;s instructions</strong>, as its <strong>processor</strong>, under our
-            Data Processing Agreement. If you messaged a business that uses Workspace, contact that business first about your data; we will help them
+            Data Processing Agreement. If you messaged a business that uses Relay, contact that business first about your data; we will help them
             respond.
           </li>
         </ul>
@@ -105,7 +105,7 @@ export default function PrivacyPolicy() {
         </p>
         <p>
           <strong>
-            Workspace&apos;s use and transfer to any other app of information received from Google APIs will adhere to the{" "}
+            Relay&apos;s use and transfer to any other app of information received from Google APIs will adhere to the{" "}
             <a className="underline" href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>,
             including the Limited Use requirements.
           </strong>{" "}
@@ -113,7 +113,7 @@ export default function PrivacyPolicy() {
           do not read it unless the user asks us to for support, it is needed for security, or the law requires it.
         </p>
         <h3 className="font-semibold">Microsoft (Outlook and Microsoft 365)</h3>
-        <p>If a user connects a Microsoft account, we sync the mailboxes and calendars they choose, only to show them in Workspace.</p>
+        <p>If a user connects a Microsoft account, we sync the mailboxes and calendars they choose, only to show them in Relay.</p>
         <h3 className="font-semibold">Shopify and WooCommerce</h3>
         <p>If a business connects its store, we read customers and orders to show them next to conversations and to run the automations the business sets up.</p>
         <p>Users can disconnect any of these at any time in Settings; we then stop syncing and delete the access tokens.</p>
@@ -192,7 +192,7 @@ export default function PrivacyPolicy() {
 
       <section className="grid gap-3">
         <h2 className="text-xl font-semibold">12. Children</h2>
-        <p>Workspace is a business service and is not meant for anyone under 18.</p>
+        <p>Relay is a business service and is not meant for anyone under 18.</p>
       </section>
 
       <section className="grid gap-3">

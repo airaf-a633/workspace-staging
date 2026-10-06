@@ -9,7 +9,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Terms of service",
-  description: "The terms for using Workspace.",
+  description: "The terms for using Relay.",
 };
 
 const UPDATED = "28 September 2026";
@@ -32,14 +32,14 @@ export default function Terms() {
         <p className="text-sm text-muted">Last updated: {UPDATED}</p>
         <p>
           These terms are an agreement between <strong>[COMPANY LEGAL NAME]</strong> ([FREE ZONE], United Arab Emirates, licence{" "}
-          <strong>[LICENCE NUMBER]</strong>) (&ldquo;we&rdquo;) and the business that creates a Workspace account (&ldquo;you&rdquo;). By creating an
-          account or using Workspace you agree to them on behalf of your business, and you confirm you are allowed to do so.
+          <strong>[LICENCE NUMBER]</strong>) (&ldquo;we&rdquo;) and the business that creates a Relay account (&ldquo;you&rdquo;). By creating an
+          account or using Relay you agree to them on behalf of your business, and you confirm you are allowed to do so.
         </p>
       </header>
 
       <Section n={1} title="The service">
         <p>
-          Workspace lets your team manage WhatsApp and email conversations, customer records, deals, tasks, campaigns and connected tools in one place. We
+          Relay lets your team manage WhatsApp and email conversations, customer records, deals, tasks, campaigns and connected tools in one place. We
           may improve or change features; if a change significantly reduces what you pay for, we will tell you in advance.
         </p>
       </Section>
@@ -47,16 +47,16 @@ export default function Terms() {
       <Section n={2} title="Your account and team">
         <ul className="list-disc ps-6">
           <li>You must give accurate details and keep them up to date.</li>
-          <li>The account owner controls who joins, their roles and what they can see. You are responsible for everything your team members do in Workspace.</li>
+          <li>The account owner controls who joins, their roles and what they can see. You are responsible for everything your team members do in Relay.</li>
           <li>Keep sign-in details secret, turn on two-factor sign-in when available, and tell us straight away about any unauthorised access.</li>
-          <li>You must be a business and at least 18 years old. Workspace is not for personal or consumer use.</li>
+          <li>You must be a business and at least 18 years old. Relay is not for personal or consumer use.</li>
         </ul>
       </Section>
 
       <Section n={3} title="WhatsApp and other third-party services">
         <ul className="list-disc ps-6">
           <li>
-            Using WhatsApp through Workspace also means agreeing to Meta&apos;s WhatsApp Business terms and policies, including the{" "}
+            Using WhatsApp through Relay also means agreeing to Meta&apos;s WhatsApp Business terms and policies, including the{" "}
             <a className="underline" href="https://business.whatsapp.com/policy">WhatsApp Business Messaging Policy</a>. You are responsible for
             following them.
           </li>
@@ -73,7 +73,7 @@ export default function Terms() {
       </Section>
 
       <Section n={4} title="Acceptable use">
-        <p>You must not use Workspace to:</p>
+        <p>You must not use Relay to:</p>
         <ul className="list-disc ps-6">
           <li>send marketing to people who have not agreed to receive it, or keep messaging people who opted out;</li>
           <li>send spam, scams, phishing, harassment, or illegal, misleading or harmful content;</li>
@@ -89,7 +89,7 @@ export default function Terms() {
 
       <Section n={5} title="Your data">
         <ul className="list-disc ps-6">
-          <li>You own your data and your customers&apos; data. We use it only to provide Workspace to you, as described in our{" "}
+          <li>You own your data and your customers&apos; data. We use it only to provide Relay to you, as described in our{" "}
             <Link className="underline" href="/privacy">Privacy policy</Link> and our Data Processing Agreement, which forms part of these terms.</li>
           <li>You are responsible for having a lawful basis to collect and use your customers&apos; personal data, and for answering their requests about it.</li>
           <li>You can export your data at any time while your account is active, and for 90 days after it ends. After that we delete it, except where the law requires us to keep it.</li>
@@ -122,14 +122,14 @@ export default function Terms() {
 
       <Section n={9} title="Our intellectual property">
         <p>
-          Workspace, its software and its brand belong to us. You get a non-exclusive, non-transferable right to use it for your business while your
+          Relay, its software and its brand belong to us. You get a non-exclusive, non-transferable right to use it for your business while your
           subscription is active. If you send us feedback, we may use it without owing you anything.
         </p>
       </Section>
 
       <Section n={10} title="Availability and warranties">
         <p>
-          We work to keep Workspace available and secure, but it is provided &ldquo;as is&rdquo;. We do not promise it will be uninterrupted or error-free,
+          We work to keep Relay available and secure, but it is provided &ldquo;as is&rdquo;. We do not promise it will be uninterrupted or error-free,
           and we are not responsible for outages or changes of third-party services such as WhatsApp.
         </p>
       </Section>
@@ -137,7 +137,7 @@ export default function Terms() {
       <Section n={11} title="Limitation of liability">
         <p>
           As far as the law allows, we are not liable for indirect or consequential losses, such as lost profits, lost sales or lost data. Our total liability
-          for any claim relating to Workspace is limited to the fees you paid us in the 12 months before the claim. Nothing in these terms limits liability
+          for any claim relating to Relay is limited to the fees you paid us in the 12 months before the claim. Nothing in these terms limits liability
           that cannot be limited by law.
         </p>
       </Section>
@@ -152,7 +152,7 @@ export default function Terms() {
       <Section n={13} title="Changes to these terms">
         <p>
           We may update these terms. If a change matters, we will tell account owners by email and in the app at least 30 days before it takes effect. Continuing
-          to use Workspace after that means you accept the new terms.
+          to use Relay after that means you accept the new terms.
         </p>
       </Section>
 

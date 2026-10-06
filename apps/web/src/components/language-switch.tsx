@@ -24,8 +24,8 @@ export function LanguageSwitch({ tone = "plain", saveToProfile = false, classNam
     });
   }
 
-  const wrap = tone === "glass" ? "glass" : "bg-surface-2";
-  const on = tone === "glass" ? "bg-white text-[#0F2537]" : "bg-surface text-text shadow-[var(--shadow-1)]";
+  const wrap = tone === "glass" ? "border border-white/25" : "bg-surface-2";
+  const on = tone === "glass" ? "bg-white text-[#111518]" : "bg-surface text-text shadow-[var(--shadow-1)]";
   const off = tone === "glass" ? "text-white/85 hover:text-white" : "text-muted hover:text-text";
 
   return (

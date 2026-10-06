@@ -44,7 +44,7 @@ export default async function WhatsAppNumbers(props: PageProps<"/w/[slug]/whatsa
             const team = Array.isArray(a.teams) ? a.teams[0] : a.teams;
             return (
               <li key={a.id} className="flex flex-wrap items-center gap-4 border-b border-border px-5 py-4 last:border-0">
-                <span className="bg-hero grid size-10 shrink-0 place-items-center rounded-full font-serif text-lg text-white" aria-hidden="true">
+                <span className="bg-primary grid size-10 shrink-0 place-items-center rounded-full font-semibold text-lg text-white" aria-hidden="true">
                   {(a.verified_name ?? a.display_phone).charAt(0)}
                 </span>
                 <span className="grid min-w-0 flex-1 gap-0.5">

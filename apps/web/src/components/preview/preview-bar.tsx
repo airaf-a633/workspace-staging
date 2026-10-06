@@ -19,7 +19,7 @@ export function PreviewBar({ current, people }: { current: string; people: { key
   }
 
   return (
-    <div className="bg-hero flex min-h-10 flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-1 text-sm text-white">
+    <div className="flex min-h-10 bg-[#111518] flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-1 text-sm text-white">
       <p className="flex items-center gap-2">
         <Eye size={18} aria-hidden="true" />
         <span><strong className="font-semibold">{t("bar.title")}</strong><span className="hidden sm:inline"> · {t("bar.note")}</span></span>
@@ -30,7 +30,7 @@ export function PreviewBar({ current, people }: { current: string; people: { key
           <select
             value={current}
             onChange={(e) => switchTo(e.target.value)}
-            className="glass min-h-8 rounded-full px-3 text-sm text-white [&>option]:text-[#0F2537]"
+            className="min-h-8 rounded-full border border-white/25 bg-transparent px-3 text-sm text-white [&>option]:text-[#111518]"
           >
             {people.map((p) => (
               <option key={p.key} value={p.key}>{common("nameRole", { name: p.name, role: p.role })}</option>

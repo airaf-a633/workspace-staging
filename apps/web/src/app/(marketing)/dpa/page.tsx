@@ -11,7 +11,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Data processing agreement",
-  description: "How Workspace processes personal data on behalf of its customers.",
+  description: "How Relay processes personal data on behalf of its customers.",
 };
 
 const UPDATED = "28 September 2026";
@@ -43,7 +43,7 @@ export default function DataProcessingAgreement() {
         <p className="text-sm text-muted">Last updated: {UPDATED}</p>
         <p>
           This agreement (&ldquo;DPA&rdquo;) is part of the <Link className="underline" href="/terms">Terms of service</Link> between{" "}
-          <strong>[COMPANY LEGAL NAME]</strong> (&ldquo;we&rdquo;, the <strong>processor</strong>) and the business using Workspace (&ldquo;you&rdquo;,
+          <strong>[COMPANY LEGAL NAME]</strong> (&ldquo;we&rdquo;, the <strong>processor</strong>) and the business using Relay (&ldquo;you&rdquo;,
           the <strong>controller</strong>). It applies whenever we process personal data on your behalf. By accepting the Terms you accept this DPA. If the
           two conflict on data protection, this DPA wins.
         </p>
@@ -51,7 +51,7 @@ export default function DataProcessingAgreement() {
 
       <Section n="1" title="Definitions">
         <ul className="list-disc ps-6">
-          <li><strong>Customer personal data:</strong> personal data we process for you through Workspace, described in Annex 1.</li>
+          <li><strong>Customer personal data:</strong> personal data we process for you through Relay, described in Annex 1.</li>
           <li><strong>Data protection law:</strong> every law that applies to that processing, including the UAE Personal Data Protection Law (Federal Decree-Law 45 of 2021) and, where they apply, the EU/UK GDPR, the Saudi PDPL, the Indian DPDP Act and the Turkish KVKK.</li>
           <li><strong>Subprocessor:</strong> a third party we engage to process customer personal data (Annex 3).</li>
           <li><strong>Security incident:</strong> a breach of security leading to accidental or unlawful destruction, loss, alteration, disclosure of, or access to customer personal data.</li>
@@ -60,14 +60,14 @@ export default function DataProcessingAgreement() {
 
       <Section n="2" title="Roles">
         <p>
-          You decide why and how customer personal data is processed; we process it only to provide Workspace. Meta (WhatsApp), Google, Microsoft, Shopify
+          You decide why and how customer personal data is processed; we process it only to provide Relay. Meta (WhatsApp), Google, Microsoft, Shopify
           and other services <strong>you</strong> connect act under their own agreements with you, not as our subprocessors.
         </p>
       </Section>
 
       <Section n="3" title="Your instructions">
         <ul className="list-disc ps-6">
-          <li>We process customer personal data only on your documented instructions. The Terms, this DPA, and your configuration and use of Workspace are those instructions.</li>
+          <li>We process customer personal data only on your documented instructions. The Terms, this DPA, and your configuration and use of Relay are those instructions.</li>
           <li>If we believe an instruction breaks data protection law, we will tell you and may pause that processing.</li>
           <li>We do not sell customer personal data, use it for our own marketing, or use it to train AI models.</li>
         </ul>
@@ -75,9 +75,9 @@ export default function DataProcessingAgreement() {
 
       <Section n="4" title="Your responsibilities">
         <ul className="list-disc ps-6">
-          <li>You have a lawful basis for the data you bring into Workspace, including consent for marketing messages and for any contact lists you import.</li>
-          <li>You give people the notices the law requires about how you use their data, including through Workspace.</li>
-          <li>You configure Workspace appropriately (roles, retention, who can export) and keep your team&apos;s access up to date.</li>
+          <li>You have a lawful basis for the data you bring into Relay, including consent for marketing messages and for any contact lists you import.</li>
+          <li>You give people the notices the law requires about how you use their data, including through Relay.</li>
+          <li>You configure Relay appropriately (roles, retention, who can export) and keep your team&apos;s access up to date.</li>
         </ul>
       </Section>
 
@@ -102,7 +102,7 @@ export default function DataProcessingAgreement() {
 
       <Section n="8" title="Helping you with people's requests">
         <p>
-          Workspace lets you find, export, correct and erase a contact&apos;s data yourself. If a person contacts us directly about data we hold for you, we
+          Relay lets you find, export, correct and erase a contact&apos;s data yourself. If a person contacts us directly about data we hold for you, we
           will pass the request to you without undue delay and not answer it ourselves unless you ask us to.
         </p>
       </Section>
@@ -145,7 +145,7 @@ export default function DataProcessingAgreement() {
       <section className="grid gap-3 border-t pt-6">
         <h2 className="text-xl font-semibold">Annex 1: Details of the processing</h2>
         <dl className="grid gap-2">
-          <div><dt className="font-semibold">Subject matter and purpose</dt><dd>Providing Workspace: receiving, storing, showing, routing and sending messages; customer records; deals, tasks, campaigns, reports; connected-service sync; AI features you use.</dd></div>
+          <div><dt className="font-semibold">Subject matter and purpose</dt><dd>Providing Relay: receiving, storing, showing, routing and sending messages; customer records; deals, tasks, campaigns, reports; connected-service sync; AI features you use.</dd></div>
           <div><dt className="font-semibold">Duration</dt><dd>For the term of your subscription plus the 90-day export period, then deletion as in section 12.</dd></div>
           <div><dt className="font-semibold">People concerned</dt><dd>Your customers, leads and contacts who message you or whom you add; your staff and team members.</dd></div>
           <div><dt className="font-semibold">Types of data</dt><dd>Names, phone numbers, WhatsApp profile names, email addresses, message content and attachments (text, images, audio, video, documents, locations, contact cards), notes, deal and order details, and any custom fields you create.</dd></div>

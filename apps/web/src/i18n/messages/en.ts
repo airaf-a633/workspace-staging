@@ -8,7 +8,7 @@ import type { Shape } from "../translate";
  */
 export const en = {
   meta: {
-    name: "Workspace",
+    name: "Relay",
     description: "WhatsApp, email and customers in one place, for every manager.",
   },
 
@@ -60,6 +60,7 @@ export const en = {
 
   money: {
     aed: "AED {amount}",
+    usd: "${amount}",
   },
 
   /** Known values that the sample data stores as words. Anything not listed shows as written. */
@@ -597,13 +598,13 @@ export const en = {
   },
 
   authFrame: {
-    headline: "Your whole team, one WhatsApp number.",
+    headline: "Every customer conversation, one shared inbox.",
     points: {
-      phone: "Keep the WhatsApp app on your phone",
+      phone: "WhatsApp, email, Instagram, chat and 14 more",
       handoff: "Hand chats over with a note, never lose context",
-      noMarkup: "No markup on WhatsApp's fees",
+      noMarkup: "A home for every manager",
     },
-    footnote: "Official WhatsApp Business Platform · Data in Frankfurt",
+    footnote: "Official platform APIs only · Data in Frankfurt",
   },
 
   auth: {
@@ -656,7 +657,7 @@ export const en = {
 
   unlock: {
     title: "Private preview",
-    description: "This is an early look at Workspace with sample data. Enter the password you were given.",
+    description: "This is an early look at Relay with sample data. Enter the password you were given.",
     wrong: "That password didn't work. Check it and try again.",
     submit: "Open the preview",
     pending: "Opening…",
@@ -954,7 +955,7 @@ export const en = {
     cardOnFile: "A card is on file with Meta.",
     noCard: "No card on file with Meta. Messages that cost money won't send until you add one in Meta Business Suite, under Billing.",
     disconnectMenu: "Disconnect this number…",
-    disconnectBody: "Sending and receiving in Workspace stops for {number}. Chats and history stay here, and the WhatsApp Business app on the phone keeps working. You can connect it again later.",
+    disconnectBody: "Sending and receiving in Relay stops for {number}. Chats and history stay here, and the WhatsApp Business app on the phone keeps working. You can connect it again later.",
     disconnect: "Disconnect {name}",
     testBadge: "Test number",
     connectedTitle: "Number connected",
@@ -1011,130 +1012,86 @@ export const en = {
   },
 
   site: {
-    nav: { label: "Site", how: "How it works", demo: "Demo", pricing: "Pricing", questions: "Questions" },
+    nav: { label: "Site", channels: "Channels", demo: "Demo", questions: "Questions" },
     signIn: "Sign in",
-    startTrial: "Start free trial",
+    startTrial: "Start free",
     tryDemo: "Try the demo",
     menu: "Menu",
     footer: {
-      about: "WhatsApp, email and customers in one place, for every manager. Made for businesses in the UAE.",
+      about: "Every customer channel in one calm inbox, with a home for every manager.",
       product: "Product",
       preview: "Preview the app",
       legal: "Legal",
       privacy: "Privacy policy",
       terms: "Terms of service",
       dpa: "Data processing agreement",
-      note: "Official WhatsApp Business Platform. Data stored in Frankfurt, Germany.",
+      note: "Official platform APIs only. Data stored in the EU (Frankfurt).",
     },
   },
 
   landing: {
-    metaTitle: "run your business from WhatsApp, together",
-    metaDescription: "A shared WhatsApp inbox, customer records and a home for every manager, for businesses in the UAE.",
+    metaTitle: "every customer channel, one calm inbox",
+    metaDescription: "Relay brings WhatsApp, email, Instagram, website chat and more into one shared inbox, with a home for every manager.",
     hero: {
-      title: "Run your business from WhatsApp, together",
-      tagline: "Inbox + customers + handoffs.",
-      body: "One shared inbox for your team, every customer's history in one place, and a home for each manager. Keep the WhatsApp app on your phone.",
-      trial: "14 days free from the day you connect WhatsApp. No card needed.",
-      photoAlt: "A shop owner in Dubai answering customers on her phone",
-      cardTitle: "Hana handed Mariam to Sara",
-      cardNote: "“Wants 10% off 12 laptops. Needs your approval.”",
-      cardMeta: "Note pinned · Mariam sees one business",
+      title: "Every customer channel in one calm inbox",
+      body: "WhatsApp, email, Instagram, website chat and 14 more, shared by your team, with a home for every manager.",
+      start: "Start free",
+      demo: "Try the demo",
     },
-    facts: {
-      markup: "markup on WhatsApp's fees. Meta bills you directly.",
-      number: "WhatsApp number for your whole team. The phone app keeps working.",
-      languages: "languages from day one: English and Arabic, right to left.",
-      days: "days free, counted from the day you connect WhatsApp.",
+    heroInbox: {
+      filter: "Show conversations for",
+      views: { all: "Everyone", sales: "Sales", support: "Support", ops: "Operations" },
+      suggested: "Suggested reply",
+      replies: {
+        sales: "Happy to help. For 12 units I can offer 8% off and free delivery this week. Shall I send the quote?",
+        support: "Sorry about that. I've opened a delivery check and will update you within the hour.",
+        ops: "Thanks, Lukas. The invoice is approved and the transfer goes out on Thursday.",
+      },
+      footer: "Sample conversations",
+      send: "Send",
+    },
+    channels: {
+      title: "Meet customers where they already are",
+      body: "Connect a channel in minutes. Every conversation lands in the same inbox, with the same tools.",
+      more: "See every channel",
+    },
+    homes: {
+      title: "A home for every manager",
+      body: "The owner sees the whole business. Sales sees the pipeline, support sees who's waiting, operations sees today's work.",
     },
     handoff: {
       title: "Hand a customer over without losing the thread",
-      body: "Hana can't approve the discount, so she hands Mariam to Sara with a note. Sara sees the whole chat and the reason at the top. Mariam just sees one business answering.",
-      try: "Try it: press “Hand over” and write a short note.",
+      body: "Every handover carries a note, so the next person starts where the last one stopped. The customer just sees one business answering.",
+      points: { note: "A note is required, and it's pinned at the top", trail: "The chat shows who held it, in order", one: "Customers never see your internal names" },
     },
-    problem: {
-      title: "Sound familiar?",
-      phone: "Customer chats live on one phone, and the whole team takes turns with it.",
-      who: "Nobody is sure who replied, who promised what, or who is following up.",
-      split: "Customer details are split between WhatsApp, email and a spreadsheet.",
+    bento: {
+      title: "Everything around the conversation",
+      ai: { title: "AI that works for each role", body: "Suggested replies, summaries and translation in every chat. Agents prepare follow-ups and triage overnight; a person approves." },
+      help: { title: "Help Center", body: "A searchable knowledge base in your customers' languages. AI answers from it, and only from it." },
+      widget: { title: "Website chat", body: "Paste one line on your site. Visitors chat live, or leave a message when you're closed." },
+      reports: { title: "Reports", body: "Reply times, resolution, satisfaction and campaign results by team, agent and channel." },
+      rules: { title: "Automations and SLAs", body: "Route, tag and assign without code. Reply targets warn the team before a customer waits too long." },
+      widgetGreeting: "Hi! How can we help?",
+      helpSearch: "Search for answers",
+      reportsLabel: "Median first reply",
+      rulesExample: "When a VIP writes, assign to Sales and reply within 15 min",
     },
-    how: {
-      title: "How it works",
-      body: "Three steps, and your team is working from one number.",
-      steps: {
-        connect: { title: "Connect your number", body: "Link your WhatsApp Business number in a few minutes. Your phone keeps working as before." },
-        invite: { title: "Invite your team", body: "Add sales, support and operations, and choose what each person can see and do." },
-        together: { title: "Work together", body: "Claim chats, hand them over with a note, and follow up. Your customer sees one business." },
-      },
-    },
-    homes: {
-      title: "Each manager gets their own home",
-      body: "The owner sees the whole business. Sales sees the pipeline, support sees who's waiting, operations sees today's work. Same customers, same data, different focus.",
-      points: {
-        owner: "Chats, deals and tasks each have a clear owner",
-        money: "Money stays visible only to the roles that need it",
-        branches: "Branches work as teams, each with its own number",
-      },
-      walk: "Walk through the app",
-    },
-    everything: {
-      title: "Everything a small team needs, in one place",
-      items: {
-        customers: { title: "Customers and deals", body: "Every chat, email, deal and order on one timeline per customer." },
-        tasks: { title: "Tasks and calendar", body: "Follow-ups with due dates, synced to Google or Outlook calendars." },
-        email: { title: "Email", body: "Outlook in the same inbox as WhatsApp. Send from Gmail." },
-        store: { title: "Your store", body: "Shopify and WooCommerce orders next to the chat they came from." },
-        ai: { title: "AI help", body: "Reply suggestions, summaries and translation. A person always sends." },
-        campaigns: { title: "Campaigns", body: "Approved templates to the right customers, with opt-outs handled for you." },
-        automations: { title: "Automations", body: "Route new chats, reply out of hours, create tasks, all without code." },
-        reports: { title: "Reports", body: "Response times, pipeline and campaign costs, per team." },
-      },
-    },
-    arabic: {
-      title: "Arabic, done properly",
-      body: "Every screen works right to left. Each person picks their own language, and customers' messages always show as they wrote them.",
-    },
-    pricing: {
-      title: "Simple pricing",
-      body: "Per business, not per message. WhatsApp's own fees are billed by Meta with no markup.",
-      beta: "Beta pricing, may change.",
-      mostTeams: "Most teams",
-      price: "AED {price}",
-      perMonth: "/ month",
-      plans: {
-        starter: { name: "Starter", size: "3 people · 1 WhatsApp number", extras: { "0": "Inbox and customers", "1": "Email and calendar", "2": "500 AI credits a month" } },
-        growth: {
-          name: "Growth",
-          size: "8 people · 2 WhatsApp numbers",
-          extras: { "0": "Everything in Starter", "1": "All manager homes and custom roles", "2": "Automations, campaigns, store", "3": "2,500 AI credits a month" },
-        },
-        business: { name: "Business", size: "20 people · 5 WhatsApp numbers", extras: { "0": "Everything in Growth", "1": "Branches and the full API", "2": "7,500 AI credits a month" } },
-      },
-      ordersPack: "Orders & Delivery",
-      orders: "Deliver your own orders? Add {pack} for AED 99 a month: dispatch, a rider page and end-of-day cash. Riders are free.",
+    languages: {
+      title: "In your customers' language",
+      body: "Relay works in English and Arabic today, right to left included. Each person picks their own language, and AI translates customer messages on request.",
     },
     faq: {
       title: "Questions",
       items: {
-        fees: { q: "Do I pay WhatsApp's message fees to you?", a: "No. Meta bills those directly to your WhatsApp account. We add nothing on top, and we show you the estimated cost before every campaign." },
-        phone: {
-          q: "Can I keep using the WhatsApp app on my phone?",
-          a: "Yes. Your number works in the app and in Workspace at the same time. Two things change when you connect: broadcast lists turn off, and WhatsApp groups don't appear in Workspace. You also need to open the app at least every 14 days.",
-        },
-        when: {
-          q: "When can I connect my WhatsApp number?",
-          a: "You can create your account and set up your team now. Connecting WhatsApp numbers opens as soon as Meta approves our platform. We'll email you the moment it's ready. Your 14-day trial only starts when you connect, so you lose nothing by signing up early.",
-        },
-        banned: {
-          q: "Will my number get banned?",
-          a: "We only use Meta's official WhatsApp Business Platform, never unofficial tools. Bans usually come from messaging people who didn't agree to it, so Workspace asks for consent before campaigns to imported lists.",
-        },
-        gmail: { q: "Does it work with Gmail?", a: "You can send email from Gmail today. Reading Gmail inside Workspace comes after Google's security review. Outlook works fully from the start." },
-        data: { q: "Where is my data kept?", a: "In Frankfurt, Germany. Your customers' data belongs to you, and you can export or delete it at any time." },
+        channels: { q: "Which channels can I connect?", a: "WhatsApp, website chat, email, Instagram, Messenger, Telegram, SMS, voice, TikTok, X, LINE, Viber, WeChat, Discord, Slack, Microsoft Teams, Apple Messages and our API. Some, like WhatsApp and Instagram, need the platform's approval first; we guide you through it." },
+        phone: { q: "Can my team keep using the WhatsApp app?", a: "Yes. A WhatsApp number works in the phone app and in Relay at the same time, and replies from either side show in the same conversation." },
+        price: { q: "How much does it cost?", a: "Plans are per workspace, with seats and channels included, priced in US dollars. Prices are announced before launch, and every plan starts with a free trial." },
+        ai: { q: "Does the AI reply to customers on its own?", a: "Only if you switch on the after-hours assistant, and only from your own business knowledge. Everything else is a suggestion a person approves." },
+        data: { q: "Where is my data kept?", a: "In the EU (Frankfurt). Your customers' data belongs to you; export or delete it at any time." },
         cancel: { q: "Can I cancel any time?", a: "Yes, from Settings, with no call needed. You keep access until the end of the period you paid for." },
       },
     },
-    final: "Bring your team onto one WhatsApp number.",
+    final: { title: "Bring every conversation into one place", body: "Start free. Connect your first channel in a few minutes." },
   },
 
   demo: {
@@ -1179,10 +1136,10 @@ export const en = {
 
   homesDemo: {
     label: "Manager home",
-    owner: { tab: "Owner", needs: { one: "Approve 8% off for Fatima Khoury", two: "Lina's 24-hour window closed", three: "Mariam's delivery is due Thursday" } },
-    sales: { tab: "Sales", needs: { one: "Fatima Khoury wants 8% off", two: "Send Ahmed's quote for 20 monitors", three: "Call back Yousef about the laptops" } },
-    support: { tab: "Support", needs: { one: "Rahul has waited 48 min about a warranty", two: "2 chats nobody has claimed", three: "Lina needs a template reply" } },
-    ops: { tab: "Operations", needs: { one: "Confirm Mariam's Thursday delivery", two: "Book a courier for order #QE-2240", three: "11:00 supplier call" } },
+    owner: { tab: "Owner", needs: { one: "Approve 8% off for Mariam's 12 laptops", two: "3 Instagram chats have no owner", three: "Lukas's invoice is due Thursday" } },
+    sales: { tab: "Sales", needs: { one: "Mariam wants 8% off on WhatsApp", two: "Send Sofia a quote by email", three: "Omar asked on Telegram about stock" } },
+    support: { tab: "Support", needs: { one: "Daniel has waited 48 min in website chat", two: "2 chats are past their reply target", three: "Aiko's LINE chat needs a follow-up" } },
+    ops: { tab: "Operations", needs: { one: "Confirm Mariam's Thursday delivery", two: "Book a courier for order #4821", three: "11:00 supplier call" } },
   },
 
   ai: {

@@ -20,7 +20,7 @@ export async function NumberList({ numbers, teamName, base, isOwner, plan, now }
           return (
             <li key={n.id} className="border-b border-border last:border-0">
               <Link href={`${base}/whatsapp/${n.id}`} className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-surface-2">
-                <span className="bg-hero grid size-10 shrink-0 place-items-center rounded-full font-serif text-lg text-white" aria-hidden="true">{n.displayName.charAt(0)}</span>
+                <span className="bg-primary grid size-10 shrink-0 place-items-center rounded-full font-semibold text-lg text-white" aria-hidden="true">{n.displayName.charAt(0)}</span>
                 <span className="grid min-w-0 flex-1 gap-0.5">
                   <span className="flex flex-wrap items-center gap-2 font-medium">
                     {n.displayName}
@@ -96,7 +96,7 @@ export async function NumberDetail({ n, teams, base, isOwner, now, people }: { n
         <ArrowLeft size={16} className="rtl:rotate-180" aria-hidden="true" /> {t("back")}
       </Link>
       <header className="flex flex-wrap items-center gap-3">
-        <span className="bg-hero grid size-12 place-items-center rounded-full font-serif text-xl text-white" aria-hidden="true">{n.displayName.charAt(0)}</span>
+        <span className="bg-primary grid size-12 place-items-center rounded-full font-semibold text-xl text-white" aria-hidden="true">{n.displayName.charAt(0)}</span>
         <div className="grid">
           <h2 className="flex flex-wrap items-center gap-2 text-xl font-semibold">
             {n.displayName} <Badge tone={STATUS_TONE[n.status]}>{t(`status.${n.status}`)}</Badge>
@@ -160,7 +160,7 @@ export async function NumberDetail({ n, teams, base, isOwner, now, people }: { n
           </div>
           {/* How customers see the profile */}
           <div aria-label={t("customersSee")} className="grid w-full max-w-64 justify-items-center gap-2 justify-self-center rounded-[1.75rem] border-[6px] border-text/80 bg-bg px-4 pb-6 pt-8 text-center">
-            <span className="bg-hero grid size-16 place-items-center rounded-full font-serif text-2xl text-white" aria-hidden="true">{n.displayName.charAt(0)}</span>
+            <span className="bg-primary grid size-16 place-items-center rounded-full font-semibold text-2xl text-white" aria-hidden="true">{n.displayName.charAt(0)}</span>
             <p className="font-semibold">{n.displayNameStatus === "approved" ? n.displayName : <span dir="ltr">{n.number}</span>}</p>
             <p className="text-xs text-muted">{t("businessAccount", { category: n.category })}</p>
             <p className="text-sm" dir="auto">{n.about}</p>
