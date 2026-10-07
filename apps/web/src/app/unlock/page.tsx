@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { AuthFrame } from "@/components/auth-frame";
-import { LanguageSwitch } from "@/components/language-switch";
 import { Submit } from "@/components/ui/submit";
 import { TextInput } from "@/components/ui/field";
 import { Notice } from "@/components/ui/surface";
@@ -20,7 +19,7 @@ export default async function Unlock(props: PageProps<"/unlock">) {
   const t = await getT("unlock");
   const auth = await getT("auth");
   return (
-    <AuthFrame title={t("title")} description={t("description")} footer={<LanguageSwitch />}>
+    <AuthFrame title={t("title")} description={t("description")}>
       {sp.error && <Notice tone="error" title={t("wrong")} />}
       <form action={unlock} className="grid gap-4">
         <input type="hidden" name="next" value={next} />

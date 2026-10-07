@@ -1,14 +1,15 @@
 import { useState, type Ref } from "react";
-import { Info, PhoneCall, WarningCircle } from "@phosphor-icons/react";
+import { BookOpenText, Info, PhoneCall, WarningCircle } from "@phosphor-icons/react";
 import type { ConversationActions } from "@app/domain";
 import { buttonClass } from "@/components/ui/button";
 import { ChannelMark } from "@/components/channels/channel-mark";
 import { replyRule, smsParts, THREADED } from "@/components/channels/rules";
 import type { ChannelKey } from "@/components/channels/catalog";
-import { useFormat, useLocale, useT } from "@/i18n/client";
+import { useFormat, useT } from "@/i18n/client";
 import { AiButton } from "@/components/ai/chat-ai";
 import { AiTag } from "@/components/ai/ai-tag";
 import { AiFeedback } from "@/components/ai/feedback";
+import { HELP_SITE, liveVersion, suggestArticles } from "@/components/help/sample";
 import type { InboxAction } from "./store";
 import type { ChannelInbox, Conversation, Identity, Person } from "./types";
 
@@ -51,7 +52,6 @@ export function Composer({ c, inbox, inboxes, actions, people, me, now, mode, se
   const [draft, setDraft] = useState(c.phoneReply?.draft ?? "");
   const [aiDrafted, setAiDrafted] = useState(false);
   const aiT = useT("aiChat");
-  const locale = useLocale();
   const [note, setNote] = useState("");
   const [template, setTemplate] = useState<string>(TEMPLATES[0].name);
   const t = useT("composer");
@@ -250,6 +250,10 @@ export function Composer({ c, inbox, inboxes, actions, people, me, now, mode, se
     );
   } else {
     const sms = channel === "sms" ? smsParts(draft) : null;
+    // AI's article shortlist for the customer's last message (sample workspace only: real workspaces have their own).
+    // Read the customer's last few messages together: the latest is often just "Hello?".
+    const recentIn = c.messages.filter((m) => m.kind === "in" && m.text).slice(-3).map((m) => m.text).join(" ");
+    const articles = !live && recentIn ? suggestArticles(recentIn) : [];
     const notice = linked
       ? o("composer.viaNew", { channel: chName(channel), name: first })
       : rule.kind === "humanAgent"
@@ -313,7 +317,23 @@ export function Composer({ c, inbox, inboxes, actions, people, me, now, mode, se
           <p className="flex flex-wrap items-center gap-2 px-4 pt-1 text-xs text-muted">
             <AiTag label={aiT("draftTag")} /> {aiT("draftCheck")} <AiFeedback />
             {/* A suggestion in the customer's language, with what it says for the reader. */}
-            {c.contact.language === "Arabic" && locale === "en" && aiT.has(`gloss.${c.id}`) && <span className="basis-full">{aiT(`gloss.${c.id}` as "gloss.lina")}</span>}
+            {c.contact.language !== "English" && aiT.has(`gloss.${c.id}`) && <span className="basis-full">{aiT(`gloss.${c.id}` as "gloss.lucia")}</span>}
+          </p>
+        )}
+        {articles.length > 0 && (
+          <p className="flex flex-wrap items-center gap-2 px-4 pt-1.5 text-xs text-muted">
+            <span className="inline-flex items-center gap-1"><BookOpenText size={14} aria-hidden="true" />{o("help.suggested")}</span>
+            {articles.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => setDraft((d) => `${d}${d && !d.endsWith("\n") ? "\n\n" : ""}${liveVersion(a, "en")!.title}: https://${HELP_SITE.domain}/a/${a.slug}`)}
+                title={o("help.insertLink")}
+                className="inline-flex min-h-7 items-center rounded-full border border-border px-2.5 text-text hover:bg-surface-2"
+              >
+                {liveVersion(a, "en")!.title}
+              </button>
+            ))}
           </p>
         )}
         {sms && draft && (

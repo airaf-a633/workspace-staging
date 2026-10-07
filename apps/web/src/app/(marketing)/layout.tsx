@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { RelayLogo } from "@/components/brand/logo";
-import { LanguageSwitch } from "@/components/language-switch";
 import { MobileMenu } from "@/components/marketing/mobile-menu";
 import { RevealOnScroll } from "@/components/marketing/reveal";
 import { buttonClass } from "@/components/ui/button";
@@ -40,7 +39,6 @@ export default async function MarketingLayout({ children }: LayoutProps<"/">) {
           <div className="grid content-start gap-4">
             <RelayLogo size={24} />
             <p className="max-w-sm text-sm text-muted">{t("footer.about")}</p>
-            <LanguageSwitch className="mt-1" />
           </div>
           <nav aria-label={t("footer.product")} className="grid content-start gap-2 text-sm">
             <p className="font-medium">{t("footer.product")}</p>

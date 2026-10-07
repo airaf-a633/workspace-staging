@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { ChartBar, ChatsCircle, CheckSquare, Gear, House, Handshake, SignOut, Sparkle, UsersThree } from "@phosphor-icons/react";
+import { BookOpenText, ChartBar, ChatsCircle, CheckSquare, Gear, House, Handshake, SignOut, Sparkle, UsersThree } from "@phosphor-icons/react";
 import { AskAi } from "@/components/ai/ask-ai";
 import type { AiWorld } from "@/lib/ai-sample";
 import { useT } from "@/i18n/client";
@@ -24,11 +24,13 @@ interface Props {
   ai?: AiWorld | null;
   /** Show Reports (reports.view). Only the preview has report data so far. */
   reports?: boolean;
+  /** Show the Help Center (canned.use). Preview only so far. */
+  help?: boolean;
   children: ReactNode;
 }
 
 /* Five to six destinations, each with an icon AND a label. Nothing is icon-only. */
-function navItems(base: string, t: TFor<"nav">, reports: boolean) {
+function navItems(base: string, t: TFor<"nav">, reports: boolean, help: boolean) {
   return [
     { key: "home", href: base, label: t("home"), Icon: House, match: (p: string) => p === base },
     { key: "inbox", href: `${base}/inbox`, label: t("inbox"), Icon: ChatsCircle, match: (p: string) => p.startsWith(`${base}/inbox`) },
@@ -36,6 +38,7 @@ function navItems(base: string, t: TFor<"nav">, reports: boolean) {
     { key: "deals", href: `${base}/deals`, label: t("deals"), Icon: Handshake, match: (p: string) => p.startsWith(`${base}/deals`) },
     { key: "tasks", href: `${base}/tasks`, label: t("tasks"), Icon: CheckSquare, match: (p: string) => p.startsWith(`${base}/tasks`) },
     ...(reports ? [{ key: "reports", href: `${base}/reports`, label: t("reports"), Icon: ChartBar, match: (p: string) => p.startsWith(`${base}/reports`) }] : []),
+    ...(help ? [{ key: "help", href: `${base}/help`, label: t("helpCenter"), Icon: BookOpenText, match: (p: string) => p.startsWith(`${base}/help`) }] : []),
     {
       key: "settings",
       href: `${base}/settings`,
@@ -46,11 +49,11 @@ function navItems(base: string, t: TFor<"nav">, reports: boolean) {
   ];
 }
 
-export function AppShell({ base, workspaceName, memberName, roleName, signOut, footer, banner, ai = null, reports = false, children }: Props) {
+export function AppShell({ base, workspaceName, memberName, roleName, signOut, footer, banner, ai = null, reports = false, help = false, children }: Props) {
   const path = usePathname();
   const t = useT("nav");
   const common = useT("common");
-  const items = navItems(base, t, reports);
+  const items = navItems(base, t, reports, help);
   const [asking, setAsking] = useState(false);
   const aiT = useT("ai");
   // ⌘K / Ctrl+K opens Ask AI from anywhere, even while typing (it's the one global shortcut).
@@ -77,7 +80,7 @@ export function AppShell({ base, workspaceName, memberName, roleName, signOut, f
     </button>
   );
   // Phones get the five most-used destinations; Tasks is reachable from Home.
-  const mobile = items.filter((i) => i.key !== "tasks" && i.key !== "reports");
+  const mobile = items.filter((i) => i.key !== "tasks" && i.key !== "reports" && i.key !== "help");
   // Work screens with their own panes (the inbox) fill the window instead of sitting in a page column.
   const fullBleed = path.startsWith(`${base}/inbox`);
   const rail = fullBleed;

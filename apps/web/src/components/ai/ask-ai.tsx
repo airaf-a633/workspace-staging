@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowUp, Check, Lightning, Microphone, Sparkle, X } from "@phosphor-icons/react";
 import { buttonClass } from "@/components/ui/button";
 import { useFormat, useLocale, useT } from "@/i18n/client";
+import { intlLocale } from "@/i18n/config";
 import type { AiWorld } from "@/lib/ai-sample";
 import { AiTag } from "./ai-tag";
 import { AiFeedback } from "./feedback";
@@ -79,7 +80,7 @@ export function AskAi({ world, open, onClose }: { world: AiWorld | null; open: b
       return;
     }
     const rec = new Ctor();
-    rec.lang = locale === "ar" ? "ar-AE" : "en-GB";
+    rec.lang = intlLocale(locale);
     rec.interimResults = true;
     rec.onresult = (e) => setText(Array.from(e.results).map((r) => r[0].transcript).join(" "));
     rec.onend = () => setListening(false);

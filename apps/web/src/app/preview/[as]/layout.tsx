@@ -22,6 +22,7 @@ export default async function PreviewApp(props: LayoutProps<"/preview/[as]">) {
       roleName={roleLabel(tAll, me.role)}
       ai={previewAiWorld(as, tz)}
       reports={previewScope(as, "reports.view") !== "none"}
+      help={previewScope(as, "canned.use") !== "none"}
       banner={<PreviewBar current={as} people={previewMembers().map(({ key, name, role }) => ({ key, name, role: roleLabel(tAll, role) }))} />}
       footer={
         <Link href="/" className="flex min-h-11 items-center gap-2 text-sm text-muted hover:text-text">

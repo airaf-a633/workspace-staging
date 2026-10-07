@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { List, X } from "@phosphor-icons/react";
-import { LanguageSwitch } from "@/components/language-switch";
 import { useT } from "@/i18n/client";
 
 const LINKS = [
@@ -45,9 +44,6 @@ export function MobileMenu() {
             ))}
             <li>
               <Link href="/sign-in" onClick={() => setOpen(false)} className="flex min-h-12 items-center text-base text-primary">{t("signIn")}</Link>
-            </li>
-            <li className="border-t border-border py-3">
-              <LanguageSwitch />
             </li>
           </ul>
         </nav>

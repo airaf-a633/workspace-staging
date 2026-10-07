@@ -86,7 +86,7 @@ export interface Message {
   /** WhatsApp: sent as an approved template (outside the 24-hour window). */
   template?: string;
   /** AI translation of a customer message into each app language, shown on request. */
-  translation?: { en?: string; ar?: string };
+  translation?: { en?: string };
   reaction?: string;
 }
 

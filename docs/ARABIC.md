@@ -1,3 +1,5 @@
+> **Superseded 2026-10-07:** Relay is English-only for now (see PRODUCT_DECISIONS, "English-only product"). This file records the earlier Arabic work for reference.
+
 # Arabic and right to left
 
 Decided 2026-10-01: the website, the preview and the real app all switch between English and Arabic. The Arabic text is a **draft for checking layouts**. A native speaker reviews every line before a customer sees it.

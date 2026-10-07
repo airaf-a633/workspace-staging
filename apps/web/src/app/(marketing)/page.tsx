@@ -153,10 +153,17 @@ export default async function Landing() {
             <h2 className="display text-3xl">{t("languages.title")}</h2>
             <p className="text-muted">{t("languages.body")}</p>
           </div>
-          <div dir="rtl" lang="ar" className="reveal grid gap-3 rounded-[var(--radius-panel)] border border-border bg-bg p-5">
-            <p className="flex items-center gap-2 font-semibold"><ChannelMark ch="whatsapp" size={18} /> مريم السويدي</p>
-            <p className="justify-self-start rounded-[var(--radius-panel)] border border-border bg-surface px-4 py-2">هل يمكنكم خصم 10٪ على 12 جهازًا؟</p>
-            <p className="justify-self-end rounded-[var(--radius-panel)] bg-primary-soft px-4 py-2">أهلًا مريم، أفضل ما نقدمه خصم 8٪.</p>
+          {/* Customers' own words stay as written; the translation and the draft are what Relay adds. */}
+          <div className="reveal grid gap-3 rounded-[var(--radius-panel)] border border-border bg-bg p-5">
+            <p className="flex items-center gap-2 font-semibold"><ChannelMark ch="whatsapp" size={18} /> Lucía Fernández</p>
+            <div className="grid max-w-[90%] gap-1.5 justify-self-start rounded-[var(--radius-panel)] border border-border bg-surface px-4 py-2" lang="es">
+              <p>¿Hacéis envíos a Madrid? Necesito dos lámparas Halo.</p>
+              <p className="border-t border-border pt-1.5 text-sm text-muted" lang="en"><span className="font-medium">{t("languages.translation")}:</span> Do you ship to Madrid? I need two Halo lamps.</p>
+            </div>
+            <div className="grid max-w-[90%] gap-1 justify-self-end rounded-[var(--radius-panel)] border border-ai/30 bg-ai-soft px-4 py-2" lang="es">
+              <span className="flex items-center gap-1 text-xs font-medium text-ai" lang="en"><Sparkle size={12} weight="fill" aria-hidden="true" /> {t("languages.draft")}</span>
+              <p>¡Hola Lucía! Sí, enviamos a Madrid en 2 a 4 días laborables, gratis a partir de 150 $.</p>
+            </div>
           </div>
         </div>
       </section>

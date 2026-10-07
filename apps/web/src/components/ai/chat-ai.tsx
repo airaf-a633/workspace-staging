@@ -38,7 +38,7 @@ export function ChatSummary({ conversationId, customer, messageCount }: { conver
 }
 
 /** "Translate" under a customer's message, into the reader's app language (1 credit). */
-export function TranslateMessage({ translation }: { translation?: { en?: string; ar?: string } }) {
+export function TranslateMessage({ translation }: { translation?: { en?: string } }) {
   const t = useT("aiChat");
   const locale = useLocale();
   const [shown, setShown] = useState(false);

@@ -6,9 +6,8 @@ import { DEFAULT_TZ, TZ_COOKIE, isTimeZone } from "./zone";
 import { createTranslator, scoped, type ScopedT, type Translator } from "./translate";
 import { makeFormat } from "./format";
 import { en, type Messages } from "./messages/en";
-import { ar } from "./messages/ar";
 
-export const MESSAGES: Record<Locale, Messages> = { en, ar };
+export const MESSAGES: Record<Locale, Messages> = { en };
 
 /** The language for this request: the person's cookie, else English. */
 export const getLocale = cache(async (): Promise<Locale> => {

@@ -117,7 +117,7 @@ export function TaskList({ tasks: initial, people, customers, viewer, now, base 
     const w = whenOf(t, now, tz);
     const day = w === "today" || w === "tomorrow" ? "" : fmt.listTime(t.due, now);
     const clock = t.hasTime ? fmt.time(t.due) : "";
-    return [day, clock].filter(Boolean).join(fmt.locale === "ar" ? "، " : ", ") || null;
+    return [day, clock].filter(Boolean).join(", ") || null;
   };
 
   const chip = "min-h-9 rounded-full border border-input bg-surface px-3 text-sm";

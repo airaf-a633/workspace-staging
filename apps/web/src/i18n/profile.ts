@@ -5,8 +5,8 @@ import { LOCALE_COOKIE, isLocale } from "./config";
 
 /**
  * After signing in, show the app in the language the person chose before (members.locale), even on a new
- * device. Only an Arabic choice overrides the device; members default to English, which would otherwise
- * undo a switch made on the sign-in page.
+ * device. Relay is English only for now (2026-10-07), so this only matters once another language is added;
+ * a non-default choice overrides the device.
  */
 export async function adoptProfileLocale(supabase: SupabaseClient, userId: string) {
   const { data } = await supabase.from("members").select("locale").eq("user_id", userId).eq("status", "active").limit(1).maybeSingle();

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Eye } from "@phosphor-icons/react";
-import { LanguageSwitch } from "@/components/language-switch";
 import { useT } from "@/i18n/client";
 
 /** The strip above every preview screen: what this is, who you're viewing as, and the language. */
@@ -37,7 +36,6 @@ export function PreviewBar({ current, people }: { current: string; people: { key
             ))}
           </select>
         </label>
-        <LanguageSwitch tone="glass" />
         <Link href="/preview" className="text-white/85 underline-offset-4 hover:underline">{t("bar.allScreens")}</Link>
       </div>
     </div>

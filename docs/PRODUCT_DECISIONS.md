@@ -325,3 +325,26 @@ The accent changed from Petrol #0A5670 to **Relay blue #006ACC** (dark mode #5AA
 - **The hero band** is flat #0058AA in light and #0A4078 in dark. White text on it reaches 7.06:1, and 80%-white body text 5.12:1.
 - **The "in transit" deal badge** is now neutral grey, so blue only ever means action or selected.
 - **The sample "Wholesale" label** moved to teal #0E7490, so a label never looks like a selection.
+
+### English-only product (2026-10-07)
+
+Relay is a global product, not Arabic-centric. The founders will pitch Arabic-speaking customers themselves.
+
+**What changed:**
+- The interface is English only.
+- Removed:
+  - the Arabic text file;
+  - the language switch;
+  - right-to-left layout for the interface;
+  - the Arabic font;
+  - the Arabic notice on the legal pages.
+- The translation system (`i18n/`) stays, so a language can be added later: add its code to `LOCALES` and a messages file.
+
+**Customers still write in any language:**
+- Their messages keep `dir="auto"` and come with Translate.
+- The demo mixes languages: Aiko writes Japanese, Lucía Spanish (she replaces Lina's Arabic chat), Chloé French.
+- AI drafts replies in the customer's language, with an English gloss.
+
+**Help Center:**
+- The demo site is English only.
+- Languages remain a feature: a business adds one in Site settings, AI drafts the translations, and a person reviews them before they go live.

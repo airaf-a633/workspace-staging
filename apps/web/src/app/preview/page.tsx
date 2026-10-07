@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, ChatsCircle, House, Gear, UserPlus } from "@phosphor-icons/react/dist/ssr";
 import { RelayLogo } from "@/components/brand/logo";
-import { LanguageSwitch } from "@/components/language-switch";
 import { roleLabel } from "@/i18n/labels";
 import { getT } from "@/i18n/server";
 import { PREVIEW_PEOPLE, previewMembers } from "@/lib/preview";
@@ -25,7 +24,6 @@ export default async function PreviewIndex() {
         <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-14 pt-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Link href="/" aria-label={meta("name")}><RelayLogo size={26} /></Link>
-            <LanguageSwitch />
           </div>
           <div className="grid max-w-3xl gap-4 pt-8">
             <h1 className="display text-4xl sm:text-5xl">{t("index.title")}</h1>
