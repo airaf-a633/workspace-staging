@@ -348,3 +348,26 @@ Relay is a global product, not Arabic-centric. The founders will pitch Arabic-sp
 **Help Center:**
 - The demo site is English only.
 - Languages remain a feature: a business adds one in Site settings, AI drafts the translations, and a person reviews them before they go live.
+
+### Campaigns (2026-10-07)
+
+**Channels:**
+- **WhatsApp:** approved templates only, with the cost per country shown before sending.
+- **Email:** subject, preview text and an unsubscribe link.
+- **SMS:** STOP opt-out, with the part count and cost shown.
+- **Messenger and Instagram:** only people who wrote within Meta's messaging window (shown as a limit).
+
+**Audience:** saved segments, with consent enforced. Relay leaves out:
+- anyone without opt-in on that channel;
+- anyone marked do-not-contact;
+- anyone with no handle on that channel.
+
+It shows how many people are left out, and why, before sending.
+
+**Replies:** go into the inbox as normal conversations. Each is labelled with its campaign and routed to the campaign's team. A STOP reply opts the person out automatically.
+
+**Sending controls:**
+- **Timing:** send now, at a set time, or at the same local time in each customer's time zone.
+- **Test send** to yourself first.
+- **A/B test:** two versions go to a slice of the audience, and the better one goes to the rest.
+- **Approval:** owners and admins approve sends over 1,000 recipients.

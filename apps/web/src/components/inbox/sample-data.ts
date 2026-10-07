@@ -55,6 +55,7 @@ export const SAMPLE_LABELS: Label[] = [
   { id: "l-order", name: "Order issue", color: "#C2410C" },
   { id: "l-warranty", name: "Warranty", color: "#4D7C0F" },
   { id: "l-feedback", name: "Product feedback", color: "#475569" },
+  { id: "l-camp-halo", name: "Campaign: Halo back in stock", color: "#7C5E10" },
 ];
 
 /**
@@ -497,6 +498,36 @@ export function buildSampleInbox(members: RealMember[], realTeams: RealTeam[], v
       lastCustomerAt: at(25),
       contact: { id: "ct-chloe", name: "Chloé Dubois", location: "Lyon, France", language: "French", tags: [], identities: [{ ch: "tiktok", handle: "@chloedeco" }], deals: [], tasks: [], orders: [] },
       messages: [msg(25, { kind: "in", text: "j'ai vu la lampe cloud dans votre vidéo !! elle coûte combien et elle existe en vert sauge ?", translation: { en: "Saw the cloud lamp in your video!! How much is it, and does it come in sage green?" } })],
+    },
+    {
+      ...base,
+      id: "ana",
+      channel: "whatsapp",
+      inboxId: "in-wa",
+      labels: ["l-camp-halo"],
+      aiSuggestion: "Hi Ana, done: one white Halo desk lamp is on hold for you until Saturday. Here's the link to check out: northwindhome.com/halo",
+      teamId: team("sales"),
+      holderId: null,
+      trail: [],
+      status: "open",
+      unread: 1,
+      lastCustomerAt: at(50),
+      contact: {
+        id: "ct-ana",
+        name: "Ana Costa",
+        phone: "+351 912 555 019",
+        location: "Porto, Portugal",
+        language: "English",
+        tags: [],
+        identities: [{ ch: "whatsapp", handle: "+351 912 555 019" }],
+        deals: [],
+        tasks: [],
+        orders: [{ no: "#NW-4119", fils: 12_900, state: "Delivered", source: "Shopify" }],
+      },
+      messages: [
+        msg(2 * DAY, { kind: "out", authorId: ids.leo, status: "read", template: "back_in_stock", text: "Hi Ana, good news: the Halo desk lamp is back in stock. Reply YES and we'll hold one for you for 48 hours." }),
+        msg(50, { kind: "in", text: "Yes please! Can you hold one in white?" }),
+      ],
     },
     {
       ...base,
