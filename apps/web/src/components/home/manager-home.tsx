@@ -7,6 +7,7 @@ import type { InboxData } from "@/components/inbox/types";
 import { getFormat, getT } from "@/i18n/server";
 import { valueLabel } from "@/i18n/labels";
 import { wallClock } from "@/i18n/zone";
+import { slaClock } from "@/components/sla/sla";
 import type { en } from "@/i18n/messages/en";
 import type { Format, TFor, Translator } from "@/i18n/types";
 
@@ -87,9 +88,21 @@ export function needsFor(data: InboxData, inboxHref: string, tAll: Translator, f
     const items: { text: string; rank: number; tone: Tone }[] = [];
     let waitingSince: number | null = null;
 
+    // Reply targets: the holder hears at 80% and at breach; managers hear at breach (decided 2026-10-07).
+    const clock = data.sla ? slaClock(c, data.sla, now) : null;
+    const manager = v.scopes["conversations.override"] === "all" || v.scopes["conversations.override"] === "team";
+    if (clock && (clock.state === "breach" || clock.state === "warn") && (mine || (clock.state === "breach" && manager))) {
+      const target = tAll(`omni.sla.targets.${clock.target}`);
+      items.push(
+        clock.state === "breach"
+          ? { text: tAll("omni.sla.overdue", { target, time: fmt.minutesWaited(clock.used - clock.limit) }), rank: 0, tone: "fail" }
+          : { text: tAll("omni.sla.dueIn", { target, time: fmt.minutesWaited(clock.limit - clock.used) }), rank: 1, tone: "warn" },
+      );
+    }
+
     if (c.status === "open") {
       if (!c.holderId && access === "claim" && last?.kind === "in" && c.lastCustomerAt) {
-        const over = now - c.lastCustomerAt > 30 * 60_000;
+        const over = clock ? clock.state === "breach" : now - c.lastCustomerAt > 30 * 60_000;
         items.push({ text: t("unclaimed"), rank: over ? 0 : 2, tone: over ? "warn" : "plain" });
         waitingSince = c.lastCustomerAt;
       }

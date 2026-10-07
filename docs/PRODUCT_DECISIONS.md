@@ -277,3 +277,14 @@ The omnichannel inbox (step 2) is built on these decisions:
 - Examples: VIP first reply within 15 minutes; email within 4 hours.
 - The clock only counts business hours.
 - A warning shows at 80% of the target. Breaches are flagged in the inbox and in reports.
+
+**SLA details (2026-10-07):**
+- **Targets in each policy:** first reply, next reply and resolution.
+- **When the clock stops:**
+  - While the team is waiting on the customer, meaning the last message was ours.
+  - Outside business hours, measured in the workspace's zone.
+- **Who hears about it:**
+  - The person holding the chat: a warning at 80%, then an alert at breach.
+  - The team's manager: an alert at breach, which also appears under "Needs you now" on their home.
+  - Unclaimed chats that breach are reassigned to the next available teammate.
+- **When several policies match:** the strictest target wins, separately for each of the three targets.

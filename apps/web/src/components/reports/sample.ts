@@ -140,6 +140,7 @@ export function buildReport(f: ReportFilters, agents: Agent[], now: number) {
     firstReply: weighted((c) => c.firstReply),
     resolution: Math.round(3.2 * 60 * (0.8 + r() * 0.4)),
     resolvedPct: weighted((c) => c.resolvedPct),
+    withinTarget: Math.round(86 + r() * 10),
     backlog: Math.round(total * 0.06),
     byChannel: byChannel.sort((a, b) => b.n - a.n),
     heat,

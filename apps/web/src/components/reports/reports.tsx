@@ -216,11 +216,12 @@ export function Reports({ agents, teams, teamScope, myTeams, canMoney, canExport
 
       {tab === "conversations" && (
         <>
-          <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-[var(--radius-panel)] bg-border ring-1 ring-border lg:grid-cols-4">
+          <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-[var(--radius-panel)] bg-border ring-1 ring-border lg:grid-cols-5">
             <Kpi label={t("kpi.conversations")} value={fmt.number(report.total)} delta={delta} good="up" />
             <Kpi label={t("kpi.firstReply")} value={minutes(report.firstReply)} />
             <Kpi label={t("kpi.resolution")} value={minutes(report.resolution)} />
             <Kpi label={t("kpi.resolved")} value={`${report.resolvedPct}%`} />
+            <Kpi label={t("kpi.withinTarget")} value={`${report.withinTarget}%`} />
           </dl>
           <Panel title={t("perDay")} onTable={toggle("days")} tableOn={tables.days}>
             {tables.days ? (

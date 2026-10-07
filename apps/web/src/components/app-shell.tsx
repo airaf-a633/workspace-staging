@@ -41,7 +41,7 @@ function navItems(base: string, t: TFor<"nav">, reports: boolean) {
       href: `${base}/settings`,
       label: t("settings"),
       Icon: Gear,
-      match: (p: string) => ["settings", "members", "teams", "roles", "whatsapp", "channels", "contact-settings", "account", "ai"].some((s) => p.startsWith(`${base}/${s}`)),
+      match: (p: string) => ["settings", "members", "teams", "roles", "whatsapp", "channels", "contact-settings", "sla", "account", "ai"].some((s) => p.startsWith(`${base}/${s}`)),
     },
   ];
 }

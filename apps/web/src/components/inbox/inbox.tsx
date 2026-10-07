@@ -7,6 +7,7 @@ import { HANDOFF_NOTE_MIN, conversationActions, handoffNoteError, replyAccess, t
 import { ChannelMark } from "@/components/channels/channel-mark";
 import { replyRule } from "@/components/channels/rules";
 import { InboxNav, parseSource, sourceKey, type Source } from "./inbox-nav";
+import { slaClock, type SlaClock, type SlaSettings } from "@/components/sla/sla";
 import { buttonClass } from "@/components/ui/button";
 import { Badge } from "@/components/ui/surface";
 import { Composer, type ComposerMode } from "./composer";
@@ -43,13 +44,25 @@ function lastReal(c: Conversation) {
 }
 
 /** Only states that need someone get a label in the list (decided 2026-09-30). */
-function attention(c: Conversation, inbox: ChannelInbox | undefined, now: number, t: TFor<"inbox">, o: TFor<"omni">, fmt: Format): { label: string; tone: "warn" | "fail" } | null {
+/** "Reply overdue by 12 min" or "First reply due in 4 min", from the conversation's reply-target clock. */
+export function slaLabel(clock: SlaClock, o: TFor<"omni">, fmt: Format) {
+  const target = o(`sla.targets.${clock.target}`);
+  if (clock.state === "breach") return o("sla.overdue", { target, time: fmt.minutesWaited(clock.used - clock.limit) });
+  if (clock.state === "paused") return o("sla.paused", { used: fmt.minutesWaited(clock.used), limit: fmt.minutesWaited(clock.limit) });
+  return o("sla.dueIn", { target, time: fmt.minutesWaited(clock.limit - clock.used) });
+}
+
+function attention(c: Conversation, inbox: ChannelInbox | undefined, sla: SlaSettings | undefined, now: number, t: TFor<"inbox">, o: TFor<"omni">, fmt: Format): { label: string; tone: "warn" | "fail" } | null {
   if (c.status !== "open") return null;
   if (c.sensitive) return { label: t("flags.sensitive"), tone: "fail" };
   if (inbox?.broken) return { label: o("nav.disconnected"), tone: "fail" };
   const last = lastReal(c);
   if (last?.status === "failed") return { label: t("flags.notDelivered"), tone: "fail" };
-  if (!c.holderId && last?.kind === "in" && c.lastCustomerAt !== null && now - c.lastCustomerAt > REPLY_TARGET_MIN * 60_000) {
+  // With reply targets set, their clock decides; without, a flat 30 minutes for unclaimed chats.
+  const clock = sla ? slaClock(c, sla, now) : null;
+  if (clock?.state === "breach") return { label: slaLabel(clock, o, fmt), tone: "fail" };
+  if (clock?.state === "warn") return { label: slaLabel(clock, o, fmt), tone: "warn" };
+  if (!sla && !c.holderId && last?.kind === "in" && c.lastCustomerAt !== null && now - c.lastCustomerAt > REPLY_TARGET_MIN * 60_000) {
     return { label: t("flags.waiting", { time: fmt.waitedFor(c.lastCustomerAt, now) }), tone: "warn" };
   }
   const rule = replyRule(c.channel, c.lastCustomerAt, now).kind;
@@ -379,7 +392,7 @@ export function Inbox({ data, onOpen, connectHref }: { data: InboxData; onOpen?:
                   {title && <h2 className="px-4 pb-1 pt-4 text-xs font-medium uppercase tracking-wide text-muted">{title}</h2>}
                   <ul className="px-2 pb-1">
                     {g.map((c) => {
-                      const flag = attention(c, inboxOf(c), now, t, o, fmt);
+                      const flag = attention(c, inboxOf(c), data.sla, now, t, o, fmt);
                       const on = c.id === selectedId;
                       return (
                         <li key={c.id}>
@@ -448,6 +461,7 @@ export function Inbox({ data, onOpen, connectHref }: { data: InboxData; onOpen?:
             c={selected}
             inbox={inboxOf(selected)}
             inboxes={data.inboxes}
+            sla={data.sla}
             canReconnect={data.viewer.scopes["numbers.manage"] === "all"}
             actions={actions}
             people={people}
@@ -494,6 +508,7 @@ interface ThreadProps {
   c: Conversation;
   inbox: ChannelInbox | undefined;
   inboxes: ChannelInbox[];
+  sla: SlaSettings | undefined;
   /** Owner only: reconnecting a channel is part of managing numbers and accounts. */
   canReconnect: boolean;
   actions: NonNullable<ReturnType<typeof conversationActions>>;
@@ -539,6 +554,7 @@ function Thread(p: ThreadProps) {
   const { sameDay } = fmt;
   const { inbox } = p;
   const { canReconnect } = p;
+  const clock = p.sla ? slaClock(c, p.sla, now) : null;
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
@@ -563,6 +579,11 @@ function Thread(p: ThreadProps) {
               {c.trail.length > 0 ? <Trail ids={c.trail} people={people} /> : <span>{c.imported ? t("importedFromPhone") : t("unassigned")}</span>}
               {team && <span className="truncate">· {team.name}</span>}
               {inbox && <span className="hidden truncate sm:inline">· {o("via", { inbox: inbox.name })}</span>}
+              {clock && (
+                <span className={`hidden shrink-0 sm:inline ${clock.state === "breach" ? "font-medium text-fail" : clock.state === "warn" ? "font-medium text-warn" : ""}`} title={o("sla.policy", { name: clock.policy })}>
+                  · {slaLabel(clock, o, fmt)}
+                </span>
+              )}
             </p>
           </div>
         </div>

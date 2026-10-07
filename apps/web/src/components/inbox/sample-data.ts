@@ -1,4 +1,5 @@
 import type { ChannelInbox, Conversation, InboxData, Label, Message, Person, Team, ViewerInfo } from "./types";
+import type { SlaSettings } from "@/components/sla/sla";
 
 /**
  * Sample conversations for Northwind Home (decided 2026-10-07): a global online brand selling home goods and
@@ -55,6 +56,29 @@ export const SAMPLE_LABELS: Label[] = [
   { id: "l-warranty", name: "Warranty", color: "#4D7C0F" },
   { id: "l-feedback", name: "Product feedback", color: "#475569" },
 ];
+
+/**
+ * Northwind Home's reply targets. Hours are long (the team spans London to Asia) so the preview shows live
+ * clocks most of the day. Team ids are matched by name when the inbox is built.
+ */
+export function sampleSla(teamId: (key: "sales" | "support" | "general") => string): SlaSettings {
+  const week: [string, string] = ["07:00", "22:00"];
+  const weekend: [string, string] = ["09:00", "18:00"];
+  return {
+    tz: "Europe/London",
+    hours: [week, week, week, week, week, weekend, weekend],
+    warnAt: 0.8,
+    alertManager: true,
+    reassignOnBreach: true,
+    policies: [
+      { id: "p-vip", name: "VIP customers", active: true, match: { vip: true }, firstReply: 15, nextReply: 30, resolution: 8 * 60 },
+      { id: "p-chat", name: "Messaging and social", active: true, match: { channels: ["whatsapp", "webchat", "instagram", "messenger", "telegram", "sms", "tiktok", "line"] }, firstReply: 30, nextReply: 60, resolution: 24 * 60 },
+      { id: "p-email", name: "Email", active: true, match: { channels: ["email"] }, firstReply: 4 * 60, nextReply: 8 * 60, resolution: 48 * 60 },
+      { id: "p-partners", name: "Partners and community", active: true, match: { channels: ["slack", "discord"] }, firstReply: 2 * 60, nextReply: 4 * 60, resolution: null },
+      { id: "p-sales", name: "Sales quotes", active: false, match: { teams: [teamId("sales")] }, firstReply: 20, nextReply: null, resolution: null },
+    ],
+  };
+}
 
 const MIN = 60_000;
 const HOUR = 60;
@@ -601,5 +625,5 @@ export function buildSampleInbox(members: RealMember[], realTeams: RealTeam[], v
     },
   ];
 
-  return { now, tz, people, teams, viewer, conversations, inboxes: SAMPLE_INBOXES, labels: SAMPLE_LABELS };
+  return { now, tz, people, teams, viewer, conversations, inboxes: SAMPLE_INBOXES, labels: SAMPLE_LABELS, sla: sampleSla(team) };
 }

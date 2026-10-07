@@ -83,7 +83,8 @@ export function makeFormat(locale: Locale, t: Translator, tz: string = DEFAULT_T
     /** "17 min", "1 h 5 min" from a number of minutes already counted. */
     minutesWaited(min: number) {
       const m = Math.max(1, Math.round(min));
-      return m < 60 ? t("time.minutes", { count: m }) : t("time.hoursMinutes", { h: Math.floor(m / 60), m: m % 60 });
+      if (m < 60) return t("time.minutes", { count: m });
+      return m % 60 === 0 ? t("time.hoursOnly", { h: m / 60 }) : t("time.hoursMinutes", { h: Math.floor(m / 60), m: m % 60 });
     },
     waitedFor(at: number, now: number) {
       const m = Math.max(1, Math.round((now - at) / 60_000));

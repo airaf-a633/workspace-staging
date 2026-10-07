@@ -1,5 +1,6 @@
 import type { Scope, ConversationPermission } from "@app/domain";
 import type { ChannelKey } from "@/components/channels/catalog";
+import type { SlaSettings } from "@/components/sla/sla";
 
 /** Shapes follow the M2 data model (docs/milestones/M2-plan.md) so real rows can replace the sample later. */
 
@@ -219,6 +220,8 @@ export interface InboxData {
   teams: Team[];
   inboxes: ChannelInbox[];
   labels: Label[];
+  /** Reply targets and business hours; absent until the workspace sets them up. */
+  sla?: SlaSettings;
   viewer: ViewerInfo;
   conversations: Conversation[];
   /** Real data from the database (not the sample chats). */
