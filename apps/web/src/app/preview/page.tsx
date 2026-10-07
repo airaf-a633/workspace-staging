@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, ChatsCircle, House, Gear, UserPlus } from "@phosphor-icons/react/dist/ssr";
+import { ArrowRight, ChatsCircle, House, Gear, ShieldCheck, UserPlus } from "@phosphor-icons/react/dist/ssr";
 import { RelayLogo } from "@/components/brand/logo";
 import { roleLabel } from "@/i18n/labels";
 import { getT } from "@/i18n/server";
@@ -67,6 +67,14 @@ export default async function PreviewIndex() {
             <span className="text-sm text-muted">{t("index.signUpBody")}</span>
           </span>
           <ArrowRight size={20} className="text-muted transition-transform group-hover:translate-x-1 rtl:rotate-180 rtl:group-hover:-translate-x-1" aria-hidden="true" />
+        </Link>
+        <Link href="/preview/staff" className="group flex items-center gap-4 rounded-[var(--radius-panel)] border border-border bg-surface p-6 transition-colors hover:bg-surface-2">
+          <span className="grid size-12 shrink-0 place-items-center rounded-full bg-surface-2 text-text"><ShieldCheck size={24} aria-hidden="true" /></span>
+          <span className="grid flex-1 gap-0.5">
+            <span className="font-semibold">{t("index.staffTitle")}</span>
+            <span className="text-sm text-muted">{t("index.staffBody")}</span>
+          </span>
+          <ArrowRight size={20} className="text-muted transition-transform group-hover:translate-x-1" aria-hidden="true" />
         </Link>
       </section>
     </main>
