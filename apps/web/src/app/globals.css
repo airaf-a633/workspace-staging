@@ -2,8 +2,10 @@
 
 /*
  * Relay design tokens (v1.0, 2026-10-07). Full rebrand: calm and product-led (Linear / Attio / Front family).
- * One accent, Petrol #0A5670, used for actions, selection and focus only. Neutral cool surfaces, never cream.
- * AI-made things use the Petrol family plus the sparkle icon and an "AI" label (decided 2026-10-07: no violet).
+ * One accent, Relay blue #006ACC (dark #5AABFF), used for actions, selection and focus only. Neutral cool surfaces,
+ * never cream. Chosen 2026-10-07 over Petrol: Chatwoot's hue (familiar to its users) but deeper, so it passes 4.5:1
+ * as text and under white labels; Chatwoot's own #1F93FF only reaches 3.15:1.
+ * AI-made things use the same blue plus the sparkle icon and an "AI" label (no violet, no second tint).
  * Type: Geist for everything (display weight 600, tight tracking), Geist Mono for numbers, IBM Plex Sans Arabic for Arabic.
  * Shape: controls and buttons 8px, panels 12px, chips and badges full-round. Every colour is a semantic token.
  */
@@ -19,32 +21,34 @@
   --text: #111518;               /* 17:1 on surface */
   --text-muted: #56616A;         /* 6.4:1 on surface */
 
-  --primary: #0A5670;            /* Petrol: 8.2:1 on surface */
+  --primary: #006ACC;            /* 5.34:1 on surface, 4.98:1 on bg; white on it 5.34:1 */
   --on-primary: #FFFFFF;
-  --primary-soft: #E4EFF2;
-  --ring: #0A5670;
-  --mint: #E6F2F1;
-  --sky: #EAF0F5;
+  --primary-soft: #E6F0FA;       /* primary text on it 4.63:1 */
+  --ring: #006ACC;
+  --mint: #EEF2F5;
+  --sky: #EAF2FB;
 
   --status-new: #56616A;       --status-new-soft: #F0F2F3;
-  --status-transit: #1D4FA8;   --status-transit-soft: #E8EEFA;
+  /* Neutral since the accent turned blue: blue means "action or selected" only. */
+  --status-transit: #56616A;   --status-transit-soft: #F0F2F3;
   --status-done: #15703F;      --status-done-soft: #E7F4EC;
   --status-warn: #8F5200;      --status-warn-soft: #FDF1DE;
   --status-fail: #B42A23;      --status-fail-soft: #FBEAE8;
   --note-soft: #FBF6E3;        --note-border: #C9B46A;
-  /* AI: the Petrol family, a touch lighter, always with the sparkle and an "AI" label. */
-  --ai: #0C6A80;               --ai-soft: #E6F2F4;
+  /* AI: the accent itself, always with the sparkle and an "AI" label. */
+  --ai: #006ACC;               --ai-soft: #E6F0FA;
   --destructive: #B42A23;      --on-destructive: #FFFFFF;
 
   /* Flat, calm brand surfaces (the old gradients and drifting light are retired). */
-  --grad-hero: linear-gradient(180deg, #0B5D78 0%, #094B61 100%);
+  /* Flat: a deeper step of the accent so white text (7.06:1) and 80% white (5.12:1) both pass. */
+  --grad-hero: #0058AA;
   --grad-soft: var(--surface-2);
   --grad-button: var(--primary);
   --grad-card: var(--surface);
 
   --shadow-1: 0 1px 2px rgb(17 21 24 / 0.05), 0 0 0 1px rgb(17 21 24 / 0.02);
   --shadow-2: 0 10px 28px -8px rgb(17 21 24 / 0.16), 0 2px 6px rgb(17 21 24 / 0.05);
-  --shadow-float: 0 24px 56px -20px rgb(9 75 97 / 0.28), 0 8px 20px -10px rgb(17 21 24 / 0.12);
+  --shadow-float: 0 24px 56px -20px rgb(0 72 140 / 0.24), 0 8px 20px -10px rgb(17 21 24 / 0.12);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -52,17 +56,17 @@
     color-scheme: dark;
     --bg: #0F1214; --surface: #15191C; --surface-2: #1C2125; --border: #272D32;
     --input-border: #6B747C; --text: #E8ECEF; --text-muted: #9AA4AC;
-    --primary: #72C4DE; --on-primary: #0B1A22; --primary-soft: #14313B; --ring: #72C4DE;
-    --mint: #12302F; --sky: #132836;
+    --primary: #5AABFF; --on-primary: #0B1A26; --primary-soft: #213345; --ring: #5AABFF;
+    --mint: #1C2328; --sky: #172738;
     --status-new: #9AA4AC; --status-new-soft: #1C2125;
-    --status-transit: #8DB4F5; --status-transit-soft: #13223D;
+    --status-transit: #9AA4AC; --status-transit-soft: #1C2125;
     --status-done: #4CC98A; --status-done-soft: #12301F;
     --status-warn: #F2B24C; --status-warn-soft: #352610;
     --status-fail: #FF8A80; --status-fail-soft: #3A1615;
     --note-soft: #2A2515; --note-border: #6B5A2A;
-    --ai: #7FD0DC; --ai-soft: #12303A;
-    --destructive: #FF8A80; --on-destructive: #0B1A22;
-    --grad-hero: linear-gradient(180deg, #0B4A5E 0%, #083949 100%);
+    --ai: #5AABFF; --ai-soft: #213345;
+    --destructive: #FF8A80; --on-destructive: #0B1A26;
+    --grad-hero: #0A4078;
     --grad-button: var(--primary); --grad-card: var(--surface);
     --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4); --shadow-2: 0 12px 32px rgb(0 0 0 / 0.5);
     --shadow-float: 0 30px 60px -20px rgb(0 0 0 / 0.6);
@@ -73,17 +77,17 @@
   color-scheme: dark;
   --bg: #0F1214; --surface: #15191C; --surface-2: #1C2125; --border: #272D32;
   --input-border: #6B747C; --text: #E8ECEF; --text-muted: #9AA4AC;
-  --primary: #72C4DE; --on-primary: #0B1A22; --primary-soft: #14313B; --ring: #72C4DE;
-  --mint: #12302F; --sky: #132836;
+  --primary: #5AABFF; --on-primary: #0B1A26; --primary-soft: #213345; --ring: #5AABFF;
+  --mint: #1C2328; --sky: #172738;
   --status-new: #9AA4AC; --status-new-soft: #1C2125;
-  --status-transit: #8DB4F5; --status-transit-soft: #13223D;
+  --status-transit: #9AA4AC; --status-transit-soft: #1C2125;
   --status-done: #4CC98A; --status-done-soft: #12301F;
   --status-warn: #F2B24C; --status-warn-soft: #352610;
   --status-fail: #FF8A80; --status-fail-soft: #3A1615;
   --note-soft: #2A2515; --note-border: #6B5A2A;
-  --ai: #7FD0DC; --ai-soft: #12303A;
-  --destructive: #FF8A80; --on-destructive: #0B1A22;
-  --grad-hero: linear-gradient(180deg, #0B4A5E 0%, #083949 100%);
+  --ai: #5AABFF; --ai-soft: #213345;
+  --destructive: #FF8A80; --on-destructive: #0B1A26;
+  --grad-hero: #0A4078;
   --grad-button: var(--primary); --grad-card: var(--surface);
   --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4); --shadow-2: 0 12px 32px rgb(0 0 0 / 0.5);
   --shadow-float: 0 30px 60px -20px rgb(0 0 0 / 0.6);

@@ -51,7 +51,7 @@ export const SAMPLE_INBOXES: ChannelInbox[] = [
 
 export const SAMPLE_LABELS: Label[] = [
   { id: "l-vip", name: "VIP", color: "#B7791F" },
-  { id: "l-wholesale", name: "Wholesale", color: "#0A5670" },
+  { id: "l-wholesale", name: "Wholesale", color: "#0E7490" },
   { id: "l-order", name: "Order issue", color: "#C2410C" },
   { id: "l-warranty", name: "Warranty", color: "#4D7C0F" },
   { id: "l-feedback", name: "Product feedback", color: "#475569" },

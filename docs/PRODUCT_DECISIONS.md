@@ -288,3 +288,40 @@ The omnichannel inbox (step 2) is built on these decisions:
   - The team's manager: an alert at breach, which also appears under "Needs you now" on their home.
   - Unclaimed chats that breach are reassigned to the next available teammate.
 - **When several policies match:** the strictest target wins, separately for each of the three targets.
+
+### Help Center (2026-10-07)
+
+**What's included:**
+- A public, branded help site with categories, search and articles. No login is needed.
+- An article editor with drafts and published articles, categories, and who wrote what and when.
+- Articles in several languages. AI drafts the translations and a person reviews them.
+- Feedback and gaps:
+  - "Was this helpful?" votes.
+  - Searches that found nothing.
+  - Questions the team keeps answering in chat.
+
+**How AI uses it:** in the reply box and in the widget, AI suggests relevant articles. It drafts answers only from published articles, and links the article it used.
+
+**Who publishes:** anyone on the team can draft. Owners, admins and managers publish.
+
+### Accent colour: Petrol → Relay blue (2026-10-07)
+
+The accent changed from Petrol #0A5670 to **Relay blue #006ACC** (dark mode #5AABFF with a near-black label).
+
+**Why:** blue feels familiar to Chatwoot users. We use Chatwoot's hue (209°), deepened, rather than their exact #1F93FF, for two reasons:
+- The exact blue fails our contrast rule: white text on it reaches only 3.15:1, and as text on the page only 2.93:1.
+- Copying their exact brand colour is not what we want.
+
+**Contrast:**
+
+| Check | Light | Dark |
+|---|---|---|
+| Label on the primary button | 5.34:1 (white) | 7.31:1 |
+| Blue as text on the surface | 5.34:1 (4.98:1 on the page background) | 7.33:1 |
+| Text on soft chips | 4.63:1 | 5.36:1 |
+
+**Related rules:**
+- **AI** uses the same blue, always with the sparkle icon and the "AI" label. There is no second tint and no violet.
+- **The hero band** is flat #0058AA in light and #0A4078 in dark. White text on it reaches 7.06:1, and 80%-white body text 5.12:1.
+- **The "in transit" deal badge** is now neutral grey, so blue only ever means action or selected.
+- **The sample "Wholesale" label** moved to teal #0E7490, so a label never looks like a selection.

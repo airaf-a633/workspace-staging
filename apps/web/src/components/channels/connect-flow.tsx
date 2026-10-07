@@ -29,7 +29,7 @@ const GENERIC: Step[] = ["account", "details", "done"];
 type EmailMethod = "google" | "microsoft" | "forward" | "relay";
 
 export const DEFAULT_WIDGET: WidgetSettings = {
-  color: "#0A5670",
+  color: "#006ACC",
   greeting: "",
   launcher: "",
   position: "right",

@@ -25,7 +25,7 @@ export interface WidgetSettings {
   identity: boolean;
 }
 
-export const SWATCHES = ["#0A5670", "#111518", "#1D4ED8", "#B42318", "#047857", "#7A2E8E"];
+export const SWATCHES = ["#006ACC", "#111518", "#0E7490", "#B42318", "#047857", "#7A2E8E"];
 
 /** White or near-black text, whichever reads better on the brand colour (WCAG relative luminance). */
 export function textOn(hex: string) {

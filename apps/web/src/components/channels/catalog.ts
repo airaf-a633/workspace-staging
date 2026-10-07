@@ -45,7 +45,7 @@ export interface Channel {
 
 export const CHANNELS: Channel[] = [
   { key: "whatsapp", name: "WhatsApp", Icon: WhatsappLogo, color: "#1FA855", group: "messaging", review: "meta" },
-  { key: "webchat", name: "Website chat", Icon: ChatsCircle, color: "#0A5670", group: "web" },
+  { key: "webchat", name: "Website chat", Icon: ChatsCircle, color: "#006ACC", group: "web" },
   { key: "email", name: "Email", Icon: EnvelopeSimple, color: "#56616A", group: "web" },
   { key: "instagram", name: "Instagram", Icon: InstagramLogo, color: "#D62976", group: "social", review: "meta" },
   { key: "messenger", name: "Messenger", Icon: MessengerLogo, color: "#0A7CFF", group: "social", review: "meta" },

@@ -9,7 +9,7 @@ import { useFormat, useT } from "@/i18n/client";
 import { buildReport, type Agent, type Range, type Report } from "./sample";
 
 /**
- * Reports (decided 2026-10-07): conversations, team, satisfaction, sales and campaigns. One hue (Petrol) for
+ * Reports (decided 2026-10-07): conversations, team, satisfaction, sales and campaigns. One hue (the accent) for
  * every chart: bars and the heatmap show amounts, and channels and people are named rows, so nothing relies
  * on telling colours apart. Every chart has a hover read-out and a table view.
  */
