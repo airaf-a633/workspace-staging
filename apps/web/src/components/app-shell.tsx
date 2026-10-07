@@ -7,6 +7,7 @@ import { BookOpenText, ChartBar, Megaphone, ChatsCircle, CheckSquare, Gear, Hous
 import { AskAi } from "@/components/ai/ask-ai";
 import type { AiWorld } from "@/lib/ai-sample";
 import { useT } from "@/i18n/client";
+import { ThemeSwitch } from "@/components/theme";
 import type { TFor } from "@/i18n/types";
 
 interface Props {
@@ -47,7 +48,7 @@ function navItems(base: string, t: TFor<"nav">, reports: boolean, help: boolean,
       href: `${base}/settings`,
       label: t("settings"),
       Icon: Gear,
-      match: (p: string) => ["settings", "members", "teams", "roles", "whatsapp", "channels", "contact-settings", "sla", "account", "ai"].some((s) => p.startsWith(`${base}/${s}`)),
+      match: (p: string) => ["settings", "members", "teams", "roles", "whatsapp", "channels", "contact-settings", "sla", "billing", "account", "ai"].some((s) => p.startsWith(`${base}/${s}`)),
     },
   ];
 }
@@ -143,6 +144,7 @@ export function AppShell({ base, workspaceName, memberName, roleName, signOut, f
               <p className="truncate font-medium">{memberName}</p>
               <p className="truncate text-sm text-muted">{roleName}</p>
             </div>
+            <ThemeSwitch compact className="w-fit" />
             {footer}
             {signOut && (
               <form action={signOut}>

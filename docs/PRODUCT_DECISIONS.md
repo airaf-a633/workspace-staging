@@ -371,3 +371,21 @@ It shows how many people are left out, and why, before sending.
 - **Test send** to yourself first.
 - **A/B test:** two versions go to a slice of the audience, and the better one goes to the rest.
 - **Approval:** owners and admins approve sends over 1,000 recipients.
+
+### Onboarding, billing and admin console (2026-10-07, step 6)
+
+**Onboarding:** a short three-step wizard (business name and size, first channel, invite the team), then a checklist on Home: install the widget, import contacts, set reply targets, try AI.
+
+**Pricing:** per seat, three plans, with unlimited channels and AI credits included per plan. The sample prices are Starter $19, Growth $39 and Pro $79 per user per month. They stay sample until the founders set real prices.
+
+**Billing in Settings:**
+- Plan and seats: change plan and add or remove seats, prorated.
+- Usage: AI credits, plus WhatsApp and SMS message costs passed through at cost, with limits.
+- Invoices: card on file, invoice history, billing email, and VAT or tax ID.
+- Trial and cancel: a trial countdown, and cancel from Settings with no call needed. Access continues to the end of the period, and data can be exported.
+
+**Relay staff admin console:**
+- Workspaces and health: plan, seats, MRR, broken channels and last activity.
+- Support access: only after the workspace owner grants time-limited access, and every action is logged.
+- Plans and credits: extend trials, comp credits and change plans, each with a written reason.
+- Platform status: queue backlog, webhook failures and channel provider status.

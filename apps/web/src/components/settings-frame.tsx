@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { getT } from "@/i18n/server";
 
-export type SettingsSection = "members" | "teams" | "roles" | "channels" | "contacts" | "sla" | "ai" | "account";
+export type SettingsSection = "members" | "teams" | "roles" | "channels" | "contacts" | "sla" | "billing" | "ai" | "account";
 
 /**
  * Settings as one page with a side sub-menu (decided 2026-09-30). The sections keep their own URLs
@@ -21,6 +21,8 @@ export async function SettingsFrame({ base, active, isOwner, children }: { base:
       ? [
           { key: "contacts" as const, label: t("contacts"), href: `${base}/contact-settings` },
           { key: "sla" as const, label: t("sla"), href: `${base}/sla` },
+          // Billing is for owners and admins; others are sent back to Account if they open the link.
+          ...(isOwner ? [{ key: "billing" as const, label: t("billing"), href: `${base}/billing` }] : []),
         ]
       : []),
     { key: "ai", label: t("ai"), href: `${base}/ai` },
