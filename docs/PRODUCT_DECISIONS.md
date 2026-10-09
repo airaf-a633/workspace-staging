@@ -63,7 +63,7 @@ _Decided with the founder in question rounds starting 2026-09-27. Each line is a
 
 ## 7. Onboarding and billing
 - **Number admin:** only the Owner can connect, reconnect or remove WhatsApp numbers and see Meta billing. Disconnecting needs a confirmation step.
-- **Trial:** 14 days with no card. Onboarding guides the owner to add a card on Meta's side, which is needed to send messages from 1 Oct 2026.
+- **Trial:** 14 days with no card, **starting when the business connects its first WhatsApp number** (decided 2026-09-29), not at sign-up. Until then the account is free and unlimited in time, so early sign-ups during Meta's review lose nothing. Onboarding guides the owner to add a card on Meta's side, which is needed to send messages from 1 Oct 2026.
 - **Seats:** a paid seat is any member who can reply or edit. Read-only viewers are free, up to 5 per workspace.
 
 ## 8. Data, privacy, audit
@@ -205,3 +205,205 @@ _Decided with the founder in question rounds starting 2026-09-27. Each line is a
 - Re-plan the engineering plan by milestones for the founder + Claude, with the private beta at the core milestone.
 - Set final prices (placeholders now) after talking to the deposit-paying leads.
 - Choose the inbound email provider for the Gmail capture address.
+
+## Relay pivot (2026-10-07)
+
+The product is now **Relay**. It is for a global market and is omnichannel, with 18 channels; see `apps/web/src/components/channels/catalog.ts`. The new identity is Geist type, a flat Petrol accent and the "arcs" mark.
+
+The omnichannel inbox (step 2) is built on these decisions:
+
+- **Demo business:** Northwind Home, a global online consumer brand selling home goods and small electronics, priced in USD.
+- **Sidebar:** Chatwoot style. Conversations come first, then one entry per connected inbox (each number or address), then teams and labels.
+- **Per-channel rules are real, not cosmetic:**
+  - Email has a subject, CC and quoted threads.
+  - WhatsApp has the 24-hour window and templates.
+  - Instagram shows story replies.
+  - Voice shows call logs and recordings.
+  - Slack and Discord have threads.
+- **Conversation side panel:** contact details with all their channels, previous conversations across channels, linked deals, orders and tasks, and the AI summary and copilot.
+- **Same person on two channels:** Relay suggests "looks like the same person" and an agent confirms the merge. There is never a silent auto-merge.
+- **Reply via:** an agent can answer on another of the contact's known channels from the composer. This starts a linked conversation, which is useful when the WhatsApp 24-hour window has closed.
+- **Broken channel** (expired token, bounced domain, flagged number), shown in three places:
+  - a banner in that inbox with Reconnect;
+  - an item on the owner's home under "Needs you now";
+  - a composer that says it can't send there and offers another channel.
+
+### Time zones and channels (2026-10-07)
+
+- **Time zones:** each person sees times in their own zone. It's set in their profile and detected from the browser at sign-up. Reports, business hours and SLAs use the workspace's zone.
+- **Channels page:**
+  - Connected inboxes come first, with health and quick settings.
+  - Below them, the catalogue of all 18 channels, grouped into Messaging, Social, Web, Work and Developer.
+- **Connect flows:**
+  - WhatsApp, website chat, email, Instagram and Messenger each get their own step-by-step flow.
+  - Website chat's flow includes a live widget preview and the install code.
+  - Email's flow covers forwarding and SMTP.
+  - The other 13 channels share one "connect with your account" flow.
+
+### Contacts (2026-10-07, step 4)
+
+**Areas:**
+- **One person, every channel:** all of a contact's identities in one place, with merged history and merge suggestions.
+- Segments and CSV import.
+- Companies.
+- Privacy tools.
+- Activity and notes.
+- Custom fields and tags.
+- Ownership and lifecycle.
+- Bulk actions.
+
+**Companies:** each contact belongs to at most one company. The company page lists its people, plus all their conversations, deals and orders. Matching by email domain is suggested, and a person confirms it.
+
+**Import:** a review step. Exact matches on email or phone update the existing contact. Likely matches are listed so a person can merge them or keep them apart. Nothing is overwritten silently.
+
+**Privacy, at production level:**
+- Marketing consent per channel, with date and source. Campaigns respect it.
+- A global "do not contact" flag.
+- One-click export of everything held about a person.
+- Erase on request (owner or admin, with a typed confirmation). The audit log records that it happened, without the data.
+- Workspace retention rules that auto-delete conversations after N months.
+
+### Reports and SLAs (2026-10-07, step 5)
+
+**Build order:** Reports, then SLAs, then Help Center, then Campaigns.
+
+**Reports cover four areas:**
+- **Conversations:** volume by channel, team and hour; first reply and resolution times; open backlog.
+- **Team and agents:** workload, reply times, ratings and handovers for each person.
+- **Satisfaction (CSAT):** ratings and comments by channel, team and agent.
+- **Sales and campaigns:** pipeline, won value, and campaign delivery, replies and conversions.
+
+**SLAs are policies, matched by team, channel and VIP:**
+- Examples: VIP first reply within 15 minutes; email within 4 hours.
+- The clock only counts business hours.
+- A warning shows at 80% of the target. Breaches are flagged in the inbox and in reports.
+
+**SLA details (2026-10-07):**
+- **Targets in each policy:** first reply, next reply and resolution.
+- **When the clock stops:**
+  - While the team is waiting on the customer, meaning the last message was ours.
+  - Outside business hours, measured in the workspace's zone.
+- **Who hears about it:**
+  - The person holding the chat: a warning at 80%, then an alert at breach.
+  - The team's manager: an alert at breach, which also appears under "Needs you now" on their home.
+  - Unclaimed chats that breach are reassigned to the next available teammate.
+- **When several policies match:** the strictest target wins, separately for each of the three targets.
+
+### Help Center (2026-10-07)
+
+**What's included:**
+- A public, branded help site with categories, search and articles. No login is needed.
+- An article editor with drafts and published articles, categories, and who wrote what and when.
+- Articles in several languages. AI drafts the translations and a person reviews them.
+- Feedback and gaps:
+  - "Was this helpful?" votes.
+  - Searches that found nothing.
+  - Questions the team keeps answering in chat.
+
+**How AI uses it:** in the reply box and in the widget, AI suggests relevant articles. It drafts answers only from published articles, and links the article it used.
+
+**Who publishes:** anyone on the team can draft. Owners, admins and managers publish.
+
+### Accent colour: Petrol → Relay blue (2026-10-07)
+
+The accent changed from Petrol #0A5670 to **Relay blue #006ACC** (dark mode #5AABFF with a near-black label).
+
+**Why:** blue feels familiar to Chatwoot users. We use Chatwoot's hue (209°), deepened, rather than their exact #1F93FF, for two reasons:
+- The exact blue fails our contrast rule: white text on it reaches only 3.15:1, and as text on the page only 2.93:1.
+- Copying their exact brand colour is not what we want.
+
+**Contrast:**
+
+| Check | Light | Dark |
+|---|---|---|
+| Label on the primary button | 5.34:1 (white) | 7.31:1 |
+| Blue as text on the surface | 5.34:1 (4.98:1 on the page background) | 7.33:1 |
+| Text on soft chips | 4.63:1 | 5.36:1 |
+
+**Related rules:**
+- **AI** uses the same blue, always with the sparkle icon and the "AI" label. There is no second tint and no violet.
+- **The hero band** is flat #0058AA in light and #0A4078 in dark. White text on it reaches 7.06:1, and 80%-white body text 5.12:1.
+- **The "in transit" deal badge** is now neutral grey, so blue only ever means action or selected.
+- **The sample "Wholesale" label** moved to teal #0E7490, so a label never looks like a selection.
+
+### English-only product (2026-10-07)
+
+Relay is a global product, not Arabic-centric. The founders will pitch Arabic-speaking customers themselves.
+
+**What changed:**
+- The interface is English only.
+- Removed:
+  - the Arabic text file;
+  - the language switch;
+  - right-to-left layout for the interface;
+  - the Arabic font;
+  - the Arabic notice on the legal pages.
+- The translation system (`i18n/`) stays, so a language can be added later: add its code to `LOCALES` and a messages file.
+
+**Customers still write in any language:**
+- Their messages keep `dir="auto"` and come with Translate.
+- The demo mixes languages: Aiko writes Japanese, Lucía Spanish (she replaces Lina's Arabic chat), Chloé French.
+- AI drafts replies in the customer's language, with an English gloss.
+
+**Help Center:**
+- The demo site is English only.
+- Languages remain a feature: a business adds one in Site settings, AI drafts the translations, and a person reviews them before they go live.
+
+### Campaigns (2026-10-07)
+
+**Channels:**
+- **WhatsApp:** approved templates only, with the cost per country shown before sending.
+- **Email:** subject, preview text and an unsubscribe link.
+- **SMS:** STOP opt-out, with the part count and cost shown.
+- **Messenger and Instagram:** only people who wrote within Meta's messaging window (shown as a limit).
+
+**Audience:** saved segments, with consent enforced. Relay leaves out:
+- anyone without opt-in on that channel;
+- anyone marked do-not-contact;
+- anyone with no handle on that channel.
+
+It shows how many people are left out, and why, before sending.
+
+**Replies:** go into the inbox as normal conversations. Each is labelled with its campaign and routed to the campaign's team. A STOP reply opts the person out automatically.
+
+**Sending controls:**
+- **Timing:** send now, at a set time, or at the same local time in each customer's time zone.
+- **Test send** to yourself first.
+- **A/B test:** two versions go to a slice of the audience, and the better one goes to the rest.
+- **Approval:** owners and admins approve sends over 1,000 recipients.
+
+### Onboarding, billing and admin console (2026-10-07, step 6)
+
+**Onboarding:** a short three-step wizard (business name and size, first channel, invite the team), then a checklist on Home: install the widget, import contacts, set reply targets, try AI.
+
+**Pricing:** per seat, three plans, with unlimited channels and AI credits included per plan. The sample prices are Starter $19, Growth $39 and Pro $79 per user per month. They stay sample until the founders set real prices.
+
+**Billing in Settings:**
+- Plan and seats: change plan and add or remove seats, prorated.
+- Usage: AI credits, plus WhatsApp and SMS message costs passed through at cost, with limits.
+- Invoices: card on file, invoice history, billing email, and VAT or tax ID.
+- Trial and cancel: a trial countdown, and cancel from Settings with no call needed. Access continues to the end of the period, and data can be exported.
+
+**Relay staff admin console:**
+- Workspaces and health: plan, seats, MRR, broken channels and last activity.
+- Support access: only after the workspace owner grants time-limited access, and every action is logged.
+- Plans and credits: extend trials, comp credits and change plans, each with a written reason.
+- Platform status: queue backlog, webhook failures and channel provider status.
+
+## Backend build order (decided 2026-10-09)
+
+Each preview feature gets real data in its own step (migration, tests, live page). The preview keeps running on sample data for partner demos.
+
+Order:
+1. Channels foundation.
+2. Customers and companies, assignment, and notes.
+3. SLAs and Reports.
+4. Help Center.
+5. Campaigns.
+6. Deals and Tasks.
+
+**Channels foundation (step 1):**
+- Every connection is a row in `channels`. WhatsApp keeps its own details table, which shares the channel's id. Team routing and connection status live on the channel.
+- One customer has many identities (WhatsApp number, email, handle) in `contact_identities`, so the same person on two channels is one customer card.
+- Threading: chat channels keep one thread per customer per channel. Email gets one thread per email thread, stored as `conversations.thread_key`.
+- Messages use provider-neutral names: `external_id`, `reply_to_external_id` and `sent_at`. The worker calls `ingest_inbound` for every channel.

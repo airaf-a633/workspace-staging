@@ -12,6 +12,7 @@
   "dependencies": {
     "@app/domain": "workspace:*",
     "@app/whatsapp": "workspace:*",
+    "@phosphor-icons/react": "^2.1.10",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.2",
     "dotenv": "^16.6.1",

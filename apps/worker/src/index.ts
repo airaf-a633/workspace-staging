@@ -1,52 +1,49 @@
-// Queue consumer. M2.1: claims whatsapp_event jobs, validates and routes each stored webhook.
-// Message handling itself (contacts, conversations, messages) is added in M2.3.
+// Queue consumer. Claims jobs, runs them, and retries with backoff (dead-letter after max attempts).
+// Queues: whatsapp_event (stored webhooks, M2.1/2.3) and media_download (customer media, M2.3).
 import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
-import { routeChanges, webhookEnvelope } from "@app/whatsapp";
 import { loadEnv } from "./env";
+import { processMediaDownload, processWhatsappEvent, type Ctx } from "./handlers";
 
 config({ path: fileURLToPath(new URL("../../../.env", import.meta.url)) });
 const env = loadEnv();
 const db = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+const ctx: Ctx = { db, apiVersion: env.WHATSAPP_API_VERSION, log: (m) => console.log(m) };
 
 const POLL_MS = 1000;
 const BATCH = 20;
 let running = true;
 
-interface Job { id: number; payload: { event_id: number }; attempts: number }
-
-async function processWhatsappEvent(job: Job): Promise<void> {
-  const { data: event, error } = await db.from("webhook_events").select("id, payload").eq("id", job.payload.event_id).single();
-  if (error || !event) throw new Error(`event ${job.payload.event_id} not found: ${error?.message}`);
-
-  const parsed = webhookEnvelope.safeParse(event.payload);
-  if (!parsed.success) {
-    await markEvent(event.id, "ignored", "Not a WhatsApp Business Account webhook");
-    return;
-  }
-  const changes = routeChanges(parsed.data);
-  const unknown = changes.filter((c) => !c.known).map((c) => c.field);
-  // M2.3 adds a handler per field here. Until then, record what arrived.
-  await markEvent(event.id, "processed", `fields: ${changes.map((c) => c.field).join(", ")}${unknown.length ? ` (unhandled: ${unknown.join(", ")})` : ""}`);
-}
+interface Job { id: number; queue: string; payload: Record<string, unknown>; attempts: number; max_attempts: number }
 
 async function markEvent(id: number, outcome: "processed" | "ignored" | "failed", note: string) {
-  const { error } = await db.from("webhook_events").update({ processed_at: new Date().toISOString(), outcome, note }).eq("id", id);
+  const { error } = await db.from("webhook_events").update({ processed_at: new Date().toISOString(), outcome, note: note.slice(0, 2000) }).eq("id", id);
   if (error) throw new Error(`could not mark event ${id}: ${error.message}`);
 }
 
-async function tick(): Promise<number> {
-  const { data: jobs, error } = await db.rpc("claim_jobs", { p_queue: "whatsapp_event", p_limit: BATCH, p_lease: "60 seconds" });
-  if (error) throw new Error(`claim_jobs: ${error.message}`);
+const HANDLERS: Record<string, (job: Job) => Promise<void>> = {
+  whatsapp_event: async (job) => {
+    const id = Number(job.payload.event_id);
+    const result = await processWhatsappEvent(ctx, id);
+    await markEvent(id, result.outcome, result.note);
+  },
+  media_download: (job) =>
+    processMediaDownload(ctx, job.payload as Parameters<typeof processMediaDownload>[1], job.attempts >= job.max_attempts),
+};
+
+async function tick(queue: string): Promise<number> {
+  const { data: jobs, error } = await db.rpc("claim_jobs", { p_queue: queue, p_limit: BATCH, p_lease: "120 seconds" });
+  if (error) throw new Error(`claim_jobs(${queue}): ${error.message}`);
   for (const job of (jobs ?? []) as Job[]) {
     try {
-      await processWhatsappEvent(job);
+      await HANDLERS[queue]!(job);
       await db.rpc("complete_job", { p_id: job.id });
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       const { data: outcome } = await db.rpc("fail_job", { p_id: job.id, p_error: message });
-      console.error(`job ${job.id} failed (${outcome}): ${message}`);
+      console.error(`${queue} job ${job.id} failed (${outcome}): ${message}`);
+      if (outcome === "dead" && queue === "whatsapp_event") await markEvent(Number(job.payload.event_id), "failed", message).catch(() => {});
     }
   }
   return jobs?.length ?? 0;
@@ -55,13 +52,15 @@ async function tick(): Promise<number> {
 async function main() {
   console.log(`worker started against ${new URL(env.SUPABASE_URL).host}`);
   while (running) {
-    try {
-      const n = await tick();
-      if (n === BATCH) continue; // more waiting: go again immediately
-    } catch (e) {
-      console.error(e instanceof Error ? e.message : e);
+    let busy = false;
+    for (const queue of Object.keys(HANDLERS)) {
+      try {
+        if ((await tick(queue)) === BATCH) busy = true;
+      } catch (e) {
+        console.error(e instanceof Error ? e.message : e);
+      }
     }
-    await new Promise((r) => setTimeout(r, POLL_MS));
+    if (!busy) await new Promise((r) => setTimeout(r, POLL_MS));
   }
   console.log("worker stopped");
 }

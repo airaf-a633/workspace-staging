@@ -12,6 +12,11 @@ await db.exec(`
   create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
   create schema extensions; create extension pgcrypto schema extensions; create extension pgtap;
   create schema auth;
+  create schema vault;
+  create table vault.secrets (id uuid primary key default gen_random_uuid(), name text, description text, secret text);
+  create view vault.decrypted_secrets as select id, name, description, secret, secret as decrypted_secret from vault.secrets;
+  create function vault.create_secret(new_secret text, new_name text default null, new_description text default '') returns uuid
+    language sql as $$ insert into vault.secrets (name, description, secret) values (new_name, new_description, new_secret) returning id $$;
   create table auth.users (instance_id uuid, id uuid primary key, aud text, role text, email text unique, encrypted_password text,
     email_confirmed_at timestamptz, raw_app_meta_data jsonb, raw_user_meta_data jsonb, created_at timestamptz, updated_at timestamptz,
     confirmation_token text, recovery_token text, email_change text, email_change_token_new text);
