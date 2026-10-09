@@ -27,7 +27,7 @@ export default async function WhatsAppNumbers(props: PageProps<"/w/[slug]/whatsa
   const tAll = await getT();
   const { data: accounts } = await supabase
     .from("whatsapp_accounts")
-    .select("id, display_phone, verified_name, status, quality_rating, is_test, team_id, teams(name)")
+    .select("id, display_phone, verified_name, quality_rating, is_test, channels(status, teams(name))")
     .eq("workspace_id", workspace.id)
     .order("created_at");
   const error = errorText(tAll, "numbers", sp.error);
@@ -41,7 +41,9 @@ export default async function WhatsAppNumbers(props: PageProps<"/w/[slug]/whatsa
       {accounts && accounts.length > 0 && (
         <ListSurface>
           {accounts.map((a) => {
-            const team = Array.isArray(a.teams) ? a.teams[0] : a.teams;
+            const channel = (Array.isArray(a.channels) ? a.channels[0] : a.channels) as unknown as { status: string; teams: { name: string } | null } | null;
+            const team = channel?.teams;
+            const status = channel?.status ?? "connecting";
             return (
               <li key={a.id} className="flex flex-wrap items-center gap-4 border-b border-border px-5 py-4 last:border-0">
                 <span className="bg-primary grid size-10 shrink-0 place-items-center rounded-full font-semibold text-lg text-white" aria-hidden="true">
@@ -50,7 +52,7 @@ export default async function WhatsAppNumbers(props: PageProps<"/w/[slug]/whatsa
                 <span className="grid min-w-0 flex-1 gap-0.5">
                   <span className="flex flex-wrap items-center gap-2 font-medium">
                     {a.verified_name ?? a.display_phone}
-                    <Badge tone={TONE[a.status as keyof typeof TONE] ?? "warn"}>{t(`status.${a.status === "connecting" ? "attention" : (a.status as "connected" | "disconnected")}`)}</Badge>
+                    <Badge tone={TONE[status as keyof typeof TONE] ?? "warn"}>{t(`status.${status === "connecting" ? "attention" : (status as "connected" | "disconnected")}`)}</Badge>
                     {a.is_test && <Badge tone="transit">{t("testBadge")}</Badge>}
                   </span>
                   <span className="text-sm text-muted">

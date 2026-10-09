@@ -31,38 +31,38 @@ select throws_ok($$ select public.whatsapp_token((select v from ids where k = 'a
 
 -- Receiving (as the worker)
 reset role;
-update public.whatsapp_accounts set team_id = (select v from ids where k = 'mall') where id = (select v from ids where k = 'acc');
-select isnt(public.ingest_inbound_message((select v from ids where k = 'acc'), '971501234567', 'Mariam', 'wamid.A', 'text', 'Hello', null, '{}', null, now() - interval '2 minutes'),
+update public.channels set team_id = (select v from ids where k = 'mall') where id = (select v from ids where k = 'acc');
+select isnt(public.ingest_inbound((select v from ids where k = 'acc'), 'whatsapp', '971501234567', 'Mariam', 'wamid.A', 'text', 'Hello', null, '{}', null, now() - interval '2 minutes'),
   null, 'the first message is stored');
-select is(public.ingest_inbound_message((select v from ids where k = 'acc'), '971501234567', 'Mariam', 'wamid.A', 'text', 'Hello', null, '{}', null, now() - interval '2 minutes'),
-  null, 'the same wamid again is skipped');
-select isnt(public.ingest_inbound_message((select v from ids where k = 'acc'), '971501234567', 'Mariam', 'wamid.B', 'text', 'Are you there?', null, '{}', null, now()),
+select is(public.ingest_inbound((select v from ids where k = 'acc'), 'whatsapp', '971501234567', 'Mariam', 'wamid.A', 'text', 'Hello', null, '{}', null, now() - interval '2 minutes'),
+  null, 'the same message id again is skipped');
+select isnt(public.ingest_inbound((select v from ids where k = 'acc'), 'whatsapp', '971501234567', 'Mariam', 'wamid.B', 'text', 'Are you there?', null, '{}', null, now()),
   null, 'a second message is stored');
-select is((select count(*)::int from public.conversations where whatsapp_account_id = (select v from ids where k = 'acc')), 1, 'one conversation per customer per number');
-select is((select unread_count from public.conversations where whatsapp_account_id = (select v from ids where k = 'acc')), 2, 'both messages count as unread');
+select is((select count(*)::int from public.conversations where channel_id = (select v from ids where k = 'acc')), 1, 'one conversation per customer per number');
+select is((select unread_count from public.conversations where channel_id = (select v from ids where k = 'acc')), 2, 'both messages count as unread');
 select ok(public.apply_reaction((select v from ids where k = 'acc'), 'wamid.A', '👍'), 'a reaction attaches to its message');
 
 -- Statuses only move forward
-insert into public.messages (workspace_id, conversation_id, wamid, direction, source, type, body, status, meta_timestamp)
-select (select v from ids where k = 'ws'), id, 'wamid.OUT', 'out', 'inbox', 'text', 'Yes!', 'sent', now() from public.conversations where whatsapp_account_id = (select v from ids where k = 'acc');
+insert into public.messages (workspace_id, conversation_id, external_id, direction, source, type, body, status, sent_at)
+select (select v from ids where k = 'ws'), id, 'wamid.OUT', 'out', 'inbox', 'text', 'Yes!', 'sent', now() from public.conversations where channel_id = (select v from ids where k = 'acc');
 select public.apply_message_status((select v from ids where k = 'acc'), 'wamid.OUT', 'read');
 select public.apply_message_status((select v from ids where k = 'acc'), 'wamid.OUT', 'delivered');
-select is((select status from public.messages where wamid = 'wamid.OUT'), 'read', 'a late "delivered" does not overwrite "read"');
+select is((select status from public.messages where external_id = 'wamid.OUT'), 'read', 'a late "delivered" does not overwrite "read"');
 
 -- Visibility follows conversations.view
 select pg_temp.act_as('10000000-0000-0000-0000-000000000003');
-select is((select count(*)::int from public.messages where wamid in ('wamid.A', 'wamid.B')), 2, 'Omar (Mall team) sees the Mall chat');
+select is((select count(*)::int from public.messages where external_id in ('wamid.A', 'wamid.B')), 2, 'Omar (Mall team) sees the Mall chat');
 reset role;
 select pg_temp.act_as('10000000-0000-0000-0000-000000000006');
-select is((select count(*)::int from public.messages where wamid in ('wamid.A', 'wamid.B')), 2, 'Aisha (viewer, Mall) can read it');
+select is((select count(*)::int from public.messages where external_id in ('wamid.A', 'wamid.B')), 2, 'Aisha (viewer, Mall) can read it');
 reset role;
 select pg_temp.act_as('10000000-0000-0000-0000-000000000002');
-select is((select count(*)::int from public.messages where wamid in ('wamid.A', 'wamid.B')), 0, 'Sara (Deira team) cannot see a Mall chat');
-select throws_ok($$ insert into public.messages (workspace_id, conversation_id, direction, type, meta_timestamp) values ((select v from ids where k = 'ws'), gen_random_uuid(), 'out', 'text', now()) $$,
+select is((select count(*)::int from public.messages where external_id in ('wamid.A', 'wamid.B')), 0, 'Sara (Deira team) cannot see a Mall chat');
+select throws_ok($$ insert into public.messages (workspace_id, conversation_id, direction, type, sent_at) values ((select v from ids where k = 'ws'), gen_random_uuid(), 'out', 'text', now()) $$,
   '42501', null, 'app users cannot write messages directly');
 reset role;
 select pg_temp.act_as('10000000-0000-0000-0000-000000000007');
-select is((select count(*)::int from public.contacts where wa_id = '971501234567'), 0, 'another business sees none of it');
+select is((select count(*)::int from public.contact_identities where address = '971501234567'), 0, 'another business sees none of it');
 
 select * from finish();
 rollback;

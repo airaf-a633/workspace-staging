@@ -3,7 +3,7 @@ import { downloadMedia, extensionFor, parseMessagesValue, routeChanges, webhookE
 
 /**
  * M2.3: what the worker does with each stored webhook. Every step is safe to run twice (Meta resends,
- * and failed jobs retry): messages dedupe on their wamid, statuses only move forward, media attaches once.
+ * and failed jobs retry): messages dedupe on their external id, statuses only move forward, media attaches once.
  */
 
 export interface Ctx {
@@ -40,20 +40,22 @@ async function handleMessages(ctx: Ctx, change: RoutedChange): Promise<string> {
   for (const m of messages) {
     if (m.reaction) {
       // A reaction to a message we don't have yet (out of order) is retried by the job; after that it is dropped.
-      if (await rpc<boolean>(ctx, "apply_reaction", { p_account: account.id, p_target_wamid: m.reaction.to, p_emoji: m.reaction.emoji })) reactions++;
+      if (await rpc<boolean>(ctx, "apply_reaction", { p_channel: account.id, p_target: m.reaction.to, p_emoji: m.reaction.emoji })) reactions++;
       continue;
     }
-    const id = await rpc<string | null>(ctx, "ingest_inbound_message", {
-      p_account: account.id,
-      p_wa_id: m.from,
-      p_profile_name: m.profileName,
-      p_wamid: m.wamid,
+    // A WhatsApp number's channel shares its id.
+    const id = await rpc<string | null>(ctx, "ingest_inbound", {
+      p_channel: account.id,
+      p_kind: "whatsapp",
+      p_address: m.from,
+      p_display: m.profileName,
+      p_external_id: m.wamid,
       p_type: m.type,
       p_body: m.body,
       p_caption: m.caption,
       p_data: m.data,
       p_reply_to: m.replyTo,
-      p_meta_ts: m.at.toISOString(),
+      p_sent_at: m.at.toISOString(),
     });
     if (!id) {
       dup++;
@@ -71,8 +73,8 @@ async function handleMessages(ctx: Ctx, change: RoutedChange): Promise<string> {
 
   for (const s of statuses) {
     await rpc(ctx, "apply_message_status", {
-      p_account: account.id,
-      p_wamid: s.wamid,
+      p_channel: account.id,
+      p_external_id: s.wamid,
       p_status: s.status,
       p_error_code: s.error?.code ?? null,
       p_error_text: s.error ? [s.error.title, s.error.details].filter(Boolean).join(": ") : null,

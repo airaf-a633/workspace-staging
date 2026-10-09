@@ -389,3 +389,21 @@ It shows how many people are left out, and why, before sending.
 - Support access: only after the workspace owner grants time-limited access, and every action is logged.
 - Plans and credits: extend trials, comp credits and change plans, each with a written reason.
 - Platform status: queue backlog, webhook failures and channel provider status.
+
+## Backend build order (decided 2026-10-09)
+
+Each preview feature gets real data in its own step (migration, tests, live page). The preview keeps running on sample data for partner demos.
+
+Order:
+1. Channels foundation.
+2. Customers and companies, assignment, and notes.
+3. SLAs and Reports.
+4. Help Center.
+5. Campaigns.
+6. Deals and Tasks.
+
+**Channels foundation (step 1):**
+- Every connection is a row in `channels`. WhatsApp keeps its own details table, which shares the channel's id. Team routing and connection status live on the channel.
+- One customer has many identities (WhatsApp number, email, handle) in `contact_identities`, so the same person on two channels is one customer card.
+- Threading: chat channels keep one thread per customer per channel. Email gets one thread per email thread, stored as `conversations.thread_key`.
+- Messages use provider-neutral names: `external_id`, `reply_to_external_id` and `sent_at`. The worker calls `ingest_inbound` for every channel.
