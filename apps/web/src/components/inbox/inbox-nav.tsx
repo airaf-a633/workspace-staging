@@ -1,13 +1,14 @@
 "use client";
 
-import { Plus, Prohibit, Tray, UsersThree, WarningCircle } from "@phosphor-icons/react";
+import { CaretRight, Plus, Prohibit, Tray, UsersThree, WarningCircle } from "@phosphor-icons/react";
 import { ChannelMark } from "@/components/channels/channel-mark";
 import { useT } from "@/i18n/client";
 import type { ChannelInbox, Label, Team } from "./types";
 
 /**
  * The inbox's own sidebar (decided 2026-10-07, Chatwoot style): conversations, then one entry per connected
- * inbox, then teams and labels. Choosing an entry narrows the list; Mine / Unassigned / All sit above the list.
+ * inbox, then teams and labels. Choosing an entry narrows the list; Mine / Waiting / All sit above the list.
+ * Simplicity pass (2026-10-19): channels, teams and labels fold away, closed unless you're filtering by one.
  */
 export type Source = { kind: "all" } | { kind: "spam" } | { kind: "inbox"; id: string } | { kind: "team"; id: string } | { kind: "label"; id: string };
 
@@ -48,12 +49,23 @@ function Item({ on, onClick, icon, label, count, warn }: { on: boolean; onClick:
   );
 }
 
-function Group({ title, children }: { title: string; children: React.ReactNode }) {
+function Group({ title, children, open }: { title: string; children: React.ReactNode; open?: boolean }) {
+  if (open === undefined) {
+    return (
+      <div className="grid gap-1">
+        <h3 className="px-2.5 pt-3 text-xs font-medium text-muted">{title}</h3>
+        <ul className="grid gap-0.5">{children}</ul>
+      </div>
+    );
+  }
   return (
-    <div className="grid gap-1">
-      <h3 className="px-2.5 pt-3 text-xs font-medium text-muted">{title}</h3>
+    <details open={open} className="group grid gap-1">
+      <summary className="flex min-h-9 cursor-pointer list-none items-center gap-1.5 rounded-[var(--radius-control)] px-2.5 pt-2 text-xs font-medium text-muted hover:text-text [&::-webkit-details-marker]:hidden">
+        <CaretRight size={12} className="transition-transform group-open:rotate-90 rtl:rotate-180 rtl:group-open:rotate-90" aria-hidden="true" />
+        {title}
+      </summary>
       <ul className="grid gap-0.5">{children}</ul>
-    </div>
+    </details>
   );
 }
 
@@ -71,7 +83,7 @@ export function InboxNav({ source, onSource, inboxes, teams, labels, count, conn
       </Group>
 
       {inboxes.length > 0 && (
-        <Group title={t("nav.inboxes")}>
+        <Group title={t("nav.inboxes")} open={source.kind === "inbox" || inboxes.some((i) => i.broken)}>
           {inboxes.map((i) => {
             const s: Source = { kind: "inbox", id: i.id };
             return (
@@ -98,7 +110,7 @@ export function InboxNav({ source, onSource, inboxes, teams, labels, count, conn
       )}
 
       {teams.length > 0 && (
-        <Group title={t("nav.teams")}>
+        <Group title={t("nav.teams")} open={source.kind === "team"}>
           {teams.map((team) => {
             const s: Source = { kind: "team", id: team.id };
             return <Item key={team.id} on={key === sourceKey(s)} onClick={pick(s)} icon={<UsersThree size={18} aria-hidden="true" />} label={team.name} count={count(s)} />;
@@ -107,7 +119,7 @@ export function InboxNav({ source, onSource, inboxes, teams, labels, count, conn
       )}
 
       {labels.length > 0 && (
-        <Group title={t("nav.labels")}>
+        <Group title={t("nav.labels")} open={source.kind === "label"}>
           {labels.map((l) => {
             const s: Source = { kind: "label", id: l.id };
             return (

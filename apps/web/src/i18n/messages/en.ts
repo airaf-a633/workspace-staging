@@ -278,7 +278,7 @@ export const en = {
     searchLabel: "Search conversations",
     searchPlaceholder: "Name, number or message",
     groups: { yours: "Yours", waiting: "Waiting for someone" },
-    empty: { search: "No chats match your search.", mine: "Nothing needs you right now.", spam: "No spam.", other: "No chats here." },
+    empty: { search: "No chats match your search.", mine: "You're not handling any chats right now.", seeWaiting: { one: "See the {count} chat waiting for someone", other: "See the {count} chats waiting for someone" }, spam: "No spam.", other: "No chats here." },
     flags: { notDelivered: "Not delivered", waiting: "Waiting {time}", windowClosed: "24h window closed", sensitive: "Sensitive" },
     sensitive: {
       tag: "Sensitive",
@@ -477,6 +477,9 @@ export const en = {
     filterChannel: "Filter by channel",
     anyChannel: "Any channel",
     saveSegment: "Save as a list",
+    filters: "Filters",
+    filtersOn: { one: "{count} filter", other: "{count} filters" },
+    clearFilters: "Clear filters",
     reachError: "Add a phone number or an email address so your team can reach them.",
     lifecycle: { lead: "Lead", customer: "Customer", repeat: "Repeat customer", churned: "Hasn't bought lately" },
     bulk: {
@@ -2042,6 +2045,8 @@ export const en = {
     busy: "Busy times",
     busyLabel: "New conversations by weekday and time of day",
     busyCell: "{day} from {from}: {count}",
+    busiestWeekdays: "Busiest on weekdays, between {from} and {to}.",
+    busiestEveryDay: "Busiest between {from} and {to}, most days.",
     less: "Fewer",
     more: "More",
     days: { mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun" },

@@ -159,7 +159,7 @@ export function DealBoard({ deals: initial, people, teams, viewer, now, base, in
               >
                 <h2 className="flex items-baseline justify-between gap-2 px-1 text-sm">
                   <span className="font-semibold">{tAll(`stages.${stage}`)} <span className="font-normal text-muted">· {fmt.number(col.length)}</span></span>
-                  {allMoney && col.length > 0 && <span className="tabular-nums text-muted">{fmt.money(total)}</span>}
+                  {allMoney && col.length > 0 && <span className="tabular-nums text-muted">{fmt.moneyWhole(total / 100)}</span>}
                 </h2>
                 {col.length === 0 ? <p className="px-1 pb-2 text-sm text-muted">{t("emptyStage")}</p> : <ul className="grid gap-2">{col.map(card)}</ul>}
               </section>

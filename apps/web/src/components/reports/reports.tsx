@@ -120,14 +120,27 @@ function BarRow({ label, mark, value, max, text }: { label: string; mark?: Chann
 }
 
 const STEPS = [0.08, 0.25, 0.45, 0.7, 1];
+const hh = (bucket: number) => `${String((bucket * 2) % 24).padStart(2, "0")}:00`;
+
+/** The grid in one sentence (simplicity pass 2026-10-19): the busiest four hours, and whether weekdays dominate. */
+function busiest(heat: number[][]) {
+  const cols = Array.from({ length: 12 }, (_, h) => heat.reduce((sum, row) => sum + (row[h] ?? 0), 0));
+  let best = 0;
+  for (let h = 1; h < 11; h++) if (cols[h] + cols[h + 1] > cols[best] + cols[best + 1]) best = h;
+  const avg = (rows: number[][]) => rows.reduce((s, r) => s + r.reduce((a, b) => a + b, 0), 0) / Math.max(1, rows.length);
+  const weekdays = avg(heat.slice(0, 5)) > avg(heat.slice(5)) * 1.2;
+  return { from: hh(best), to: hh(best + 2), weekdays };
+}
 function Heatmap({ heat }: { heat: number[][] }) {
   const t = useT("reports");
   const fmt = useFormat();
   const max = Math.max(...heat.flat(), 1);
   const days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
   const step = (v: number) => STEPS[Math.min(4, Math.floor((v / max) * 4.999))];
+  const peak = busiest(heat);
   return (
     <div className="grid gap-2 overflow-x-auto">
+      <p className="font-medium">{t(peak.weekdays ? "busiestWeekdays" : "busiestEveryDay", { from: peak.from, to: peak.to })}</p>
       <div className="grid min-w-[30rem] grid-cols-[3rem_repeat(12,1fr)] gap-0.5 text-xs" role="table" aria-label={t("busyLabel")}>
         <span role="columnheader" />
         {Array.from({ length: 12 }, (_, h) => <span key={h} role="columnheader" className="text-center text-muted tabular-nums">{h % 2 === 0 ? `${String(h * 2).padStart(2, "0")}` : ""}</span>)}

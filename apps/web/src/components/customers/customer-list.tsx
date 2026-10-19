@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Buildings, CaretDown, DownloadSimple, MagnifyingGlass, Plus, Tag, Trash, UploadSimple, UserCircle, X } from "@phosphor-icons/react";
+import { Buildings, CaretDown, DownloadSimple, Funnel, MagnifyingGlass, Plus, Tag, Trash, UploadSimple, UserCircle, X } from "@phosphor-icons/react";
 import { ChannelMark } from "@/components/channels/channel-mark";
 import { CHANNELS, type ChannelKey } from "@/components/channels/catalog";
-import { canSeeDealValue, type Viewer } from "@app/domain";
+import type { Viewer } from "@app/domain";
 import { buttonClass } from "@/components/ui/button";
 import { Badge } from "@/components/ui/surface";
 import { useFormat, useT } from "@/i18n/client";
@@ -13,7 +13,6 @@ import { valueLabel } from "@/i18n/labels";
 import type { Person, Team } from "@/components/inbox/types";
 import { SEGMENTS } from "./sample";
 import { LIFECYCLES, type Company, type Customer, type Lifecycle } from "./types";
-import { STAGE } from "@/components/deals/stages";
 
 const digits = (s = "") => s.replace(/\D/g, "");
 
@@ -44,6 +43,8 @@ export function CustomerList({ customers: initial, companies, people, teams, vie
   const [life, setLife] = useState<Lifecycle | "">("");
   const [ch, setCh] = useState<ChannelKey | "">("");
   const [query, setQuery] = useState("");
+  // Filters stay folded behind one button until someone wants them (simplicity pass 2026-10-19).
+  const [showFilters, setShowFilters] = useState(false);
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState({ name: "", phone: "", email: "", company: "", tag: "" });
   const [tried, setTried] = useState(false);
@@ -211,6 +212,15 @@ export function CustomerList({ customers: initial, companies, people, teams, vie
               <MagnifyingGlass size={18} className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true" />
               <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("searchPlaceholder")} className="min-h-10 w-full rounded-full border border-input bg-surface ps-9 pe-4 text-sm placeholder:text-muted" />
             </label>
+            <button
+              type="button"
+              onClick={() => setShowFilters(!showFilters)}
+              aria-expanded={showFilters || filtering}
+              className={buttonClass(filtering ? "primary" : "secondary", "sm", "rounded-full")}
+            >
+              <Funnel size={16} aria-hidden="true" /> {filtering ? t("filtersOn", { count: tags.length + (life ? 1 : 0) + (ch ? 1 : 0) }) : t("filters")}
+            </button>
+            {(showFilters || filtering) && (<>
             {tags.map((tag) => (
               <button key={tag} type="button" onClick={() => setTags(tags.filter((x) => x !== tag))} className="inline-flex min-h-9 items-center gap-1 rounded-full bg-primary-soft px-3 text-sm font-medium text-primary" aria-label={t("removeTag", { tag })}>
                 {tag} <X size={14} aria-hidden="true" />
@@ -237,7 +247,11 @@ export function CustomerList({ customers: initial, companies, people, teams, vie
                 {usedChannels.map((x) => <option key={x.key} value={x.key}>{tAll(`channels.${x.key}`)}</option>)}
               </select>
             </label>
+            {filtering && (
+              <button type="button" onClick={() => { setTags([]); setLife(""); setCh(""); }} className={buttonClass("ghost", "sm")}>{t("clearFilters")}</button>
+            )}
             {filtering && <button type="button" onClick={saveSegment} className={buttonClass("ghost", "sm")}>{t("saveSegment")}</button>}
+            </>)}
           </div>
 
           {adding && (
@@ -350,16 +364,13 @@ export function CustomerList({ customers: initial, companies, people, teams, vie
                         </th>
                       )}
                       <th scope="col" className="px-5 py-3 text-start font-medium">{t("cols.name")}</th>
-                      <th scope="col" className="px-3 py-3 text-start font-medium">{t("cols.channels")}</th>
                       <th scope="col" className="px-3 py-3 text-start font-medium">{t("cols.lastContact")}</th>
                       <th scope="col" className="px-3 py-3 text-start font-medium">{t("cols.stage")}</th>
-                      <th scope="col" className="hidden px-3 py-3 text-start font-medium xl:table-cell">{t("cols.deal")}</th>
                       <th scope="col" className="px-5 py-3 text-start font-medium">{t("cols.owner")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {list.map((c) => {
-                      const deal = c.deals.find((d) => d.stage === "new" || d.stage === "quoted" || d.stage === "negotiating") ?? c.deals[0];
                       const on = picked.includes(c.id);
                       return (
                         <tr key={c.id} className={`relative border-b border-border transition-colors last:border-0 hover:bg-surface-2 ${on ? "bg-primary-soft/50" : ""}`}>
@@ -372,23 +383,15 @@ export function CustomerList({ customers: initial, companies, people, teams, vie
                             <Link href={`${base}/customers/${c.id}`} className="font-medium after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:rounded-[var(--radius-control)] focus-visible:after:ring-2 focus-visible:after:ring-ring">
                               <bdi>{c.name}</bdi>
                             </Link>
-                            <span className="block truncate text-muted">{c.company ?? c.area ?? valueLabel(tAll, "customerType", c.type)}</span>
-                          </td>
-                          <td className="px-3 py-3">
-                            <span className="flex -space-x-1 rtl:space-x-reverse">
-                              {c.identities.slice(0, 4).map((i) => <ChannelMark key={`${i.ch}-${i.handle}`} ch={i.ch} size={20} label={tAll(`channels.${i.ch}`)} className="ring-2 ring-surface" />)}
+                            <span className="mt-0.5 flex min-w-0 items-center gap-2 text-muted">
+                              <span className="flex shrink-0 -space-x-1 rtl:space-x-reverse">
+                                {c.identities.slice(0, 4).map((i) => <ChannelMark key={`${i.ch}-${i.handle}`} ch={i.ch} size={16} label={tAll(`channels.${i.ch}`)} className="ring-2 ring-surface" />)}
+                              </span>
+                              <span className="truncate">{c.company ?? c.area ?? valueLabel(tAll, "customerType", c.type)}</span>
                             </span>
                           </td>
                           <td className="px-3 py-3 text-muted">{c.lastContact ? fmt.ago(c.lastContact.at, now) : tAll("common.never")}</td>
                           <td className="px-3 py-3"><Badge tone={LIFE_TONE[c.lifecycle]}>{t(`lifecycle.${c.lifecycle}`)}</Badge></td>
-                          <td className="hidden px-3 py-3 xl:table-cell">
-                            {deal ? (
-                              <span className="inline-flex flex-wrap items-center gap-2">
-                                <Badge tone={STAGE[deal.stage][1]}>{tAll(`stages.${deal.stage}`)}</Badge>
-                                {canSeeDealValue(viewer, deal.ownerId) && <span className="tabular-nums text-muted">{fmt.money(deal.fils)}</span>}
-                              </span>
-                            ) : <span className="text-muted">{tAll("common.none")}</span>}
-                          </td>
                           <td className="px-5 py-3 text-muted">{name(c.ownerId)}</td>
                         </tr>
                       );

@@ -176,8 +176,8 @@ export function Inbox({
     if (s.kind === "label") return !!c.labels?.includes(s.id);
     return true;
   };
-  const inTab = (c: Conversation, tb: Tab) =>
-    tb === "mine" ? isMine(c) || (!c.holderId && replyAccess(viewer, c) === "claim") : tb === "unassigned" ? !c.holderId : true;
+  // "Mine" is only what you handle or help on; chats nobody has taken live under "Waiting for someone" (simplicity pass 2026-10-19).
+  const inTab = (c: Conversation, tb: Tab) => (tb === "mine" ? isMine(c) : tb === "unassigned" ? !c.holderId : true);
   const statusOk = (c: Conversation) => spam || (showResolved ? c.status === "resolved" : c.status === "open");
   const list = visible.filter((c) => inSource(c, source) && (spam || inTab(c, tab)) && statusOk(c) && matches(c)).sort(byRecent);
   const sourceCount = (s: Source) => visible.filter((c) => inSource(c, s) && c.status === "open").length;
@@ -189,14 +189,7 @@ export function Inbox({
     : s.kind === "team" ? teams.find((x) => x.id === s.id)?.name ?? ""
     : data.labels.find((l) => l.id === s.id)?.name ?? "";
 
-  // "Mine" shows chats I hold first, then unassigned chats I can claim (decided 2026-09-29).
-  const groups: [string | null, Conversation[]][] =
-    !spam && tab === "mine" && !showResolved
-      ? [
-          [t("groups.yours"), list.filter(isMine)],
-          [t("groups.waiting"), list.filter((c) => !isMine(c))],
-        ]
-      : [[null, list]];
+  const groups: [string | null, Conversation[]][] = [[null, list]];
   const ordered = groups.flatMap(([, g]) => g);
 
   const selected = visible.find((c) => c.id === selectedId) ?? null;
@@ -411,9 +404,15 @@ export function Inbox({
 
         <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
           {ordered.length === 0 ? (
-            <p className="p-8 text-center text-muted">
-              {query ? t("empty.search") : spam ? t("empty.spam") : tab === "mine" ? t("empty.mine") : t("empty.other")}
-            </p>
+            <div className="grid justify-items-center gap-3 p-8 text-center text-muted">
+              <p>{query ? t("empty.search") : spam ? t("empty.spam") : tab === "mine" ? t("empty.mine") : t("empty.other")}</p>
+              {/* An empty "Mine" points straight at the chats waiting for someone (simplicity pass 2026-10-19). */}
+              {!query && !spam && tab === "mine" && !showResolved && tabCount("unassigned") > 0 && (
+                <button type="button" onClick={() => setTab("unassigned")} className={buttonClass("secondary", "sm")}>
+                  {t("empty.seeWaiting", { count: tabCount("unassigned") })}
+                </button>
+              )}
+            </div>
           ) : (
             groups.map(([title, g]) =>
               g.length === 0 ? null : (
