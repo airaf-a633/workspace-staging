@@ -4,10 +4,12 @@ import { MobileMenu } from "@/components/marketing/mobile-menu";
 import { RevealOnScroll } from "@/components/marketing/reveal";
 import { buttonClass } from "@/components/ui/button";
 import { getT } from "@/i18n/server";
+import { RIVALS } from "@/lib/competitors";
 
 /* Relay site chrome (2026-10-07): a solid, quiet header and footer. The product carries the page. */
 export const SITE_NAV = [
-  ["/#channels", "channels"],
+  ["/features", "features"],
+  ["/pricing", "pricing"],
   ["/preview", "demo"],
   ["/#questions", "questions"],
 ] as const;
@@ -35,16 +37,24 @@ export default async function MarketingLayout({ children }: LayoutProps<"/">) {
       <div className="flex-1">{children}</div>
 
       <footer className="border-t border-border bg-surface">
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 pb-10 pt-14 md:grid-cols-[1.4fr_1fr_1fr]">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 pb-10 pt-14 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div className="grid content-start gap-4">
             <RelayLogo size={24} />
             <p className="max-w-sm text-sm text-muted">{t("footer.about")}</p>
           </div>
           <nav aria-label={t("footer.product")} className="grid content-start gap-2 text-sm">
             <p className="font-medium">{t("footer.product")}</p>
+            <Link href="/features" className="text-muted hover:text-text">{t("nav.features")}</Link>
+            <Link href="/pricing" className="text-muted hover:text-text">{t("nav.pricing")}</Link>
             <Link href="/#channels" className="text-muted hover:text-text">{t("nav.channels")}</Link>
             <Link href="/demo" className="text-muted hover:text-text">{t("tryDemo")}</Link>
             <Link href="/preview" className="text-muted hover:text-text">{t("footer.preview")}</Link>
+          </nav>
+          <nav aria-label={t("footer.compare")} className="grid content-start gap-2 text-sm">
+            <p className="font-medium">{t("footer.compare")}</p>
+            {RIVALS.map((r) => (
+              <Link key={r.key} href={`/compare/${r.key}`} className="text-muted hover:text-text">{t("footer.vs", { name: r.name })}</Link>
+            ))}
           </nav>
           <nav aria-label={t("footer.legal")} className="grid content-start gap-2 text-sm">
             <p className="font-medium">{t("footer.legal")}</p>

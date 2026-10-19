@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/surface";
 import { buttonClass } from "@/components/ui/button";
 import { useFormat, useT } from "@/i18n/client";
 import { valueLabel } from "@/i18n/labels";
-import type { InboxAction } from "./store";
+import { stamp, type InboxAction } from "./store";
 import type { Conversation, Label, Person, Team } from "./types";
 import { ChannelMark } from "@/components/channels/channel-mark";
 import { AiTag } from "@/components/ai/ai-tag";
@@ -35,6 +35,107 @@ interface Props {
   onClose: () => void;
 }
 
+/**
+ * Labels and collaborators for this chat (decided 2026-10-19). Labeling follows conversations.notes; adding or
+ * removing collaborators follows conversations.collaborators. Only people who can reply are worth adding.
+ */
+function ThisChat({ c, labels, people, viewer, dispatch }: Pick<Props, "c" | "labels" | "people" | "viewer" | "dispatch">) {
+  const o = useT("omni");
+  const [editing, setEditing] = useState(false);
+  const [pick, setPick] = useState("");
+  const me = viewer.memberId;
+  const canLabel = covers(viewer, "conversations.notes", c);
+  const canCollab = covers(viewer, "conversations.collaborators", c);
+  const on = labels.filter((l) => c.labels?.includes(l.id));
+  const collaborators = people.filter((p) => c.collaboratorIds.includes(p.id));
+  const addable = people.filter((p) => p.canReply && p.id !== c.holderId && !c.collaboratorIds.includes(p.id));
+  if (!canLabel && on.length === 0 && collaborators.length === 0) return null;
+
+  function toggle(id: string) {
+    const next = c.labels?.includes(id) ? c.labels.filter((x) => x !== id) : [...(c.labels ?? []), id];
+    dispatch({ type: "setLabels", id: c.id, labelIds: next });
+  }
+
+  return (
+    <Section title={o("panel.thisChat")}>
+      <div className="grid gap-2">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm font-medium">{o("panel.labels")}</span>
+          {canLabel && labels.length > 0 && (
+            <button type="button" onClick={() => setEditing(!editing)} aria-expanded={editing} className="min-h-8 rounded px-2 text-sm text-primary hover:bg-surface-2">
+              {editing ? o("panel.done") : o("panel.editLabels")}
+            </button>
+          )}
+        </div>
+        {editing ? (
+          <ul className="grid gap-1">
+            {labels.map((l) => (
+              <li key={l.id}>
+                <label className="flex min-h-9 cursor-pointer items-center gap-2.5 rounded px-1.5 text-sm hover:bg-surface-2">
+                  <input type="checkbox" checked={!!c.labels?.includes(l.id)} onChange={() => toggle(l.id)} className="size-4 accent-[var(--color-primary)]" />
+                  <span className="size-2.5 rounded-full" style={{ background: l.color }} aria-hidden="true" />
+                  {l.name}
+                </label>
+              </li>
+            ))}
+          </ul>
+        ) : on.length > 0 ? (
+          <ul className="flex flex-wrap gap-1.5" aria-label={o("panel.labels")}>
+            {on.map((l) => (
+              <li key={l.id} className="inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-0.5 text-xs">
+                <span className="size-2 rounded-full" style={{ background: l.color }} aria-hidden="true" />
+                {l.name}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted">{labels.length ? o("panel.noLabels") : o("panel.noLabelsYet")}</p>
+        )}
+      </div>
+
+      <div className="grid gap-2 pt-1">
+        <span className="text-sm font-medium">{o("panel.collaborators")}</span>
+        {collaborators.length > 0 ? (
+          <ul className="grid gap-1">
+            {collaborators.map((p) => (
+              <li key={p.id} className="flex min-h-9 items-center justify-between gap-2 text-sm">
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="grid size-7 shrink-0 place-items-center rounded-full bg-primary-soft text-xs font-semibold text-primary" aria-hidden="true">{p.name.charAt(0)}</span>
+                  <bdi className="truncate">{p.name}</bdi>
+                </span>
+                {canCollab && (
+                  <button type="button" onClick={() => dispatch({ type: "removeCollab", id: c.id, by: me, member: p.id, at: stamp() })} className="grid size-8 place-items-center rounded text-muted hover:bg-surface-2 hover:text-text" aria-label={o("panel.removeCollab", { name: p.name })}>
+                    <X size={16} aria-hidden="true" />
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted">{o("panel.noCollaborators")}</p>
+        )}
+        {canCollab && addable.length > 0 && (
+          <form
+            className="flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!pick) return;
+              dispatch({ type: "addCollab", id: c.id, by: me, member: pick, at: stamp() });
+              setPick("");
+            }}
+          >
+            <select value={pick} onChange={(e) => setPick(e.target.value)} aria-label={o("panel.addTeammate")} className="min-h-9 min-w-0 flex-1 rounded-[var(--radius-control)] border border-border bg-surface px-2 text-sm">
+              <option value="">{o("panel.addTeammate")}</option>
+              {addable.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+            <button type="submit" disabled={!pick} className={buttonClass("secondary", "sm")}>{o("panel.add")}</button>
+          </form>
+        )}
+      </div>
+    </Section>
+  );
+}
+
 /* Only what exists is shown (decided 2026-09-30): empty sections collapse into one "add" link. */
 /** Copilot answers in the preview: built from what the panel already knows (the real one asks the AI). */
 type Question = "promised" | "open" | "draft";
@@ -57,7 +158,6 @@ export function CustomerPanel({ c, related, labels, onOpenConversation, people, 
 
   const canMerge = (viewer.scopes["contacts.merge"] ?? "none") !== "none";
   const first = ct.name.split(" ")[0];
-  const chatLabels = labels.filter((l) => c.labels?.includes(l.id));
   const history = [
     ...related.map((x) => {
       const last = x.messages.filter((m) => m.kind === "in" || m.kind === "out").at(-1);
@@ -118,16 +218,6 @@ export function CustomerPanel({ c, related, labels, onOpenConversation, people, 
             {ct.tags.map((t) => <li key={t} className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs">{t}</li>)}
           </ul>
         )}
-        {chatLabels.length > 0 && (
-          <ul className="flex flex-wrap gap-1.5" aria-label={o("panel.labels")}>
-            {chatLabels.map((l) => (
-              <li key={l.id} className="inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-0.5 text-xs">
-                <span className="size-2 rounded-full" style={{ background: l.color }} aria-hidden="true" />
-                {l.name}
-              </li>
-            ))}
-          </ul>
-        )}
         {ct.merge && (
           <div className="grid gap-2 rounded-[var(--radius-panel)] border border-warn/40 bg-warn-soft p-3 text-sm">
             <p className="flex items-center gap-2 font-semibold"><UsersThree size={18} className="text-warn" aria-hidden="true" /> {o("panel.merge.title")}</p>
@@ -157,6 +247,8 @@ export function CustomerPanel({ c, related, labels, onOpenConversation, people, 
         )}
         {merged && <p role="status" className="rounded-[var(--radius-control)] bg-done-soft px-3 py-2 text-sm">{merged}</p>}
       </div>
+
+      <ThisChat c={c} labels={labels} people={people} viewer={viewer} dispatch={dispatch} />
 
       {ct.identities.length > 0 && (
         <Section title={o("panel.channels")}>

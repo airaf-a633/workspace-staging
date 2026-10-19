@@ -8,6 +8,8 @@ import { AskAi } from "@/components/ai/ask-ai";
 import type { AiWorld } from "@/lib/ai-sample";
 import { useT } from "@/i18n/client";
 import { ThemeSwitch } from "@/components/theme";
+import { NotificationBell } from "@/components/notifications/bell";
+import type { AppNotice } from "@/components/notifications/notifications";
 import type { TFor } from "@/i18n/types";
 
 interface Props {
@@ -27,6 +29,10 @@ interface Props {
   reports?: boolean;
   /** Show the Help Center (canned.use). Preview only so far. */
   help?: boolean;
+  /** The bell's items; null where notifications aren't stored yet (the real app for now). */
+  notifications?: AppNotice[] | null;
+  /** "Now" for the bell's times (the preview's fixed clock). */
+  now?: number;
   /** Show Campaigns (campaigns.manage, or owners and admins who approve). Preview only so far. */
   campaigns?: boolean;
   children: ReactNode;
@@ -53,7 +59,7 @@ function navItems(base: string, t: TFor<"nav">, reports: boolean, help: boolean,
   ];
 }
 
-export function AppShell({ base, workspaceName, memberName, roleName, signOut, footer, banner, ai = null, reports = false, help = false, campaigns = false, children }: Props) {
+export function AppShell({ base, workspaceName, memberName, roleName, signOut, footer, banner, ai = null, reports = false, help = false, campaigns = false, notifications = null, now = 0, children }: Props) {
   const path = usePathname();
   const t = useT("nav");
   const common = useT("common");
@@ -102,8 +108,14 @@ export function AppShell({ base, workspaceName, memberName, roleName, signOut, f
           <span className="bg-primary grid size-9 shrink-0 place-items-center rounded-[var(--radius-control)] font-semibold text-lg text-white" aria-hidden={!rail} title={rail ? workspaceName : undefined}>
             {initial}
           </span>
-          {rail ? <span className="sr-only">{workspaceName}</span> : <p className="title truncate text-lg" title={workspaceName}>{workspaceName}</p>}
+          {rail ? <span className="sr-only">{workspaceName}</span> : <p className="title min-w-0 flex-1 truncate text-lg" title={workspaceName}>{workspaceName}</p>}
+          {notifications && !rail && <NotificationBell initial={notifications} now={now} place="sidebar" />}
         </div>
+        {notifications && rail && (
+          <div className="grid justify-items-center pb-1">
+            <NotificationBell initial={notifications} now={now} place="rail" />
+          </div>
+        )}
         <nav className={`grid gap-1 ${rail ? "justify-items-center px-2 pt-2" : "px-3"}`}>
           {items.map(({ href, label, Icon, match }) => {
             const active = match(path);
@@ -161,7 +173,8 @@ export function AppShell({ base, workspaceName, memberName, roleName, signOut, f
         {banner}
         {/* Phone top bar */}
         <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-surface px-4 py-2 lg:hidden">
-          <p className="title truncate text-lg">{workspaceName}</p>
+          <p className="title min-w-0 flex-1 truncate text-lg">{workspaceName}</p>
+          {notifications && <NotificationBell initial={notifications} now={now} place="phone" />}
           <button type="button" onClick={() => setAsking(true)} className="flex min-h-10 items-center gap-1.5 rounded-full bg-ai-soft px-3 text-sm font-medium text-ai">
             <Sparkle size={16} weight="fill" aria-hidden="true" /> {aiT("short")}
           </button>

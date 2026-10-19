@@ -416,3 +416,11 @@ Order:
 - Notes store the @mentions of active members. Notifications come in a later step.
 - Collaborators count as "own" for visibility.
 - Labels exist and show in the inbox. A screen for adding them comes later.
+
+## Frontend day (decided 2026-10-19)
+
+- **Labels:** Settings › Labels lets owners and admins (`crm.settings`) create, rename, recolour and delete labels. Anyone who can write notes on a chat can label it, from the customer panel's "This chat" section.
+- **Collaborators:** people with `conversations.collaborators` add or remove teammates who can reply. When someone asks to collaborate, the holder sees a banner and chooses Add or Not now.
+- **Notifications bell:** shows only things that need you: a chat handed to you, an @mention, a collaboration request on your chat, a missed reply target on your chat, and broken channels (owners and admins only). Items older than a day start as read. The preview builds them from sample data; the real app stores them later.
+- **Pricing (provisional):** $19 / $39 / $79 per user per month, with yearly billing at two months free. Every channel is on every plan. WhatsApp and SMS fees are passed through at cost. The trial is 14 days with no card. Plans live in `lib/plans.ts`, shared by the site and Billing.
+- **Public site:** new Features and Pricing pages, and comparison pages for Zendesk, Intercom, Front and Chatwoot. Comparisons use only the competitor's official list prices, with a "checked on" date and a link (`lib/competitors.ts`), and each says honestly when the competitor is a good fit. Chatwoot Cloud charges the same as our Starter and Growth, so that page competes on handovers, manager homes and hosting, not price.

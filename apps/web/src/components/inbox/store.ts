@@ -16,6 +16,10 @@ export type InboxAction =
   | { type: "notSpam"; id: string; by: string; at: number }
   | { type: "note"; id: string; by: string; text: string; at: number; mentions?: string[] }
   | { type: "askCollab"; id: string; by: string; at: number }
+  | { type: "addCollab"; id: string; by: string; member: string; at: number }
+  | { type: "removeCollab"; id: string; by: string; member: string; at: number }
+  | { type: "declineCollab"; id: string; by: string; member: string; at: number }
+  | { type: "setLabels"; id: string; labelIds: string[] }
   | { type: "dismissPhoneReply"; id: string }
   | { type: "addTask"; id: string; by: string; text: string; at: number }
   | { type: "toggleTask"; id: string; taskId: string }
@@ -79,6 +83,16 @@ export function reducer() {
           return { ...c, messages: [...c.messages, { id: nextId(), kind: "note", authorId: a.by, text: a.text.trim(), at: a.at }] };
         case "askCollab":
           return { ...c, messages: [...c.messages, event({ key: "askedCollab", by: a.by, holder: c.holderId }, a.at)] };
+        case "addCollab":
+          return c.collaboratorIds.includes(a.member)
+            ? c
+            : { ...c, collaboratorIds: [...c.collaboratorIds, a.member], messages: [...c.messages, event({ key: "collabAdded", by: a.by, to: a.member }, a.at)] };
+        case "removeCollab":
+          return { ...c, collaboratorIds: c.collaboratorIds.filter((x) => x !== a.member), messages: [...c.messages, event({ key: "collabRemoved", by: a.by, to: a.member }, a.at)] };
+        case "declineCollab":
+          return { ...c, messages: [...c.messages, event({ key: "collabDeclined", by: a.by, to: a.member }, a.at)] };
+        case "setLabels":
+          return { ...c, labels: a.labelIds };
         case "dismissPhoneReply":
           return { ...c, phoneReply: undefined };
         case "addTask":
@@ -98,6 +112,18 @@ export function lastActivity(c: Conversation) {
 
 /** Actions the live inbox saves to the database (the rest are sample-only for now). */
 export const SAVED_ACTIONS = new Set<InboxAction["type"]>(["claim", "handover", "resolve", "reopen", "spam", "notSpam", "note", "askCollab"]);
+
+/** People who asked to collaborate and are still waiting: not added, removed or turned down since they asked. */
+export function pendingCollabRequests(c: Conversation): string[] {
+  const waiting = new Set<string>();
+  for (const m of c.messages) {
+    const e = m.event;
+    if (!e) continue;
+    if (e.key === "askedCollab" && e.by) waiting.add(e.by);
+    if ((e.key === "collabAdded" || e.key === "collabDeclined") && e.to) waiting.delete(e.to);
+  }
+  return [...waiting].filter((id) => !c.collaboratorIds.includes(id) && id !== c.holderId);
+}
 
 /** Members named as @Name in a note. */
 export function mentionsIn(text: string, people: Person[]): string[] {

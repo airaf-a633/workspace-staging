@@ -7,6 +7,7 @@ import { HeroInbox } from "@/components/marketing/hero-inbox";
 import { ManagerHomesPreview } from "@/components/marketing/manager-homes-preview";
 import { buttonClass } from "@/components/ui/button";
 import { getT } from "@/i18n/server";
+import { PLANS, TRIAL_DAYS } from "@/lib/plans";
 
 /*
  * Relay landing page (rebrand 2026-10-07). Calm and product-led: the product itself is the visual
@@ -20,9 +21,12 @@ export async function generateMetadata() {
 
 const FAQ = ["channels", "phone", "price", "ai", "data", "cancel"] as const;
 const POINTS = ["note", "trail", "one"] as const;
+const STEPS = ["connect", "invite", "answer"] as const;
+const TRUST = ["trial", "card", "eu"] as const;
 
 export default async function Landing() {
   const t = await getT("landing");
+  const b = await getT("billing");
 
   return (
     <main className="overflow-x-clip">
@@ -35,6 +39,14 @@ export default async function Landing() {
             <Link href="/sign-up" className={buttonClass("primary", "lg")}>{t("hero.start")}</Link>
             <Link href="/preview" className={buttonClass("secondary", "lg")}>{t("hero.demo")}</Link>
           </div>
+          <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted">
+            {TRUST.map((k) => (
+              <li key={k} className="flex items-center gap-1.5">
+                <Check size={16} className="text-primary" aria-hidden="true" />
+                {t(`trust.${k}`, { days: TRIAL_DAYS })}
+              </li>
+            ))}
+          </ul>
         </div>
         <div>
           <HeroInbox />
@@ -56,6 +68,20 @@ export default async function Landing() {
             ))}
           </ul>
         </div>
+      </section>
+
+      {/* 2b. Getting started: three numbered steps, so people from an ad know what happens after "Start free". */}
+      <section className="mx-auto grid max-w-7xl gap-10 px-4 pt-24">
+        <h2 className="display max-w-2xl text-3xl sm:text-4xl">{t("steps.title")}</h2>
+        <ol className="reveal grid gap-4 md:grid-cols-3">
+          {STEPS.map((k, i) => (
+            <li key={k} className="grid content-start gap-3 rounded-[var(--radius-panel)] bg-surface p-6 ring-1 ring-border">
+              <span className="display grid size-10 place-items-center rounded-full bg-primary-soft text-lg text-primary" aria-hidden="true">{i + 1}</span>
+              <h3 className="text-lg font-semibold">{t(`steps.${k}.title`)}</h3>
+              <p className="text-muted">{t(`steps.${k}.body`)}</p>
+            </li>
+          ))}
+        </ol>
       </section>
 
       {/* 3. Manager homes: one full-width, working preview under a stacked heading. */}
@@ -166,6 +192,24 @@ export default async function Landing() {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* 6b. Pricing in one glance; the full page has the table and the details. */}
+      <section className="mx-auto grid max-w-7xl gap-10 px-4 pt-24 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
+        <div className="grid gap-4">
+          <h2 className="display text-3xl sm:text-4xl">{t("pricing.title")}</h2>
+          <p className="max-w-[44ch] text-muted">{t("pricing.body", { days: TRIAL_DAYS })}</p>
+          <Link href="/pricing" className={buttonClass("secondary", "md", "w-fit")}>{t("pricing.link")}</Link>
+        </div>
+        <ul className="reveal grid gap-4 sm:grid-cols-3">
+          {PLANS.map((p) => (
+            <li key={p.key} className={`grid gap-1 rounded-[var(--radius-panel)] p-6 ${p.key === "growth" ? "bg-primary text-on-primary" : "bg-surface ring-1 ring-border"}`}>
+              <span className="font-semibold">{b(`plans.${p.key}`)}</span>
+              <span className="display text-4xl tabular-nums">${p.price}</span>
+              <span className={`text-sm ${p.key === "growth" ? "opacity-85" : "text-muted"}`}>{t("pricing.per")}</span>
+            </li>
+          ))}
+        </ul>
       </section>
 
       {/* 7. Questions. */}

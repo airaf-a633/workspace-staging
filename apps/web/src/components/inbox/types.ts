@@ -47,7 +47,7 @@ export interface Media {
  * person reads it in their own language: "Sara handed this chat to Priya (Operations manager)".
  */
 export interface ChatEvent {
-  key: "claimed" | "handedToPerson" | "handedToTeam" | "resolved" | "reopened" | "spam" | "notSpam" | "askedCollab" | "imported";
+  key: "claimed" | "handedToPerson" | "handedToTeam" | "resolved" | "reopened" | "spam" | "notSpam" | "askedCollab" | "collabAdded" | "collabRemoved" | "collabDeclined" | "imported";
   by?: string;
   to?: string;
   team?: string;

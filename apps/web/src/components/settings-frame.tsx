@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { getT } from "@/i18n/server";
 
-export type SettingsSection = "members" | "teams" | "roles" | "channels" | "contacts" | "sla" | "billing" | "ai" | "account";
+export type SettingsSection = "members" | "teams" | "roles" | "channels" | "labels" | "contacts" | "sla" | "billing" | "ai" | "account";
 
 /**
  * Settings as one page with a side sub-menu (decided 2026-09-30). The sections keep their own URLs
@@ -19,6 +19,7 @@ export async function SettingsFrame({ base, active, isOwner, children }: { base:
     // Contacts and privacy settings exist in the preview only until custom fields and retention are stored for real.
     ...(base.startsWith("/preview")
       ? [
+          { key: "labels" as const, label: t("labels"), href: `${base}/labels` },
           { key: "contacts" as const, label: t("contacts"), href: `${base}/contact-settings` },
           { key: "sla" as const, label: t("sla"), href: `${base}/sla` },
           // Billing is for owners and admins; others are sent back to Account if they open the link.

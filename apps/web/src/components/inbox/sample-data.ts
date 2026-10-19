@@ -387,6 +387,8 @@ export function buildSampleInbox(members: RealMember[], realTeams: RealTeam[], v
       messages: [
         msg(3 * DAY, { kind: "in", call: { direction: "in", duration: "4:12", recording: "4:12" } }),
         msg(3 * DAY - 5, { kind: "note", authorId: ids.leo, text: "Walked her through assembling the Nook shelf. All good." }),
+        msg(30, { kind: "note", authorId: ids.priya, text: "@Leo the courier says the parcel is held at their depot. Can you call her back today?" }),
+        msg(25, { kind: "event", event: { key: "askedCollab", by: ids.kenji, holder: ids.leo } }),
         msg(35, {
           kind: "in",
           call: { direction: "in", missed: true, voicemail: "Hi, it's Grace Kim, order 4802. The tracking hasn't moved in four days. Can someone call me back? Thanks." },

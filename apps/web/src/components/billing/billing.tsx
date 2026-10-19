@@ -5,19 +5,13 @@ import { Check, CreditCard, DownloadSimple, Info, Minus, Plus, Sparkle } from "@
 import { buttonClass } from "@/components/ui/button";
 import { Badge } from "@/components/ui/surface";
 import { useFormat, useT } from "@/i18n/client";
+import { PLANS, type PlanKey } from "@/lib/plans";
 
 /**
  * Settings › Billing (decided 2026-10-07): per-seat plans (sample prices until the founders set real ones),
  * seats with proration, usage with pass-through message costs and a spend limit, invoices and the card, and a
  * trial countdown with cancel-anytime. Owners and admins only (billing.manage).
  */
-type PlanKey = "starter" | "growth" | "pro";
-type Feature = "inbox" | "channels" | "helpCenter" | "reports" | "sla" | "campaigns" | "customRoles" | "sso" | "audit" | "api";
-const PLANS: { key: PlanKey; price: number; credits: number; features: Feature[] }[] = [
-  { key: "starter", price: 19, credits: 100, features: ["inbox", "channels", "helpCenter", "reports"] },
-  { key: "growth", price: 39, credits: 500, features: ["inbox", "channels", "helpCenter", "reports", "sla", "campaigns", "customRoles"] },
-  { key: "pro", price: 79, credits: 2_000, features: ["inbox", "channels", "helpCenter", "reports", "sla", "campaigns", "customRoles", "sso", "audit", "api"] },
-];
 const INVOICES = [
   { id: "INV-2026-0009", daysAgo: 6, cents: 23_400 + 1_826 },
   { id: "INV-2026-0008", daysAgo: 37, cents: 19_500 + 1_412 },

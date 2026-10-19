@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, CaretDown, ChatsCircle, DotsThree, MagnifyingGlass, SidebarSimple, X } from "@phosphor-icons/react";
-import { HANDOFF_NOTE_MIN, conversationActions, handoffNoteError, replyAccess, type Viewer } from "@app/domain";
+import { HANDOFF_NOTE_MIN, conversationActions, covers, handoffNoteError, replyAccess, type Viewer } from "@app/domain";
 import { ChannelMark } from "@/components/channels/channel-mark";
 import { replyRule } from "@/components/channels/rules";
 import { InboxNav, parseSource, sourceKey, type Source } from "./inbox-nav";
@@ -18,7 +18,7 @@ import type { Format, TFor, Translator } from "@/i18n/types";
 import { MessageItem, mediaLabel } from "./message";
 import { AiButton, ChatSummary } from "@/components/ai/chat-ai";
 import { AiTag } from "@/components/ai/ai-tag";
-import { SAVED_ACTIONS, lastActivity, mentionsIn, reducer, stamp, type InboxAction } from "./store";
+import { SAVED_ACTIONS, lastActivity, mentionsIn, pendingCollabRequests, reducer, stamp, type InboxAction } from "./store";
 import type { ChannelInbox, Conversation, InboxData, Message, Person } from "./types";
 
 type Tab = "mine" | "unassigned" | "all";
@@ -722,6 +722,25 @@ function Thread(p: ThreadProps) {
           </div>
         </div>
       )}
+
+      {(c.holderId === me || covers(viewer, "conversations.collaborators", c)) &&
+        pendingCollabRequests(c).map((id) => {
+          const who = people.find((x) => x.id === id);
+          if (!who) return null;
+          return (
+            <div key={id} role="status" className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-primary-soft px-5 py-3 text-sm">
+              <p>{t.rich("collabRequest", { name: <bdi className="font-semibold">{who.name}</bdi> })}</p>
+              <div className="flex gap-2">
+                <button type="button" className={buttonClass("ghost", "sm")} onClick={() => dispatch({ type: "declineCollab", id: c.id, by: me, member: id, at: stamp() })}>
+                  {t("collabNotNow")}
+                </button>
+                <button type="button" className={buttonClass("primary", "sm")} onClick={() => dispatch({ type: "addCollab", id: c.id, by: me, member: id, at: stamp() })}>
+                  {t("collabAdd")}
+                </button>
+              </div>
+            </div>
+          );
+        })}
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto grid w-full max-w-3xl content-start px-4 py-6 md:px-6">
