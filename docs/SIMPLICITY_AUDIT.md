@@ -203,4 +203,10 @@ Corrections to the audit above:
 - **The Reports filters were already dropdowns.** The text scan listed their options, which made them look like buttons.
 - **The Deals column headers were fine.** Only the cents were dropped.
 
+Final pass (19 October): every audit item is now done.
+- **"Template"** became **"approved message"** everywhere.
+- **Reply targets:** each rule reads as one plain sentence, and the warning choice is in words ("Halfway to late / When it's getting close / Just before it's late").
+- **Onboarding** no longer offers the delivery option.
+- **The custom role editor** asks six plain questions with answers in words.
+
 Still to do: **test with real people** using the script above. That's the real test.

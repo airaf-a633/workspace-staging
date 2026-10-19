@@ -3,7 +3,8 @@
 import { useT } from "@/i18n/client";
 
 export type TeamShapeValue = "solo" | "small" | "split" | "delivery";
-const SHAPES: TeamShapeValue[] = ["solo", "small", "split", "delivery"];
+// "delivery" stays a valid stored value for older workspaces, but is no longer offered (decided 2026-10-19).
+const SHAPES: TeamShapeValue[] = ["solo", "small", "split"];
 
 /** "What does your team look like?" on workspace creation (real and preview). Controlled when `onChange` is given. */
 export function TeamShapeField({ value, onChange }: { value?: TeamShapeValue | null; onChange?: (v: TeamShapeValue) => void }) {
