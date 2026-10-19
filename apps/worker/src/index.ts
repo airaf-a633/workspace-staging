@@ -1,10 +1,11 @@
 // Queue consumer. Claims jobs, runs them, and retries with backoff (dead-letter after max attempts).
-// Queues: whatsapp_event (stored webhooks, M2.1/2.3) and media_download (customer media, M2.3).
+// Queues: whatsapp_event (stored webhooks, M2.1/2.3), media_download (customer media, M2.3) and
+// send_message (replies from the inbox, M2.4).
 import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import { loadEnv } from "./env";
-import { processMediaDownload, processWhatsappEvent, type Ctx } from "./handlers";
+import { processMediaDownload, processSendMessage, processWhatsappEvent, type Ctx } from "./handlers";
 
 config({ path: fileURLToPath(new URL("../../../.env", import.meta.url)) });
 const env = loadEnv();
@@ -27,6 +28,9 @@ const HANDLERS: Record<string, (job: Job) => Promise<void>> = {
     const id = Number(job.payload.event_id);
     const result = await processWhatsappEvent(ctx, id);
     await markEvent(id, result.outcome, result.note);
+  },
+  send_message: async (job) => {
+    ctx.log(`send ${String(job.payload.message_id)}: ${await processSendMessage(ctx, job.payload as { message_id: string }, job.attempts >= job.max_attempts)}`);
   },
   media_download: (job) =>
     processMediaDownload(ctx, job.payload as Parameters<typeof processMediaDownload>[1], job.attempts >= job.max_attempts),

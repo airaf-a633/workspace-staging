@@ -32,11 +32,16 @@ export async function saveInboxAction(a: InboxAction): Promise<string | null> {
         return supabase.rpc("add_conversation_note", { p_conversation: a.id, p_body: a.text, p_mentions: a.mentions ?? [] });
       case "askCollab":
         return supabase.rpc("ask_to_collaborate", { p_conversation: a.id });
+      case "reply":
+        return supabase.rpc("send_reply", { p_conversation: a.id, p_body: a.text, p_client_id: a.clientId });
       default:
         return null;
     }
   })();
   if (!call) return null;
   const { error } = await call;
-  return error ? "failed" : null;
+  if (!error) return null;
+  // send_reply names the reason in its message so the inbox can say it in plain words.
+  const known = ["window_closed", "channel_disconnected", "too_long", "not_allowed"].find((k) => error.message.includes(k));
+  return known ?? "failed";
 }

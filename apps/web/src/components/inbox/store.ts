@@ -15,6 +15,8 @@ export type InboxAction =
   | { type: "spam"; id: string; by: string; at: number }
   | { type: "notSpam"; id: string; by: string; at: number }
   | { type: "note"; id: string; by: string; text: string; at: number; mentions?: string[] }
+  /** A text reply (M2.4). `clientId` makes a repeated click harmless: the server returns the same message. */
+  | { type: "reply"; id: string; by: string; text: string; at: number; clientId: string }
   | { type: "askCollab"; id: string; by: string; at: number }
   | { type: "addCollab"; id: string; by: string; member: string; at: number }
   | { type: "removeCollab"; id: string; by: string; member: string; at: number }
@@ -79,6 +81,13 @@ export function reducer() {
           return { ...c, status: "spam", messages: [...c.messages, event({ key: "spam", by: a.by }, a.at)] };
         case "notSpam":
           return { ...c, status: "open", messages: [...c.messages, event({ key: "notSpam", by: a.by }, a.at)] };
+        case "reply":
+          return {
+            ...c,
+            status: c.status === "resolved" ? "open" : c.status,
+            unread: 0,
+            messages: [...c.messages, { id: a.clientId, kind: "out", authorId: a.by, source: "inbox", text: a.text.trim(), at: a.at }],
+          };
         case "note":
           return { ...c, messages: [...c.messages, { id: nextId(), kind: "note", authorId: a.by, text: a.text.trim(), at: a.at }] };
         case "askCollab":
@@ -111,7 +120,7 @@ export function lastActivity(c: Conversation) {
 }
 
 /** Actions the live inbox saves to the database (the rest are sample-only for now). */
-export const SAVED_ACTIONS = new Set<InboxAction["type"]>(["claim", "handover", "resolve", "reopen", "spam", "notSpam", "note", "askCollab"]);
+export const SAVED_ACTIONS = new Set<InboxAction["type"]>(["claim", "handover", "resolve", "reopen", "spam", "notSpam", "note", "askCollab", "reply"]);
 
 /** People who asked to collaborate and are still waiting: not added, removed or turned down since they asked. */
 export function pendingCollabRequests(c: Conversation): string[] {

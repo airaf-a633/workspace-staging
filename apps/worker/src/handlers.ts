@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { downloadMedia, extensionFor, parseMessagesValue, routeChanges, webhookEnvelope, type RoutedChange } from "@app/whatsapp";
+import { classifySendError, downloadMedia, extensionFor, parseMessagesValue, routeChanges, sendText, webhookEnvelope, type RoutedChange } from "@app/whatsapp";
 
 /**
  * M2.3: what the worker does with each stored webhook. Every step is safe to run twice (Meta resends,
@@ -10,6 +10,8 @@ export interface Ctx {
   db: SupabaseClient;
   apiVersion: string;
   log: (msg: string) => void;
+  /** Swappable in tests; the real fetch otherwise. */
+  fetch?: typeof fetch;
 }
 
 type Outcome = { outcome: "processed" | "ignored"; note: string };
@@ -145,5 +147,65 @@ export async function processMediaDownload(
       p_message: msg.id, p_meta_media_id: job.media_id, p_storage_path: null, p_mime: job.mime,
       p_size: null, p_sha256: null, p_filename: job.filename, p_error: e instanceof Error ? e.message : String(e),
     });
+  }
+}
+
+interface Outbound {
+  message_id: string;
+  status: string;
+  body: string | null;
+  channel_id: string;
+  channel_type: string;
+  channel_status: string;
+  phone_number_id: string | null;
+  to_address: string | null;
+}
+
+/** One adapter per channel type. WhatsApp first; email and website chat plug in here later. */
+type Adapter = (ctx: Ctx, m: Outbound) => Promise<{ externalId: string }>;
+const ADAPTERS: Record<string, Adapter> = {
+  whatsapp: async (ctx, m) => {
+    const token = await rpc<string | null>(ctx, "whatsapp_token", { p_account: m.channel_id });
+    if (!token) throw new Error("no token for this number");
+    return sendText(ctx.apiVersion, m.phone_number_id!, token, m.to_address!, m.body ?? "", ctx.fetch);
+  },
+};
+
+/**
+ * M2.4: sends one queued reply. Safe to run twice: only a queued message is sent, and only a queued message is
+ * marked. Temporary failures throw so the queue retries; permanent ones (and the last try) fail the message
+ * with a reason in plain words, shown under it in the inbox.
+ */
+export async function processSendMessage(ctx: Ctx, job: { message_id: string }, lastAttempt: boolean): Promise<string> {
+  const { data, error } = await ctx.db.rpc("outbound_message", { p_message: job.message_id });
+  if (error) throw new Error(`outbound_message: ${error.message}`);
+  const m = (data as Outbound[] | null)?.[0];
+  if (!m) return "message gone";
+  if (m.status !== "queued") return `already ${m.status}`;
+
+  const fail = (code: string, reason: string) => rpc(ctx, "mark_message_failed", { p_message: m.message_id, p_code: code, p_text: reason });
+  const adapter = ADAPTERS[m.channel_type];
+  if (!adapter) {
+    await fail("unsupported", "Sending on this channel isn't available yet.");
+    return `unsupported channel ${m.channel_type}`;
+  }
+  if (m.channel_status === "disconnected") {
+    await fail("disconnected", "This channel is disconnected. Reconnect it in Settings › Channels, then send again.");
+    return "channel disconnected";
+  }
+  if (!m.to_address) {
+    await fail("no_address", "Relay doesn't have an address for this customer on this channel.");
+    return "no address";
+  }
+
+  try {
+    const sent = await adapter(ctx, m);
+    await rpc(ctx, "mark_message_sent", { p_message: m.message_id, p_external_id: sent.externalId });
+    return `sent ${sent.externalId}`;
+  } catch (e) {
+    const c = classifySendError(e);
+    if (c.temporary && !lastAttempt) throw e;
+    await fail(c.code, c.reason);
+    return `failed ${c.code}`;
   }
 }

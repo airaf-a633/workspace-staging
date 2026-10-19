@@ -79,6 +79,16 @@ export function Composer({ c, inbox, inboxes, actions, people, me, now, mode, se
   const [cc, setCc] = useState((c.messages.findLast((m) => m.kind === "in" && m.email?.cc)?.email?.cc ?? []).join(", "));
   const [subject, setSubject] = useState(c.subject ? (c.subject.startsWith("Re:") ? c.subject : `Re: ${c.subject}`) : "");
 
+  /** Sends the reply (M2.4). Replying on a different channel than the chat's own comes later. */
+  function send() {
+    if (!draft.trim() || c.phoneReply) return;
+    if (linked) return setNotSent(true);
+    dispatch({ type: "reply", id: c.id, by: me, text: draft, at: at(), clientId: crypto.randomUUID() });
+    setDraft("");
+    setAiDrafted(false);
+    setNotSent(false);
+  }
+
   function addNote() {
     if (!note.trim()) return;
     dispatch({ type: "note", id: c.id, by: me, text: note, at: at() });
@@ -267,7 +277,7 @@ export function Composer({ c, inbox, inboxes, actions, people, me, now, mode, se
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          setNotSent(true);
+          send();
         }}
       >
         {(notice || viaPicker) && (
@@ -305,7 +315,7 @@ export function Composer({ c, inbox, inboxes, actions, people, me, now, mode, se
           dir="auto"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && (e.ctrlKey || e.metaKey) && !c.phoneReply && draft.trim() && setNotSent(true)}
+          onKeyDown={(e) => e.key === "Enter" && (e.ctrlKey || e.metaKey) && send()}
           placeholder={
             channel === "email" ? t("placeholderEmail", { name: first })
             : channel === "whatsapp" ? t("placeholderWhatsapp", { name: first })

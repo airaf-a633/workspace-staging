@@ -215,7 +215,8 @@ export async function loadLiveInbox(
           media,
           authorId: m.sent_by_member ?? undefined,
           source: m.source === "phone_app" ? "phone" : m.direction === "out" ? "inbox" : undefined,
-          status: m.status === "queued" ? "sent" : (m.status ?? undefined),
+          // Queued means "on its way": no tick until WhatsApp accepts it.
+          status: m.status === "queued" ? undefined : (m.status ?? undefined),
           error: undefined,
           errorText: m.error_text ?? undefined,
           imported: m.imported || undefined,

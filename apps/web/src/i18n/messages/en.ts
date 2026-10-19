@@ -257,6 +257,12 @@ export const en = {
 
   inbox: {
     title: "Inbox",
+    sendErrors: {
+      window_closed: "Not sent: more than 24 hours have passed since the customer wrote. WhatsApp only allows an approved message now.",
+      channel_disconnected: "Not sent: this channel is disconnected. Reconnect it in Settings › Channels.",
+      too_long: "Not sent: the message is too long. Split it into two.",
+      not_allowed: "Not sent: someone else is handling this chat now. Ask them, or ask to help.",
+    },
     collabRequest: "{name} asked to help on this chat. Helpers can read and reply alongside you.",
     collabNotNow: "Not now",
     collabAdd: "Let them help",
@@ -372,7 +378,7 @@ export const en = {
     sendAnyway: "Send anyway",
     notSentWhatsapp: "Sample chat, so nothing was sent. Replies go out once your WhatsApp number is connected.",
     notSentEmail: "Sample chat, so nothing was sent. Replies go out once your Outlook mailbox is connected.",
-    notSentLive: "Not sent yet: replying from the inbox arrives in the next step. Reply from your phone for now.",
+    notSentLive: "Not sent: replying on a different channel than this chat's own comes later. Switch back to this chat's channel to send.",
     templates: {
       order_update: { label: "Order update", preview: "Hi {{1}}, an update on your order {{2}}: {{3}}" },
       follow_up: { label: "Follow-up offer", preview: "Hi {{1}}, still interested in {{2}}? This week only: {{3}}" },

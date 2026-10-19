@@ -95,6 +95,8 @@ function Trail({ ids, people }: { ids: string[]; people: Person[] }) {
   );
 }
 
+const SEND_ERRORS = ["window_closed", "channel_disconnected", "too_long", "not_allowed"] as const;
+
 export function Inbox({
   data,
   onOpen,
@@ -112,7 +114,7 @@ export function Inbox({
   const me = viewer.memberId;
   const [conversations, localDispatch] = useReducer(useMemo(() => reducer(), []), data.conversations);
   const router = useRouter();
-  const [actionFailed, setActionFailed] = useState(false);
+  const [actionFailed, setActionFailed] = useState<string | null>(null);
   // Live inbox: fresh server data (after a save or a realtime refresh) replaces the local state.
   useEffect(() => {
     localDispatch({ type: "reset", conversations: data.conversations });
@@ -125,7 +127,7 @@ export function Inbox({
     if (!onAction || !SAVED_ACTIONS.has(action.type)) return;
     void onAction(action).then((err) => {
       if (!err) return;
-      setActionFailed(true);
+      setActionFailed(err);
       router.refresh();
     });
   }
@@ -516,8 +518,8 @@ export function Inbox({
 
       {actionFailed && (
         <div role="alert" className="fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-md items-center justify-between gap-3 rounded-[var(--radius-panel)] border border-fail/40 bg-fail-soft px-4 py-3 text-sm shadow-[var(--shadow-2)]">
-          <span>{t("actionFailed")}</span>
-          <button type="button" onClick={() => setActionFailed(false)} className="min-h-11 rounded px-3 font-medium hover:bg-surface-2">{t("dismiss")}</button>
+          <span>{SEND_ERRORS.includes(actionFailed as (typeof SEND_ERRORS)[number]) ? t(`sendErrors.${actionFailed as (typeof SEND_ERRORS)[number]}`) : t("actionFailed")}</span>
+          <button type="button" onClick={() => setActionFailed(null)} className="min-h-11 rounded px-3 font-medium hover:bg-surface-2">{t("dismiss")}</button>
         </div>
       )}
 

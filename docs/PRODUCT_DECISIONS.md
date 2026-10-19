@@ -424,3 +424,17 @@ Order:
 - **Notifications bell:** shows only things that need you: a chat handed to you, an @mention, a collaboration request on your chat, a missed reply target on your chat, and broken channels (owners and admins only). Items older than a day start as read. The preview builds them from sample data; the real app stores them later.
 - **Pricing (provisional):** $19 / $39 / $79 per user per month, with yearly billing at two months free. Every channel is on every plan. WhatsApp and SMS fees are passed through at cost. The trial is 14 days with no card. Plans live in `lib/plans.ts`, shared by the site and Billing.
 - **Public site:** new Features and Pricing pages, and comparison pages for Zendesk, Intercom, Front and Chatwoot. Comparisons use only the competitor's official list prices, with a "checked on" date and a link (`lib/competitors.ts`), and each says honestly when the competitor is a good fit. Chatwoot Cloud charges the same as our Starter and Growth, so that page competes on handovers, manager homes and hosting, not price.
+
+## Sending replies, M2.4 step 1 (decided 2026-10-19)
+
+- **One outbound path for every channel.**
+  - `send_reply()` checks who may reply: the holder or a helper with reply rights, or a manager whose override reaches the chat. Untaken chats must be taken first.
+  - It refuses empty or overlong text (4,096 characters), a disconnected channel, and WhatsApp replies more than 24 hours after the customer's last message.
+  - It stores the message as `queued` and adds a `send_message` job.
+- **A repeated click never sends twice:** each send carries a client id, and the same id returns the same message.
+- **The worker sends through a per-channel adapter**, starting with WhatsApp.
+  - Temporary problems (rate limits, Meta outages, network) retry with backoff.
+  - Permanent ones fail the message at once with a reason in plain words, shown under it.
+  - Channels without an adapter fail with "Sending on this channel isn't available yet."
+- **Queued messages show no tick** until WhatsApp accepts them. Delivery and read ticks come from the existing status webhooks.
+- **Next:** media, reactions, approved templates outside the 24-hour window, the 20-messages-per-second limit per number, and replying on a customer's other channel.
