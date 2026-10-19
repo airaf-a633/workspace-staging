@@ -5,6 +5,8 @@ import type { ChatEvent, Conversation, Message, Person, Team } from "./types";
  * so swapping this reducer for real mutations doesn't change the screen.
  */
 export type InboxAction =
+  /** Fresh data from the server (live inbox): replaces the local state. */
+  | { type: "reset"; conversations: Conversation[] }
   | { type: "open"; id: string }
   | { type: "claim"; id: string; by: string; at: number }
   | { type: "handover"; id: string; by: string; toPerson: string | null; toTeam: string | null; note: string; at: number }
@@ -12,7 +14,7 @@ export type InboxAction =
   | { type: "reopen"; id: string; by: string; at: number }
   | { type: "spam"; id: string; by: string; at: number }
   | { type: "notSpam"; id: string; by: string; at: number }
-  | { type: "note"; id: string; by: string; text: string; at: number }
+  | { type: "note"; id: string; by: string; text: string; at: number; mentions?: string[] }
   | { type: "askCollab"; id: string; by: string; at: number }
   | { type: "dismissPhoneReply"; id: string }
   | { type: "addTask"; id: string; by: string; text: string; at: number }
@@ -33,7 +35,9 @@ const event = (e: ChatEvent, at: number): Message => ({ id: nextId(), kind: "eve
 /** Events are stored as who-did-what ids, so the reducer needs no names; screens word them per language. */
 export function reducer() {
   return (state: Conversation[], a: InboxAction): Conversation[] =>
-    a.type === "merge" || a.type === "dismissMerge"
+    a.type === "reset"
+      ? a.conversations
+      : a.type === "merge" || a.type === "dismissMerge"
       ? state.map((c) => {
           if (c.contact.id !== a.contactId || !c.contact.merge) return c;
           const { merge, ...contact } = c.contact;
@@ -90,6 +94,14 @@ export function reducer() {
 export function lastActivity(c: Conversation) {
   const real = c.messages.filter((m) => m.kind !== "event");
   return (real[real.length - 1] ?? c.messages[c.messages.length - 1])?.at ?? 0;
+}
+
+/** Actions the live inbox saves to the database (the rest are sample-only for now). */
+export const SAVED_ACTIONS = new Set<InboxAction["type"]>(["claim", "handover", "resolve", "reopen", "spam", "notSpam", "note", "askCollab"]);
+
+/** Members named as @Name in a note. */
+export function mentionsIn(text: string, people: Person[]): string[] {
+  return people.filter((p) => text.includes(`@${p.name}`)).map((p) => p.id);
 }
 
 /** Timestamp for a user action. Called from event handlers only. */

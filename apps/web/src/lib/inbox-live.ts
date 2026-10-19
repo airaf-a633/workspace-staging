@@ -1,7 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ChannelKey } from "@/components/channels/catalog";
-import type { ChannelInbox, Conversation, Identity, InboxData, Media, MediaType, Message, Person, Team, ViewerInfo } from "@/components/inbox/types";
+import type { ChannelInbox, ChatEvent, Conversation, Handoff, Identity, InboxData, Media, MediaType, Message, Person, Team, ViewerInfo } from "@/components/inbox/types";
 
 /**
  * The real inbox (M2.3): the conversations this person may see (row-level security decides), mapped
@@ -73,6 +73,39 @@ function identity(i: { kind: string; address: string; display: string | null }):
 const BROKEN = { disconnected: "tokenExpired" } as const;
 
 /** Every connected channel in the workspace, as inboxes. WhatsApp shows its number; others their name. */
+interface EventRow {
+  id: string;
+  conversation_id: string;
+  kind: "claimed" | "handed_to_person" | "handed_to_team" | "resolved" | "reopened" | "spam" | "not_spam" | "asked_collab";
+  actor_member_id: string | null;
+  to_member_id: string | null;
+  to_team_id: string | null;
+  holder_member_id: string | null;
+  note: string | null;
+  created_at: string;
+}
+
+const EVENT_KEY: Record<EventRow["kind"], ChatEvent["key"]> = {
+  claimed: "claimed",
+  handed_to_person: "handedToPerson",
+  handed_to_team: "handedToTeam",
+  resolved: "resolved",
+  reopened: "reopened",
+  spam: "spam",
+  not_spam: "notSpam",
+  asked_collab: "askedCollab",
+};
+
+function chatEvent(e: EventRow): ChatEvent {
+  return {
+    key: EVENT_KEY[e.kind],
+    by: e.actor_member_id ?? undefined,
+    to: e.to_member_id ?? undefined,
+    team: e.to_team_id ?? undefined,
+    holder: e.holder_member_id,
+  };
+}
+
 export async function loadChannelInboxes(supabase: SupabaseClient, workspaceId: string): Promise<ChannelInbox[]> {
   const { data } = await supabase
     .from("channels")
@@ -120,6 +153,17 @@ export async function loadLiveInbox(
     .limit(MAX_MESSAGES);
   const rows = ((msgs ?? []) as unknown as MsgRow[]).reverse();
 
+  // The trail, internal notes, collaborators and labels (step 2a). Row-level security applies to each.
+  const [{ data: evs }, { data: notes }, { data: collabs }, { data: labelRows }, { data: convLabels }] = await Promise.all([
+    supabase.from("conversation_events").select("id, conversation_id, kind, actor_member_id, to_member_id, to_team_id, holder_member_id, note, created_at").in("conversation_id", ids).order("created_at"),
+    supabase.from("conversation_notes").select("id, conversation_id, author_member_id, body, created_at").in("conversation_id", ids).order("created_at"),
+    supabase.from("conversation_collaborators").select("conversation_id, member_id").in("conversation_id", ids),
+    supabase.from("labels").select("id, name, color").eq("workspace_id", workspaceId).order("name"),
+    supabase.from("conversation_labels").select("conversation_id, label_id").in("conversation_id", ids),
+  ]);
+  const events = (evs ?? []) as EventRow[];
+  const noteRows = (notes ?? []) as { id: string; conversation_id: string; author_member_id: string | null; body: string; created_at: string }[];
+
   // Signed links (1 hour) for downloaded media; the storage policy re-checks who may see each file.
   const paths = rows.map((m) => m.media?.storage_path).filter((p): p is string => !!p);
   const urls = new Map<string, string>();
@@ -133,9 +177,24 @@ export async function loadLiveInbox(
 
   const conversations: Conversation[] = (convs as unknown as Row[]).map((c) => {
     const contactName = name(c.contacts);
+    const mine = events.filter((e) => e.conversation_id === c.id);
+    const extras: Message[] = [
+      ...mine.map((e) => ({ id: e.id, kind: "event" as const, at: new Date(e.created_at).getTime(), event: chatEvent(e) })),
+      ...noteRows
+        .filter((n) => n.conversation_id === c.id)
+        .map((n) => ({ id: n.id, kind: "note" as const, at: new Date(n.created_at).getTime(), authorId: n.author_member_id ?? undefined, text: n.body })),
+    ];
+    const handoffs: Handoff[] = mine
+      .filter((e) => e.kind === "handed_to_person" || e.kind === "handed_to_team")
+      .map((e) => ({ fromId: e.actor_member_id, toId: e.to_member_id, toTeamId: e.to_team_id, note: e.note ?? "", at: new Date(e.created_at).getTime() }));
+    // Everyone who has held the chat, in order; the current holder last.
+    const trail = mine
+      .map((e) => (e.kind === "claimed" ? e.actor_member_id : e.kind === "handed_to_person" ? e.to_member_id : null))
+      .filter((id): id is string => !!id);
+    if (c.holder_member_id && trail[trail.length - 1] !== c.holder_member_id) trail.push(c.holder_member_id);
     const messages: Message[] = rows
       .filter((m) => m.conversation_id === c.id)
-      .map((m) => {
+      .map((m): Message => {
         const mediaType = MEDIA_TYPE[m.type];
         const media: Media | undefined = mediaType
           ? {
@@ -163,7 +222,9 @@ export async function loadLiveInbox(
           reaction: m.reaction ?? undefined,
           replyTo: quoted ? { author: quoted.direction === "in" ? contactName : "", text: quoted.body ?? quoted.caption ?? "" } : undefined,
         } satisfies Message;
-      });
+      })
+      .concat(extras)
+      .sort((a, b) => a.at - b.at);
     return {
       id: c.id,
       channel: c.channels?.type ?? "whatsapp",
@@ -183,16 +244,17 @@ export async function loadLiveInbox(
       },
       teamId: c.team_id ?? "",
       holderId: c.holder_member_id,
-      trail: c.holder_member_id ? [c.holder_member_id] : [],
-      collaboratorIds: [],
+      trail,
+      collaboratorIds: (collabs ?? []).filter((x) => x.conversation_id === c.id).map((x) => x.member_id),
+      labels: (convLabels ?? []).filter((x) => x.conversation_id === c.id).map((x) => x.label_id),
       status: c.status,
       unread: c.unread_count,
       lastCustomerAt: c.last_customer_message_at ? new Date(c.last_customer_message_at).getTime() : null,
       imported: c.imported || undefined,
       messages,
-      handoffs: [],
+      handoffs,
     };
   });
 
-  return { now: Date.now(), tz, people, teams, viewer, conversations, inboxes, labels: [], live: true };
+  return { now: Date.now(), tz, people, teams, viewer, conversations, inboxes, labels: (labelRows ?? []) as InboxData["labels"], live: true };
 }

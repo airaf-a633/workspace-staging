@@ -5,7 +5,7 @@ import { buildSampleInbox } from "@/components/inbox/sample-data";
 import { loadWorkspace } from "@/lib/workspace";
 import { LiveRefresh } from "@/components/inbox/live-refresh";
 import { loadLiveInbox } from "@/lib/inbox-live";
-import { markConversationRead } from "./actions";
+import { markConversationRead, saveInboxAction } from "./actions";
 import { getT, getTimeZone } from "@/i18n/server";
 
 export async function generateMetadata() {
@@ -47,7 +47,7 @@ export default async function InboxPage(props: PageProps<"/w/[slug]/inbox">) {
   return (
     <Suspense>
       <LiveRefresh workspaceId={workspace.id} />
-      <Inbox data={data} onOpen={live ? markConversationRead : undefined} />
+      <Inbox data={data} onOpen={live ? markConversationRead : undefined} onAction={live ? saveInboxAction : undefined} />
     </Suspense>
   );
 }

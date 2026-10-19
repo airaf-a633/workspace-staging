@@ -407,3 +407,12 @@ Order:
 - One customer has many identities (WhatsApp number, email, handle) in `contact_identities`, so the same person on two channels is one customer card.
 - Threading: chat channels keep one thread per customer per channel. Email gets one thread per email thread, stored as `conversations.thread_key`.
 - Messages use provider-neutral names: `external_id`, `reply_to_external_id` and `sent_at`. The worker calls `ingest_inbound` for every channel.
+
+**Inbox actions (step 2a):**
+- Claim, hand over, resolve, reopen, spam and not-spam each go through a checked database function. Internal notes and "ask to collaborate" do too.
+- Taking a chat that someone else holds needs `conversations.override`.
+- A handoff needs a note of at least 10 characters, and it clears the collaborators.
+- Handover, spam and override are written to the audit log. Every action is recorded in the conversation's own trail (`conversation_events`).
+- Notes store the @mentions of active members. Notifications come in a later step.
+- Collaborators count as "own" for visibility.
+- Labels exist and show in the inbox. A screen for adding them comes later.

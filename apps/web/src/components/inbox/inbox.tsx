@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, CaretDown, ChatsCircle, DotsThree, MagnifyingGlass, SidebarSimple, X } from "@phosphor-icons/react";
 import { HANDOFF_NOTE_MIN, conversationActions, handoffNoteError, replyAccess, type Viewer } from "@app/domain";
 import { ChannelMark } from "@/components/channels/channel-mark";
@@ -18,7 +18,7 @@ import type { Format, TFor, Translator } from "@/i18n/types";
 import { MessageItem, mediaLabel } from "./message";
 import { AiButton, ChatSummary } from "@/components/ai/chat-ai";
 import { AiTag } from "@/components/ai/ai-tag";
-import { lastActivity, reducer, stamp, type InboxAction } from "./store";
+import { SAVED_ACTIONS, lastActivity, mentionsIn, reducer, stamp, type InboxAction } from "./store";
 import type { ChannelInbox, Conversation, InboxData, Message, Person } from "./types";
 
 type Tab = "mine" | "unassigned" | "all";
@@ -95,11 +95,40 @@ function Trail({ ids, people }: { ids: string[]; people: Person[] }) {
   );
 }
 
-export function Inbox({ data, onOpen, connectHref }: { data: InboxData; onOpen?: (conversationId: string) => Promise<void>; connectHref?: string }) {
+export function Inbox({
+  data,
+  onOpen,
+  onAction,
+  connectHref,
+}: {
+  data: InboxData;
+  onOpen?: (conversationId: string) => Promise<void>;
+  /** Live inbox: saves an action; returns an error key when the database refused it. */
+  onAction?: (a: InboxAction) => Promise<string | null>;
+  connectHref?: string;
+}) {
   const { now, people, teams } = data;
   const viewer: Viewer = data.viewer;
   const me = viewer.memberId;
-  const [conversations, dispatch] = useReducer(useMemo(() => reducer(), []), data.conversations);
+  const [conversations, localDispatch] = useReducer(useMemo(() => reducer(), []), data.conversations);
+  const router = useRouter();
+  const [actionFailed, setActionFailed] = useState(false);
+  // Live inbox: fresh server data (after a save or a realtime refresh) replaces the local state.
+  useEffect(() => {
+    localDispatch({ type: "reset", conversations: data.conversations });
+  }, [data.conversations]);
+
+  /** Shows the change at once; in the live inbox also saves it, and reloads the truth if the database refuses. */
+  function dispatch(a: InboxAction) {
+    const action = a.type === "note" ? { ...a, mentions: mentionsIn(a.text, people) } : a;
+    localDispatch(action);
+    if (!onAction || !SAVED_ACTIONS.has(action.type)) return;
+    void onAction(action).then((err) => {
+      if (!err) return;
+      setActionFailed(true);
+      router.refresh();
+    });
+  }
 
   const params = useSearchParams();
   const selectedId = params.get("c");
@@ -485,6 +514,13 @@ export function Inbox({ data, onOpen, connectHref }: { data: InboxData; onOpen?:
           />
         )}
       </section>
+
+      {actionFailed && (
+        <div role="alert" className="fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-md items-center justify-between gap-3 rounded-[var(--radius-panel)] border border-fail/40 bg-fail-soft px-4 py-3 text-sm shadow-[var(--shadow-2)]">
+          <span>{t("actionFailed")}</span>
+          <button type="button" onClick={() => setActionFailed(false)} className="min-h-11 rounded px-3 font-medium hover:bg-surface-2">{t("dismiss")}</button>
+        </div>
+      )}
 
       {/* Customer panel: closed by default; a column from 1280px, a sheet below that. */}
       {selected && panelOpen && (

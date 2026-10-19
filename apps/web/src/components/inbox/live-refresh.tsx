@@ -22,6 +22,8 @@ export function LiveRefresh({ workspaceId }: { workspaceId: string }) {
       .channel(`inbox-${workspaceId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `workspace_id=eq.${workspaceId}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "conversations", filter: `workspace_id=eq.${workspaceId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "conversation_events", filter: `workspace_id=eq.${workspaceId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "conversation_notes", filter: `workspace_id=eq.${workspaceId}` }, refresh)
       .subscribe();
     return () => {
       window.clearTimeout(timer);

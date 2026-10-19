@@ -252,6 +252,8 @@ export const en = {
 
   inbox: {
     title: "Inbox",
+    actionFailed: "That didn't save, so the chat now shows the latest state. Someone may have changed it at the same time.",
+    dismiss: "Dismiss",
     conversations: "Conversations",
     conversation: "Conversation",
     view: "View",
