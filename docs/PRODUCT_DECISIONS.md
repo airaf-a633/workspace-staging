@@ -438,3 +438,13 @@ Order:
   - Channels without an adapter fail with "Sending on this channel isn't available yet."
 - **Queued messages show no tick** until WhatsApp accepts them. Delivery and read ticks come from the existing status webhooks.
 - **Next:** media, reactions, approved templates outside the 24-hour window, the 20-messages-per-second limit per number, and replying on a customer's other channel.
+
+## Website chat (decided 2026-10-19)
+
+- **The first channel that needs no outside approval.** Owners and admins add it in Settings › Channels (name, website, greeting, colour, button side), then paste one `<script>` line on their site.
+- **The widget is public.** It knows only its key. The chat panel runs in a Relay page inside a frame, so it never touches the site's own code.
+- **Visitors don't sign in.** Their browser keeps a random secret, sent in a header and never in the URL. Relay stores only its SHA-256 fingerprint as the contact identity, so a leaked row can't be used to pose as a visitor. They show in the inbox as "Website visitor" until they give a name or email.
+- **The email is optional.** It's offered after the first message, kept on the contact, and never takes over another contact's address.
+- **Messages and replies use the shared paths:** `ingest_inbound` for incoming and `send_reply` for outgoing. The worker's website-chat sender just marks a reply sent; the widget checks every 4 seconds while it's open and marks replies read when the visitor sees them.
+- **Guard rails:** 10 messages a minute per visitor, 4,000 characters per message, retried sends stored once, and unknown keys refused. The widget is switched off on the password-protected partner preview, which never touches the database.
+- **Later:** file uploads, typing indicators, a live connection instead of checking every few seconds, checking which site the widget runs on, and showing a reply by email when the visitor has left.

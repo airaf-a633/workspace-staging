@@ -164,6 +164,8 @@ interface Outbound {
 /** One adapter per channel type. WhatsApp first; email and website chat plug in here later. */
 type Adapter = (ctx: Ctx, m: Outbound) => Promise<{ externalId: string }>;
 const ADAPTERS: Record<string, Adapter> = {
+  // Website chat has nothing to call: the visitor's widget fetches the reply. Marking it sent makes it visible there.
+  webchat: async (_ctx, m) => ({ externalId: `wc-out:${m.message_id}` }),
   whatsapp: async (ctx, m) => {
     const token = await rpc<string | null>(ctx, "whatsapp_token", { p_account: m.channel_id });
     if (!token) throw new Error("no token for this number");

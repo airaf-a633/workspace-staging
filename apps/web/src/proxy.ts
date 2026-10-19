@@ -5,7 +5,7 @@ import { PREVIEW_COOKIE, previewMode, tokenIsValid } from "@/lib/preview-gate";
 const PROTECTED = ["/app", "/w/"];
 
 /** The real app's paths; on the partner preview they're switched off (nothing may reach the staging database). */
-const REAL_APP = ["/app", "/w", "/sign-in", "/sign-up", "/invite", "/auth", "/api"];
+const REAL_APP = ["/app", "/w", "/sign-in", "/sign-up", "/invite", "/auth", "/api", "/widget"];
 const OPEN_ON_PREVIEW = ["/unlock", "/robots.txt"];
 
 /**

@@ -10,6 +10,8 @@ import { CHANNELS, type ChannelGroup, type ChannelKey } from "./catalog";
 const GROUPS: ChannelGroup[] = ["messaging", "social", "web", "work", "developer"];
 /** What most businesses connect first; the rest of the catalogue is one click deeper (simplicity pass 2026-10-19). */
 const POPULAR: ChannelKey[] = ["whatsapp", "email", "webchat", "instagram", "messenger"];
+/** Channels a real workspace can connect today. */
+const LIVE_CHANNELS: ChannelKey[] = ["whatsapp", "webchat"];
 
 /**
  * Settings › Channels (decided 2026-10-07): the channels you've connected first, with their health and where
@@ -33,7 +35,7 @@ export async function ChannelsPage({
   teamOf: Record<string, string>;
   canManage: boolean;
   isOwner: boolean;
-  /** The real workspace: only WhatsApp connects for real so far; the rest show as coming soon. */
+  /** The real workspace: WhatsApp and website chat connect for real so far; the rest show as coming soon. */
   live?: boolean;
   /** Show the "add a channel" view instead of the list. */
   adding?: boolean;
@@ -58,10 +60,10 @@ export async function ChannelsPage({
           <span className="text-sm text-muted">{t(`desc.${c.key}`)}</span>
           {c.review && <span className="text-xs text-muted">{t(`review.${c.review}`)}</span>}
         </span>
-        {live && c.key !== "whatsapp" ? (
+        {live && !LIVE_CHANNELS.includes(c.key) ? (
           <span className="shrink-0 rounded-full bg-surface-2 px-2.5 py-0.5 text-xs text-muted">{common("soon")}</span>
         ) : (
-          <Link href={live ? `${base}/whatsapp` : `${base}/channels/new/${c.key}`} className={buttonClass(n > 0 ? "ghost" : "secondary", "sm", "shrink-0")} aria-label={t("connectAria", { channel: tAll(`channels.${c.key}`) })}>
+          <Link href={live && c.key === "whatsapp" ? `${base}/whatsapp` : `${base}/channels/new/${c.key}`} className={buttonClass(n > 0 ? "ghost" : "secondary", "sm", "shrink-0")} aria-label={t("connectAria", { channel: tAll(`channels.${c.key}`) })}>
             {n > 0 ? t("connectAnother") : t("connect")}
           </Link>
         )}
@@ -126,7 +128,7 @@ export async function ChannelsPage({
           <ul className="overflow-hidden rounded-[var(--radius-panel)] border border-border bg-surface">
             {inboxes.map((i) => (
               <li key={i.id} className="border-b border-border last:border-0">
-                <Link href={live ? `${base}/whatsapp` : `${base}/channels/${i.id}`} className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-surface-2">
+                <Link href={live && i.channel === "whatsapp" ? `${base}/whatsapp` : `${base}/channels/${i.id}`} className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-surface-2">
                   <ChannelMark ch={i.channel} size={32} label={tAll(`channels.${i.channel}`)} />
                   <span className="grid min-w-0 flex-1 gap-0.5">
                     <span className="flex flex-wrap items-center gap-2">

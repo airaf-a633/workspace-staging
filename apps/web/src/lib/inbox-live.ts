@@ -66,7 +66,8 @@ interface MsgRow {
 /** How an identity shows on the customer card: phone numbers get their "+", handles show as the provider names them. */
 function identity(i: { kind: string; address: string; display: string | null }): Identity {
   const ch: ChannelKey = i.kind === "phone" ? "sms" : (i.kind as ChannelKey);
-  const handle = i.kind === "whatsapp" || i.kind === "phone" ? `+${i.address}` : (i.display ?? i.address);
+  // A website visitor's address is a fingerprint of their browser's secret: never show it.
+  const handle = i.kind === "whatsapp" || i.kind === "phone" ? `+${i.address}` : i.kind === "webchat" ? (i.display ?? "Website visitor") : (i.display ?? i.address);
   return { ch, handle };
 }
 
@@ -173,7 +174,7 @@ export async function loadLiveInbox(
   }
 
   const byExternalId = new Map(rows.filter((m) => m.external_id).map((m) => [m.external_id!, m]));
-  const name = (c: Row["contacts"]) => c?.name ?? c?.profile_name ?? c?.email ?? c?.phone ?? "";
+  const name = (c: Row["contacts"]) => c?.name ?? c?.profile_name ?? c?.email ?? c?.phone ?? "Website visitor";
 
   const conversations: Conversation[] = (convs as unknown as Row[]).map((c) => {
     const contactName = name(c.contacts);

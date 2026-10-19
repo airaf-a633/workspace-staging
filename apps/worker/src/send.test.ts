@@ -54,6 +54,12 @@ describe("sending a queued reply", () => {
     expect(calls.map((c) => c.fn)).toEqual(["outbound_message"]);
   });
 
+  it("hands website chat replies to the widget", async () => {
+    const { db, calls } = fakeDb({ channel_type: "webchat", phone_number_id: null, to_address: "a".repeat(64) });
+    expect(await processSendMessage(ctx(db, graph(500, {})), { message_id: "m1" }, false)).toBe("sent wc-out:m1");
+    expect(calls.some((c) => c.fn === "mark_message_sent")).toBe(true);
+  });
+
   it("explains channels that can't send yet", async () => {
     const { db, calls } = fakeDb({ channel_type: "email" });
     await processSendMessage(ctx(db, graph(200, {})), { message_id: "m1" }, false);

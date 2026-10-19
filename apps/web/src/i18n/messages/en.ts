@@ -2638,6 +2638,34 @@ export const en = {
     },
   },
 
+  webchatSetup: {
+    addTitle: "Add website chat",
+    addHelp: "A chat button on your website. Visitors write without signing in, and every chat lands in your inbox.",
+    back: "Back to channels",
+    backToList: "Your channels",
+    defaultName: "Website chat",
+    name: "Name",
+    nameHelp: "Only your team sees this, in the inbox.",
+    site: "Your website",
+    greeting: "Greeting",
+    greetingPlaceholder: "Ask us anything. We usually reply in a few minutes.",
+    color: "Colour",
+    position: "Button position",
+    positions: { right: "Bottom right", left: "Bottom left" },
+    create: "Add website chat",
+    save: "Save",
+    saved: "Saved.",
+    created: "Website chat is ready",
+    createdBody: "Copy the code below into your website. The chat button appears as soon as the page reloads.",
+    pageHelp: "The chat button on your website. Chats from it land in the shared inbox.",
+    installTitle: "Add it to your website",
+    installHelp: "Paste this code just before </body> on every page where the chat should show. Your web person can do it in a minute.",
+    installNote: "Using Shopify, WordPress or Wix? Paste it where the site lets you add code to every page (often called \"custom code\" or \"footer scripts\").",
+    lookTitle: "How it looks",
+    readOnly: "Only owners and admins can change website chat.",
+    errors: { needName: "Give it a name.", notAllowed: "Only owners and admins can do this.", failed: "That didn't save. Try again." },
+  },
+
   // @@END: new sections go above this line (keep en.ts and ar.ts in the same order)
 };
 
