@@ -11,7 +11,7 @@ const GROUPS: ChannelGroup[] = ["messaging", "social", "web", "work", "developer
 /** What most businesses connect first; the rest of the catalogue is one click deeper (simplicity pass 2026-10-19). */
 const POPULAR: ChannelKey[] = ["whatsapp", "email", "webchat", "instagram", "messenger"];
 /** Channels a real workspace can connect today. */
-const LIVE_CHANNELS: ChannelKey[] = ["whatsapp", "webchat"];
+const LIVE_CHANNELS: ChannelKey[] = ["whatsapp", "webchat", "email"];
 
 /**
  * Settings › Channels (decided 2026-10-07): the channels you've connected first, with their health and where

@@ -10,6 +10,8 @@ const schema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   WHATSAPP_API_VERSION: z.string().default("v25.0"),
   SENTRY_DSN: z.url().optional(),
+  /** The domain forwarding addresses live on, e.g. in.relayinbox.com (email channel). */
+  INBOUND_EMAIL_DOMAIN: z.string().optional(),
 });
 
 export type WorkerEnv = z.infer<typeof schema>;

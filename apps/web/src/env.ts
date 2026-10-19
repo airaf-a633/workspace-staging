@@ -17,6 +17,11 @@ const serverSchema = z.object({
   META_WEBHOOK_VERIFY_TOKEN: z.string().min(1).optional(),
   WHATSAPP_API_VERSION: z.string().default("v25.0"),
   SENTRY_DSN: z.url().optional(),
+  /** Email channel (decided 2026-10-19): forwarding addresses live on this domain; Postmark posts inbound mail
+      with these Basic-auth credentials in the webhook URL. */
+  INBOUND_EMAIL_DOMAIN: z.string().optional(),
+  POSTMARK_INBOUND_USER: z.string().min(16).optional(),
+  POSTMARK_INBOUND_PASSWORD: z.string().min(16).optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;

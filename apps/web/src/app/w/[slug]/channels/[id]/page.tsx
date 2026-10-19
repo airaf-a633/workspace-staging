@@ -4,11 +4,14 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
 import { SectionHeader, SettingsFrame } from "@/components/settings-frame";
 import { WebchatForm } from "@/components/channels/webchat-form";
+import { EmailForm } from "@/components/channels/email-form";
+import { serverEnv } from "@/env";
 import { Notice } from "@/components/ui/surface";
 import { getT } from "@/i18n/server";
 import { publicEnv } from "@/lib/public-env";
 import { can, loadWorkspace } from "@/lib/workspace";
 import { updateWebchat } from "../webchat-actions";
+import { updateEmailChannel } from "../email-actions";
 
 export async function generateMetadata() {
   return { title: (await getT("settings"))("channels") };
@@ -30,6 +33,7 @@ export default async function ChannelPage(props: PageProps<"/w/[slug]/channels/[
   const { data: ch } = await supabase.from("channels").select("id, type, name, external_id, settings, status").eq("id", id).eq("workspace_id", workspace.id).maybeSingle();
   if (!ch) notFound();
   if (ch.type === "whatsapp") redirect(`/w/${slug}/whatsapp`);
+  if (ch.type === "email") return <EmailChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
   if (ch.type !== "webchat") notFound();
 
   const t = await getT("webchatSetup");
@@ -62,6 +66,69 @@ export default async function ChannelPage(props: PageProps<"/w/[slug]/channels/[
           slug={slug}
           id={ch.id}
           initial={{ name: ch.name, site: s.domains ?? "", color: s.color ?? "#006ACC", greeting: s.greeting ?? "", position: s.position ?? "right" }}
+          submit={t("save")}
+          disabled={!canManage}
+        />
+        {!canManage && <p className="text-sm text-muted">{t("readOnly")}</p>}
+      </section>
+    </SettingsFrame>
+  );
+}
+
+const STEPS = ["one", "two", "three"] as const;
+const EMAIL_ERRORS = ["needName", "badAddress", "notAllowed"] as const;
+
+/* An email channel: the forwarding address to point the business's mailbox at, then how replies look. */
+async function EmailChannel({ slug, ch, sp, workspaceId }: {
+  slug: string;
+  ch: { id: string; name: string; external_id: string | null; settings: unknown };
+  sp: Record<string, string | string[] | undefined>;
+  workspaceId: string;
+}) {
+  const t = await getT("emailSetup");
+  const canManage = await can(workspaceId, "numbers.manage");
+  const s = (ch.settings ?? {}) as { address?: string; fromName?: string; signature?: string; domainVerified?: boolean };
+  const domain = serverEnv().INBOUND_EMAIL_DOMAIN;
+  const forward = domain ? `${ch.external_id}@${domain}` : null;
+  const error = typeof sp.error === "string" ? (EMAIL_ERRORS.find((e) => e === sp.error) ?? "failed") : null;
+
+  return (
+    <SettingsFrame base={`/w/${slug}`} active="channels" isOwner={await can(workspaceId, "members.manage")}>
+      <Link href={`/w/${slug}/channels`} className="flex w-fit items-center gap-1.5 text-sm text-muted hover:text-text">
+        <ArrowLeft size={16} className="rtl:rotate-180" aria-hidden="true" /> {t("backToList")}
+      </Link>
+      <SectionHeader title={ch.name} description={t("pageHelp", { address: s.address ?? "" })} />
+      {sp.created && <Notice tone="success" title={t("created")}>{t("createdBody")}</Notice>}
+      {sp.saved && <Notice tone="success" title={t("saved")} />}
+      {error && <Notice tone="error" title={t(`errors.${error}`)} />}
+
+      <section className="grid gap-3 rounded-[var(--radius-panel)] bg-surface p-5 shadow-[var(--shadow-1)] ring-1 ring-border">
+        <h2 className="font-semibold">{t("forwardTitle")}</h2>
+        {forward ? (
+          <>
+            <p className="text-sm text-muted">{t("forwardHelp", { address: s.address ?? "" })}</p>
+            <p className="break-all rounded-[var(--radius-control)] bg-surface-2 p-4 font-mono text-sm" dir="ltr">{forward}</p>
+            <ol className="grid list-decimal gap-1.5 ps-5 text-sm">
+              {STEPS.map((k) => <li key={k}>{t(`forwardSteps.${k}`, { address: s.address ?? "" })}</li>)}
+            </ol>
+          </>
+        ) : (
+          <p className="text-sm text-muted">{t("notConfigured")}</p>
+        )}
+      </section>
+
+      <section className="grid gap-2 rounded-[var(--radius-panel)] bg-surface p-5 shadow-[var(--shadow-1)] ring-1 ring-border">
+        <h2 className="font-semibold">{t("fromTitle")}</h2>
+        <p className="text-sm text-muted">{s.domainVerified ? t("fromVerified", { address: s.address ?? "" }) : t("fromPending", { address: s.address ?? "" })}</p>
+      </section>
+
+      <section className="grid gap-3">
+        <h2 className="font-semibold">{t("settingsTitle")}</h2>
+        <EmailForm
+          action={updateEmailChannel}
+          slug={slug}
+          id={ch.id}
+          initial={{ name: ch.name, address: s.address ?? "", fromName: s.fromName ?? "", signature: s.signature ?? "" }}
           submit={t("save")}
           disabled={!canManage}
         />

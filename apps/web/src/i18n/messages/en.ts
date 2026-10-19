@@ -2666,6 +2666,43 @@ export const en = {
     errors: { needName: "Give it a name.", notAllowed: "Only owners and admins can do this.", failed: "That didn't save. Try again." },
   },
 
+  emailSetup: {
+    addTitle: "Add email",
+    addHelp: "Bring your support email into the shared inbox. You keep your address; emails to it are forwarded to Relay, and replies go back from it.",
+    back: "Back to channels",
+    backToList: "Your channels",
+    defaultName: "Support email",
+    address: "Your email address",
+    addressHelp: "The address customers already write to, like support@ or hello@.",
+    name: "Name in the inbox",
+    nameHelp: "Only your team sees this.",
+    fromName: "Replies come from",
+    fromNamePlaceholder: "Northwind Home Support",
+    fromNameHelp: "Customers see this name, after the name of the person replying.",
+    signature: "Signature",
+    signaturePlaceholder: "Northwind Home · northwindhome.com",
+    create: "Add email",
+    save: "Save",
+    saved: "Saved.",
+    created: "Email is almost ready",
+    createdBody: "One last step: forward your emails to the address below.",
+    pageHelp: "Emails to {address} land in the shared inbox.",
+    forwardTitle: "Forward your emails to Relay",
+    forwardHelp: "Set up {address} to forward every email it receives to this address:",
+    forwardSteps: {
+      one: "Open the settings of the mailbox for {address} (Gmail, Outlook or your email host).",
+      two: "Find \"Forwarding\" and add the address above. Some providers send a confirmation code: it arrives here in the inbox as a new chat.",
+      three: "Send a test email to {address}. It should appear in the inbox within a minute.",
+    },
+    notConfigured: "Email forwarding isn't set up on this Relay server yet. Ask whoever runs Relay to finish the email setup.",
+    fromTitle: "Who replies come from",
+    fromVerified: "Replies are sent from {address}.",
+    fromPending: "Until your domain is verified, replies come from a Relay address, with replies going back to {address}. Verifying the domain comes next.",
+    settingsTitle: "Settings",
+    readOnly: "Only owners and admins can change email settings.",
+    errors: { needName: "Give it a name.", badAddress: "That email address doesn't look right.", notAllowed: "Only owners and admins can do this.", failed: "That didn't save. Try again." },
+  },
+
   // @@END: new sections go above this line (keep en.ts and ar.ts in the same order)
 };
 

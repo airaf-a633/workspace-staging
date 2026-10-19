@@ -448,3 +448,14 @@ Order:
 - **Messages and replies use the shared paths:** `ingest_inbound` for incoming and `send_reply` for outgoing. The worker's website-chat sender just marks a reply sent; the widget checks every 4 seconds while it's open and marks replies read when the visitor sees them.
 - **Guard rails:** 10 messages a minute per visitor, 4,000 characters per message, retried sends stored once, and unknown keys refused. The widget is switched off on the password-protected partner preview, which never touches the database.
 - **Later:** file uploads, typing indicators, a live connection instead of checking every few seconds, checking which site the widget runs on, and showing a reply by email when the visitor has left.
+
+## Email, part 1: receiving (decided 2026-10-19)
+
+- **Forwarding first.** Each email channel gets a forwarding address `{token}@{INBOUND_EMAIL_DOMAIN}` (e.g. `northwind-3fa9c2@in.…`), and the business forwards its own support address there. "Continue with Outlook" and "Continue with Google" come as separate steps.
+- **Postmark posts each email to `/api/webhooks/postmark`,** protected by Basic auth from the webhook URL. The email is stored and queued like Meta's webhooks; unauthorised calls are refused and not stored.
+- **The worker files each email into a conversation.**
+  - It finds the channel by token, and threads by References / In-Reply-To.
+  - It keeps only the new reply (Postmark's stripped reply, otherwise our own trim of the quoted "On … wrote:" history).
+  - It stores attachments up to 10 MB each in the private media bucket.
+  - A repeated email is ignored, because its Message-ID is the dedupe key.
+- **Replies come from the business's own address once its domain is verified.** Until then they come from a Relay address with Reply-To set to the business's. Each channel has one signature, plus the sender's name.

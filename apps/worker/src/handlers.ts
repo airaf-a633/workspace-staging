@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { parseInbound } from "./email";
 import { classifySendError, downloadMedia, extensionFor, parseMessagesValue, routeChanges, sendText, webhookEnvelope, type RoutedChange } from "@app/whatsapp";
 
 /**
@@ -9,6 +10,8 @@ import { classifySendError, downloadMedia, extensionFor, parseMessagesValue, rou
 export interface Ctx {
   db: SupabaseClient;
   apiVersion: string;
+  /** Where email forwarding addresses live (email channel); unset until email is configured. */
+  inboundDomain?: string | undefined;
   log: (msg: string) => void;
   /** Swappable in tests; the real fetch otherwise. */
   fetch?: typeof fetch;
@@ -210,4 +213,54 @@ export async function processSendMessage(ctx: Ctx, job: { message_id: string }, 
     await fail(c.code, c.reason);
     return `failed ${c.code}`;
   }
+}
+
+/**
+ * Email, receiving: files one stored Postmark email into the right conversation. Safe to run twice (the email's
+ * Message-ID is the dedupe key). Attachments go to the private media bucket; the first is the message's media.
+ */
+export async function processPostmarkEvent(ctx: Ctx, eventId: number): Promise<Outcome> {
+  if (!ctx.inboundDomain) throw new Error("INBOUND_EMAIL_DOMAIN is not set");
+  const { data: event, error } = await ctx.db.from("webhook_events").select("id, payload").eq("id", eventId).single();
+  if (error || !event) throw new Error(`event ${eventId} not found: ${error?.message}`);
+  const mail = parseInbound(event.payload, ctx.inboundDomain);
+  if (!mail) return { outcome: "ignored", note: "Not a Postmark inbound email" };
+  if (!mail.token) return { outcome: "ignored", note: "Not addressed to a forwarding address" };
+  if (!mail.messageId) return { outcome: "ignored", note: "No Message-ID" };
+
+  const channel = await rpc<string | null>(ctx, "email_channel_by_token", { p_token: mail.token });
+  if (!channel) {
+    ctx.log(`SECURITY: email for unknown forwarding token ${mail.token}`);
+    return { outcome: "ignored", note: `unknown token ${mail.token}` };
+  }
+  const thread = (mail.refs.length ? await rpc<string | null>(ctx, "email_thread_for", { p_channel: channel, p_refs: mail.refs }) : null) ?? mail.messageId;
+  const id = await rpc<string | null>(ctx, "ingest_inbound", {
+    p_channel: channel,
+    p_kind: "email",
+    p_address: mail.from,
+    p_display: mail.fromName || null,
+    p_external_id: mail.messageId,
+    p_type: "text",
+    p_body: mail.body,
+    p_caption: null,
+    p_data: { subject: mail.subject, cc: mail.cc },
+    p_reply_to: mail.inReplyTo,
+    p_sent_at: mail.sentAt.toISOString(),
+    p_thread_key: thread,
+    p_subject: mail.subject || null,
+  });
+  if (!id) return { outcome: "processed", note: "repeat email" };
+
+  const { data: msg } = await ctx.db.from("messages").select("workspace_id, conversation_id").eq("id", id).single();
+  for (const [i, a] of mail.attachments.entries()) {
+    const path = `${msg!.workspace_id}/${msg!.conversation_id}/${id}-${i}.${extensionFor(a.mime, a.name)}`;
+    const up = await ctx.db.storage.from("media").upload(path, a.bytes, { contentType: a.mime, upsert: true });
+    if (up.error) throw new Error(`storage: ${up.error.message}`);
+    if (i === 0) {
+      await rpc(ctx, "attach_media", { p_message: id, p_meta_media_id: null, p_storage_path: path, p_mime: a.mime, p_size: a.bytes.byteLength, p_sha256: null, p_filename: a.name, p_error: null });
+    } else {
+      await rpc(ctx, "add_message_attachment", { p_message: id, p_path: path, p_name: a.name, p_mime: a.mime, p_size: a.bytes.byteLength });
+    }
+  }
+  return { outcome: "processed", note: `email from ${mail.from}, ${mail.attachments.length} attachments` };
 }

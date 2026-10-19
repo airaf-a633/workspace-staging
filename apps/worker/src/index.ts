@@ -5,12 +5,12 @@ import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import { loadEnv } from "./env";
-import { processMediaDownload, processSendMessage, processWhatsappEvent, type Ctx } from "./handlers";
+import { processMediaDownload, processPostmarkEvent, processSendMessage, processWhatsappEvent, type Ctx } from "./handlers";
 
 config({ path: fileURLToPath(new URL("../../../.env", import.meta.url)) });
 const env = loadEnv();
 const db = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
-const ctx: Ctx = { db, apiVersion: env.WHATSAPP_API_VERSION, log: (m) => console.log(m) };
+const ctx: Ctx = { db, apiVersion: env.WHATSAPP_API_VERSION, inboundDomain: env.INBOUND_EMAIL_DOMAIN, log: (m) => console.log(m) };
 
 const POLL_MS = 1000;
 const BATCH = 20;
@@ -27,6 +27,11 @@ const HANDLERS: Record<string, (job: Job) => Promise<void>> = {
   whatsapp_event: async (job) => {
     const id = Number(job.payload.event_id);
     const result = await processWhatsappEvent(ctx, id);
+    await markEvent(id, result.outcome, result.note);
+  },
+  postmark_event: async (job) => {
+    const id = Number(job.payload.event_id);
+    const result = await processPostmarkEvent(ctx, id);
     await markEvent(id, result.outcome, result.note);
   },
   send_message: async (job) => {
@@ -47,7 +52,7 @@ async function tick(queue: string): Promise<number> {
       const message = e instanceof Error ? e.message : String(e);
       const { data: outcome } = await db.rpc("fail_job", { p_id: job.id, p_error: message });
       console.error(`${queue} job ${job.id} failed (${outcome}): ${message}`);
-      if (outcome === "dead" && queue === "whatsapp_event") await markEvent(Number(job.payload.event_id), "failed", message).catch(() => {});
+      if (outcome === "dead" && (queue === "whatsapp_event" || queue === "postmark_event")) await markEvent(Number(job.payload.event_id), "failed", message).catch(() => {});
     }
   }
   return jobs?.length ?? 0;
