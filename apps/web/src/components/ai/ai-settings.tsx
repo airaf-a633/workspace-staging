@@ -47,7 +47,13 @@ function Section({ title, description, children }: { title: string; description?
   );
 }
 
-/* Settings › AI (decided 2026-10-01): agents, automations made with Ask AI, business knowledge, credits, privacy. */
+/*
+ * Settings › AI (decided 2026-10-01). Simplicity pass (2026-10-19): three tabs instead of seven sections. Each
+ * assistant shows its name, one sentence and a switch; numbers and naming sit under "Details". The after-hours
+ * receptionist's options appear only once it's switched on.
+ */
+type Tab = "does" | "knows" | "usage";
+const TABS: Tab[] = ["does", "knows", "usage"];
 export function AiSettings({ isOwner, credits }: { isOwner: boolean; credits: { left: number; total: number } }) {
   const t = useT("aiSettings");
   const ai = useT("ai");
@@ -60,10 +66,31 @@ export function AiSettings({ isOwner, credits }: { isOwner: boolean; credits: { 
   const business = t("labelBusiness");
   const used = credits.total - credits.left + spent;
   const card = "rounded-[var(--radius-panel)] bg-surface shadow-[var(--shadow-1)] ring-1 ring-border";
+  const [tab, setTab] = useState<Tab>("does");
 
   return (
-    <div className="grid gap-8">
+    <div className="grid gap-6">
       {!isOwner && <p className="rounded-[var(--radius-control)] bg-surface-2 p-3 text-sm text-muted">{t("readOnly")}</p>}
+
+      <div role="tablist" aria-label={t("tabs.label")} className="flex w-fit flex-wrap gap-1 rounded-full bg-surface-2 p-1">
+        {TABS.map((k) => (
+          <button
+            key={k}
+            type="button"
+            role="tab"
+            id={`ai-tab-${k}`}
+            aria-selected={tab === k}
+            aria-controls={`ai-panel-${k}`}
+            onClick={() => setTab(k)}
+            className={`min-h-10 rounded-full px-4 text-sm font-medium transition-colors ${tab === k ? "bg-surface text-text shadow-[var(--shadow-1)]" : "text-muted hover:text-text"}`}
+          >
+            {t(`tabs.${k}`)}
+          </button>
+        ))}
+      </div>
+
+      {tab === "does" && (
+      <div role="tabpanel" id="ai-panel-does" aria-labelledby="ai-tab-does" className="grid gap-8">
 
       <Section title={t("agents.title")} description={t("agents.description")}>
         <ul className={`${card} overflow-hidden`}>
@@ -72,6 +99,9 @@ export function AiSettings({ isOwner, credits }: { isOwner: boolean; credits: { 
               <span className="grid flex-1 gap-1">
                 <span className="flex flex-wrap items-center gap-2 font-medium">{t(`agents.${k}.name`)} <AiTag /></span>
                 <span className="text-sm text-muted">{t(`agents.${k}.does`)}</span>
+                <details className="group">
+                  <summary className="w-fit cursor-pointer list-none text-xs font-medium text-primary [&::-webkit-details-marker]:hidden">{t("agents.details")}</summary>
+                <span className="mt-2 grid gap-1">
                 <span className="text-xs text-muted">{t(`agents.${k}.for`)} · {agents[k] ? t("agents.runs", { count: RUNS[k] }) : t("agents.off")}</span>
                 {STATS[k] && (
                   <span className="text-xs text-muted">{t("agents.stats", { approved: STATS[k]![0], edited: STATS[k]![1], skipped: STATS[k]![2] })}</span>
@@ -89,6 +119,8 @@ export function AiSettings({ isOwner, credits }: { isOwner: boolean; credits: { 
                     />
                   </label>
                 )}
+                </span>
+                </details>
               </span>
               <Toggle on={agents[k]} disabled={!isOwner} label={t(`agents.${k}.name`)} onChange={() => setAgents((a) => ({ ...a, [k]: !a[k] }))} />
             </li>
@@ -97,6 +129,7 @@ export function AiSettings({ isOwner, credits }: { isOwner: boolean; credits: { 
         <p className="text-xs text-muted">{t("agents.approval")} {t("agents.nameRule")}</p>
       </Section>
 
+      {agents.receptionist && (
       <Section title={t("receptionist.title")} description={t("receptionist.description")}>
         <div className={`${card} grid gap-4 p-5`}>
           <ul className="grid gap-3">
@@ -118,7 +151,9 @@ export function AiSettings({ isOwner, credits }: { isOwner: boolean; credits: { 
           </div>
         </div>
       </Section>
+      )}
 
+      {recipes.length > 0 && (
       <Section title={t("recipes.title")} description={t("recipes.description")}>
         {recipes.length === 0 ? (
           <p className={`${card} p-5 text-sm text-muted`}>{t("recipes.empty")}</p>
@@ -140,7 +175,12 @@ export function AiSettings({ isOwner, credits }: { isOwner: boolean; credits: { 
           </ul>
         )}
       </Section>
+      )}
+      </div>
+      )}
 
+      {tab === "knows" && (
+      <div role="tabpanel" id="ai-panel-knows" aria-labelledby="ai-tab-knows" className="grid gap-8">
       <Section title={t("knowledge.title")} description={t("knowledge.description")}>
         <div className={`${card} grid gap-4 p-5`}>
           <div className="grid gap-1 sm:grid-cols-[10rem_1fr] sm:gap-4">
@@ -190,6 +230,11 @@ export function AiSettings({ isOwner, credits }: { isOwner: boolean; credits: { 
           <p className="text-xs text-muted">{t("knowledge.never")}</p>
         </div>
       </Section>
+      </div>
+      )}
+
+      {tab === "usage" && (
+      <div role="tabpanel" id="ai-panel-usage" aria-labelledby="ai-tab-usage" className="grid gap-8">
 
       <Section title={t("feedback.title")} description={t("feedback.description")}>
         <div className={`${card} grid gap-2 p-5 text-sm`}>
@@ -230,6 +275,8 @@ export function AiSettings({ isOwner, credits }: { isOwner: boolean; credits: { 
           {(["workspace", "noTraining", "role", "ownerOnly", "meta"] as const).map((k) => <li key={k}>{t(`privacy.${k}`)}</li>)}
         </ul>
       </Section>
+      </div>
+      )}
     </div>
   );
 }

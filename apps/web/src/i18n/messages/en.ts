@@ -188,6 +188,7 @@ export const en = {
   },
 
   settings: {
+    groups: { you: "You", team: "Your team", business: "Your business" },
     title: "Settings",
     members: "Team members",
     teams: "Teams",
@@ -221,6 +222,9 @@ export const en = {
       title: "Your time zone",
       description: "Times and dates show in this zone. Reports, business hours and reply targets use the workspace's zone.",
       automatic: "Automatic ({zone})",
+      search: "Type a city, like London",
+      useDevice: "Use my device's time zone ({zone})",
+      followingDevice: "Following your device's time zone.",
     },
   },
 
@@ -984,7 +988,7 @@ export const en = {
   rolesPage: {
     metaTitle: "Roles and permissions",
     title: "Roles",
-    description: "The six built-in roles are fixed. Make a custom role by copying one, then change what it can do.",
+    description: "Seven ready-made roles cover most businesses. Need something different? Copy one and change what it can do.",
     custom: "Custom roles",
     noneYet: "None yet. Most businesses don't need one.",
     newName: "New role name",
@@ -992,11 +996,49 @@ export const en = {
     startFrom: "Start from",
     create: "Create role",
     matrixTitle: "What each role can do",
-    matrixHelp: "All = the whole workspace. Team = their teams. Own = what they hold or own.",
+    matrixHelp: "Everything = the whole business. Their teams = chats and deals in teams they belong to. Their own = only what they handle or own.",
     permission: "Permission",
     ownerOnly: "(owner and admin)",
     ownerOnlyLabel: "Owner and admin only",
-    cell: { own: "Own", team: "Team", all: "All" },
+    cell: { own: "Their own", team: "Their teams", all: "Everything" },
+    compareAll: "Compare every permission",
+    cards: {
+      owner: {
+        who: "The person who runs the business.",
+        can: { one: "Everything in Relay, including billing", two: "Add people, create roles and connect channels", three: "Permanently erase a customer's data on request" },
+        cant: "There's always exactly one owner. Pass ownership on before you leave.",
+      },
+      admin: {
+        who: "A trusted right hand who helps run things.",
+        can: { one: "Everything the owner can, day to day", two: "Manage people, roles, channels and billing", three: "See every chat, deal and report" },
+        cant: "Can't remove the owner or make someone else an owner.",
+      },
+      sales_manager: {
+        who: "Leads the sales team.",
+        can: { one: "See and answer their team's chats", two: "See every deal and its value, and approve discounts", three: "Step into a teammate's chat without taking it over" },
+        cant: "Can't change billing or workspace settings.",
+      },
+      support_manager: {
+        who: "Leads the support team.",
+        can: { one: "See and answer their team's chats", two: "Step into a teammate's chat, mark spam and block numbers", three: "Set up saved replies and message templates" },
+        cant: "Can't see what deals are worth.",
+      },
+      ops_manager: {
+        who: "Keeps orders and tasks moving.",
+        can: { one: "See their team's chats and take new ones", two: "Create and assign tasks for anyone", three: "See deals and where they stand" },
+        cant: "Can't see what deals are worth.",
+      },
+      agent: {
+        who: "Answers customers every day.",
+        can: { one: "Take new chats for their team and reply", two: "Hand a chat over with a note, or ask a teammate to help", three: "Work on their own deals and tasks" },
+        cant: "Can't see other people's deals or step into chats someone else is handling.",
+      },
+      viewer: {
+        who: "Needs to read along without replying, like an accountant or trainee.",
+        can: { one: "Read their team's chats", two: "See contacts for those chats", three: "See the numbers on their Home" },
+        cant: "Can't reply, take chats or change anything.",
+      },
+    },
     allRoles: "All roles",
     editDescription: "Choose how far each permission reaches. Owner-only permissions can't be given to other roles.",
     saved: "Role saved",
@@ -1409,6 +1451,7 @@ export const en = {
   },
 
   aiSettings: {
+    tabs: { label: "AI settings", does: "What AI does", knows: "What AI knows", usage: "Usage and privacy" },
     title: "AI",
     labelBusiness: "Northwind Home",
     receptionist: {
@@ -1437,6 +1480,7 @@ export const en = {
     soonTitle: "AI arrives after WhatsApp is connected",
     soonBody: "Reply suggestions, summaries, translation, assistants for each manager and automations you describe in your own words. Try it now in the preview.",
     agents: {
+      details: "Details",
       title: "AI assistants",
       description: "Each agent works for a role, with that person's permissions. They prepare work; a person approves it.",
       runs: { zero: "Hasn't run this week", one: "Ran once this week", other: "Ran {count} times this week" },
@@ -1661,6 +1705,11 @@ export const en = {
 
   /** Settings › Channels (step 3, decided 2026-10-07). */
   channelsPage: {
+    addTitle: "Add a channel",
+    addHelp: "Pick where your customers already write to you. Each one takes a few minutes, and you can add more later.",
+    backToList: "Your channels",
+    popular: "Most businesses start with",
+    seeAll: "See all {count} channels",
     title: "Channels",
     description: "Every place customers can reach you. Connect a channel and its conversations arrive in the shared inbox.",
     readOnly: "Only the owner and admins can connect or change channels.",

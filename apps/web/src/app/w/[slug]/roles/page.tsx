@@ -8,6 +8,7 @@ import { can, loadWorkspace } from "@/lib/workspace";
 import { createRole } from "./actions";
 import { errorText, permissionLabel, roleLabel } from "@/i18n/labels";
 import { getT } from "@/i18n/server";
+import { RoleCards } from "@/components/roles/role-cards";
 
 export async function generateMetadata() {
   return { title: (await getT("rolesPage"))("metaTitle") };
@@ -34,6 +35,31 @@ export default async function Roles(props: PageProps<"/w/[slug]/roles">) {
     <SettingsFrame base={`/w/${slug}`} active="roles" isOwner>
       <SectionHeader title={t("title")} description={t("description")} />
       {error && <Notice tone="error" title={error} />}
+      <RoleCards grid={<>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[720px] text-sm">
+            <thead>
+              <tr className="border-b border-border">
+                <th scope="col" className="sticky start-0 bg-surface py-2 pe-4 text-start font-medium">{t("permission")}</th>
+                {roles?.map((r) => <th key={r.id} scope="col" className="px-3 py-2 text-start font-medium whitespace-nowrap">{roleLabel(tAll, r.name)}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {perms?.map((p) => (
+                <tr key={p.key} className="border-b border-border last:border-0">
+                  <th scope="row" className="sticky start-0 bg-surface py-2 pe-4 text-start font-normal">
+                    {permissionLabel(tAll, p.key)}{p.owner_only && <span className="text-muted"> {t("ownerOnly")}</span>}
+                  </th>
+                  {roles?.map((r) => {
+                    const s = scope.get(`${r.id}:${p.key}`) ?? "none";
+                    return <td key={r.id} className={`px-3 py-2 ${s === "none" ? "text-muted" : ""}`}>{s === "none" ? "—" : t(`cell.${s as "own" | "team" | "all"}`)}</td>;
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </>} />
 
       <Card title={t("custom")}>
         {custom.length > 0 ? (
@@ -57,31 +83,7 @@ export default async function Roles(props: PageProps<"/w/[slug]/roles">) {
         </form>
       </Card>
 
-      <Card title={t("matrixTitle")} description={t("matrixHelp")}>
-        <div className="-mx-6 overflow-x-auto">
-          <table className="w-full min-w-[720px] text-sm">
-            <thead>
-              <tr className="border-b border-border">
-                <th scope="col" className="sticky start-0 bg-surface px-6 py-2 text-start font-medium">{t("permission")}</th>
-                {roles?.map((r) => <th key={r.id} scope="col" className="px-3 py-2 text-start font-medium whitespace-nowrap">{roleLabel(tAll, r.name)}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {perms?.map((p) => (
-                <tr key={p.key} className="border-b border-border last:border-0">
-                  <th scope="row" className="sticky start-0 bg-surface px-6 py-2 text-start font-normal">
-                    {permissionLabel(tAll, p.key)}{p.owner_only && <span className="text-muted"> {t("ownerOnly")}</span>}
-                  </th>
-                  {roles?.map((r) => {
-                    const s = scope.get(`${r.id}:${p.key}`) ?? "none";
-                    return <td key={r.id} className={`px-3 py-2 ${s === "none" ? "text-muted" : ""}`}>{s === "none" ? "—" : t(`cell.${s as "own" | "team" | "all"}`)}</td>;
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+
     </SettingsFrame>
   );
 }

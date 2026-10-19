@@ -19,10 +19,10 @@ export default async function Channels(props: PageProps<"/w/[slug]/channels">) {
       base={`/w/${slug}`}
       inboxes={inboxes}
       teamOf={teamOf}
-      openCount={{}}
       canManage={await can(workspace.id, "numbers.manage")}
       isOwner={await can(workspace.id, "members.manage")}
       live
+      adding={!!(await props.searchParams).add}
     />
   );
 }

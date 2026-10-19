@@ -11,49 +11,68 @@ export type SettingsSection = "members" | "teams" | "roles" | "channels" | "labe
 export async function SettingsFrame({ base, active, isOwner, children }: { base: string; active: SettingsSection; isOwner: boolean; children: ReactNode }) {
   const t = await getT("settings");
   const common = await getT("common");
-  const items: { key: SettingsSection; label: string; href?: string }[] = [
-    { key: "members", label: t("members"), href: `${base}/members` },
-    { key: "teams", label: t("teams"), href: `${base}/teams` },
-    ...(isOwner ? [{ key: "roles" as const, label: t("roles"), href: `${base}/roles` }] : []),
-    { key: "channels", label: t("channels"), href: `${base}/channels` },
-    // Contacts and privacy settings exist in the preview only until custom fields and retention are stored for real.
-    ...(base.startsWith("/preview")
-      ? [
-          { key: "labels" as const, label: t("labels"), href: `${base}/labels` },
-          { key: "contacts" as const, label: t("contacts"), href: `${base}/contact-settings` },
-          { key: "sla" as const, label: t("sla"), href: `${base}/sla` },
-          // Billing is for owners and admins; others are sent back to Account if they open the link.
-          ...(isOwner ? [{ key: "billing" as const, label: t("billing"), href: `${base}/billing` }] : []),
-        ]
-      : []),
-    { key: "ai", label: t("ai"), href: `${base}/ai` },
-    { key: "account", label: t("account"), href: `${base}/account` },
+  type Item = { key: SettingsSection; label: string; href?: string };
+  const preview = base.startsWith("/preview");
+  // Three plain groups instead of one long list (simplicity pass 2026-10-19): you, your team, your business.
+  const groups: { key: "you" | "team" | "business"; items: Item[] }[] = [
+    { key: "you", items: [{ key: "account", label: t("account"), href: `${base}/account` }] },
+    {
+      key: "team",
+      items: [
+        { key: "members", label: t("members"), href: `${base}/members` },
+        { key: "teams", label: t("teams"), href: `${base}/teams` },
+        ...(isOwner ? [{ key: "roles" as const, label: t("roles"), href: `${base}/roles` }] : []),
+      ],
+    },
+    {
+      key: "business",
+      items: [
+        { key: "channels", label: t("channels"), href: `${base}/channels` },
+        // Labels, contacts, reply targets and billing exist in the preview only until they're stored for real.
+        ...(preview
+          ? [
+              { key: "labels" as const, label: t("labels"), href: `${base}/labels` },
+              { key: "contacts" as const, label: t("contacts"), href: `${base}/contact-settings` },
+              { key: "sla" as const, label: t("sla"), href: `${base}/sla` },
+            ]
+          : []),
+        { key: "ai", label: t("ai"), href: `${base}/ai` },
+        // Billing is for owners and admins; others are sent back to Account if they open the link.
+        ...(preview && isOwner ? [{ key: "billing" as const, label: t("billing"), href: `${base}/billing` }] : []),
+      ],
+    },
   ];
+  const link = (i: Item) =>
+    i.href ? (
+      <Link
+        key={i.key}
+        href={i.href}
+        aria-current={i.key === active ? "page" : undefined}
+        className={`flex min-h-10 shrink-0 items-center rounded-full px-3.5 text-sm transition-colors ${
+          i.key === active ? "bg-primary-soft font-semibold text-primary" : "text-muted hover:bg-surface-2 hover:text-text"
+        }`}
+      >
+        {i.label}
+      </Link>
+    ) : (
+      <span key={i.key} className="flex min-h-10 shrink-0 items-center justify-between gap-2 rounded-full px-3.5 text-sm text-muted/70" aria-disabled="true">
+        {i.label}
+        <span className="rounded-full bg-surface-2 px-2 text-xs">{common("soon")}</span>
+      </span>
+    );
 
   return (
     <div className="grid gap-6">
       <h1 className="title text-3xl sm:text-4xl">{t("title")}</h1>
       <div className="grid gap-6 md:grid-cols-[13rem_minmax(0,1fr)] md:gap-10">
-        <nav aria-label={t("title")} className="-mx-4 flex gap-1 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:grid md:content-start md:overflow-visible md:px-0">
-          {items.map((i) =>
-            i.href ? (
-              <Link
-                key={i.key}
-                href={i.href}
-                aria-current={i.key === active ? "page" : undefined}
-                className={`flex min-h-10 shrink-0 items-center rounded-full px-3.5 text-sm transition-colors ${
-                  i.key === active ? "bg-primary-soft font-semibold text-primary" : "text-muted hover:bg-surface-2 hover:text-text"
-                }`}
-              >
-                {i.label}
-              </Link>
-            ) : (
-              <span key={i.key} className="flex min-h-10 shrink-0 items-center justify-between gap-2 rounded-full px-3.5 text-sm text-muted/70" aria-disabled="true">
-                {i.label}
-                <span className="rounded-full bg-surface-2 px-2 text-xs">{common("soon")}</span>
-              </span>
-            ),
-          )}
+        {/* Phones: one scrolling row in group order. From tablet up: three labelled groups. */}
+        <nav aria-label={t("title")} className="-mx-4 flex gap-1 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:grid md:content-start md:gap-5 md:overflow-visible md:px-0">
+          {groups.map((g) => (
+            <div key={g.key} role="group" aria-labelledby={`settings-${g.key}`} className="flex shrink-0 gap-1 md:grid">
+              <p id={`settings-${g.key}`} className="sr-only px-3.5 text-xs font-medium uppercase tracking-wide text-muted md:not-sr-only md:pb-1">{t(`groups.${g.key}`)}</p>
+              {g.items.map(link)}
+            </div>
+          ))}
         </nav>
         <div className="grid min-w-0 content-start gap-6">{children}</div>
       </div>
