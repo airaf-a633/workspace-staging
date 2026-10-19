@@ -77,6 +77,18 @@ export function HelpAdmin({ base, canPublish }: { base: string; canPublish: bool
               {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
+          {list.length === 0 ? (
+            <div className="grid justify-items-center gap-3 rounded-[var(--radius-panel)] bg-surface p-8 text-center text-muted ring-1 ring-border">
+              {q.trim() || status !== "all" || cat !== "all" ? (
+                <p>{t("emptyFiltered")}</p>
+              ) : (
+                <>
+                  <p>{t("emptyAll")}</p>
+                  <Link href={`${base}/help/new`} className={buttonClass("primary", "sm")}><Plus size={16} aria-hidden="true" /> {t("newArticle")}</Link>
+                </>
+              )}
+            </div>
+          ) : (
           <div className="overflow-x-auto rounded-[var(--radius-panel)] bg-surface ring-1 ring-border">
             <table className="w-full min-w-[44rem] text-sm">
               <thead><tr className="border-b border-border text-muted">{(["title", "status", ...(multilingual ? (["languages"] as const) : []), "views", "helpful", "updated"] as const).map((k) => <th key={k} scope="col" className={`px-4 py-3 font-medium ${k === "title" ? "text-start" : k === "views" || k === "helpful" ? "text-end" : "text-start"}`}>{t(`cols.${k}`)}</th>)}</tr></thead>
@@ -100,6 +112,7 @@ export function HelpAdmin({ base, canPublish }: { base: string; canPublish: bool
               </tbody>
             </table>
           </div>
+          )}
           {!canPublish && <p className="flex items-center gap-2 text-sm text-muted"><Info size={16} aria-hidden="true" />{t("draftOnly")}</p>}
         </>
       )}

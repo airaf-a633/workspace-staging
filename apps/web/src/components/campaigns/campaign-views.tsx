@@ -35,6 +35,14 @@ export function CampaignList({ base, canCreate, canApprove }: { base: string; ca
           <button key={k} role="tab" type="button" aria-selected={tab === k} onClick={() => setTab(k)} className={`-mb-px min-h-10 border-b-2 text-sm font-medium ${tab === k ? "border-primary text-text" : "border-transparent text-muted hover:text-text"}`}>{t(`tabs.${k}`)}</button>
         ))}
       </div>
+      {list.length === 0 ? (
+        <div className="grid justify-items-center gap-3 rounded-[var(--radius-panel)] bg-surface p-8 text-center text-muted ring-1 ring-border">
+          <p>{t(`empty.${tab}`)}</p>
+          {canCreate && (tab === "all" || tab === "drafts") && (
+            <Link href={`${base}/campaigns/new`} className={buttonClass("primary", "sm")}><Plus size={16} aria-hidden="true" /> {t("emptyCta")}</Link>
+          )}
+        </div>
+      ) : (
       <ul className="overflow-hidden rounded-[var(--radius-panel)] bg-surface ring-1 ring-border">
         {list.map((c) => {
           const seg = SEGMENTS.find((s) => s.id === c.segment)!;
@@ -58,6 +66,7 @@ export function CampaignList({ base, canCreate, canApprove }: { base: string; ca
           );
         })}
       </ul>
+      )}
     </div>
   );
 }

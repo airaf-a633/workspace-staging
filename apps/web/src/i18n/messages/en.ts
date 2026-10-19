@@ -468,7 +468,7 @@ export const en = {
     openExisting: "Open {name}",
     submit: "Add contact",
     emptyFiltered: "No contacts match. Try fewer filters.",
-    empty: "No contacts in this list yet.",
+    empty: "No contacts here yet. People are added on their own when they write to you, or you can add or import them.",
     cols: { name: "Name", channels: "Channels", lastContact: "Last contact", stage: "Stage", deal: "Deal", tags: "Tags", owner: "Owner" },
     tabs: { people: "People", companies: "Companies" },
     savedSegments: "Saved lists",
@@ -531,7 +531,7 @@ export const en = {
     timeline: "Timeline",
     show: "Show",
     filters: { all: "All", chats: "Chats", email: "Email", deals: "Deals and follow-ups", orders: "Orders", notes: "Notes", activity: "Activity" },
-    empty: "Nothing here yet.",
+    empty: "Nothing of this kind with this contact yet.",
     stage: "Stage: {stage}",
     stageLabel: "Stage",
     channels: "Channels",
@@ -773,7 +773,7 @@ export const en = {
       notGotBody: "Check your spam folder, or wait a minute and try signing up again.",
     },
     errors: {
-      generic: "Something went wrong. Try again.",
+      generic: "That didn't work. Check your internet connection and try again.",
       invalidEmail: "Enter a valid email address.",
       shortPassword: "Use at least 10 characters for your password.",
       needPassword: "Enter your password.",
@@ -808,7 +808,7 @@ export const en = {
       needName: "Enter your name.",
       wrongEmail: "This invite was sent to a different email. You're signed in as {email}.",
       alreadyMember: "You're already a member of this workspace.",
-      invalid: "This invite link is invalid or has expired. Ask for a new one.",
+      invalid: "This invite link has expired or was already used. Ask the person who invited you to send a new one.",
     },
   },
 
@@ -967,7 +967,7 @@ export const en = {
     people: { one: "{count} person", other: "{count} people" },
     removeFrom: "Remove {name} from {team}",
     removeTitle: "Remove from team",
-    empty: "Nobody in this team yet.",
+    empty: "Nobody in this team yet. Add people from Team members.",
     edit: "Edit {name}",
     addSomeone: "Add someone",
     addToTeam: "Add to team",
@@ -2113,6 +2113,8 @@ export const en = {
 
   /** Help Center for the team (decided 2026-10-07). */
   helpCenter: {
+    emptyAll: "No articles yet. Start with the question customers ask most.",
+    emptyFiltered: "No articles match. Try a different search or filter.",
     title: "Help Center",
     viewSite: "View site",
     newArticle: "New article",
@@ -2175,6 +2177,8 @@ export const en = {
   },
 
   campaignsPage: {
+    empty: { all: "No campaigns yet. Send an update to customers who said yes to hearing from you.", drafts: "No drafts.", scheduled: "Nothing scheduled.", sent: "Nothing sent yet." },
+    emptyCta: "Create a campaign",
     title: "Campaigns",
     new: "New campaign",
     waitingApproval: { one: "{count} campaign is waiting for your approval.", other: "{count} campaigns are waiting for your approval." },

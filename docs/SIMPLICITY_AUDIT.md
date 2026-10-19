@@ -188,3 +188,19 @@ No checklist replaces watching someone. Do this before launch, and again after t
 - Shopify, [the new admin](https://www.shopify.com/blog/admin-new-look), and the [merchant pushback](https://community.shopify.com/t/make-the-shopify-home-screen-more-useful/660605): a reminder that simplifying a home screen must not hide the numbers people check daily
 
 *Note: many blog posts quote percentages ("reduces cognitive load by 55%" and so on) attributed to Nielsen Norman Group. I couldn't trace any of them to a primary source, so none are used here.*
+
+## Status (19 October 2026)
+
+All five fix steps are done:
+1. **Words** (`d0a088e`).
+2. **Home** (`07be8ca`).
+3. **Settings** (`d49add3`).
+4. **Lists and filters** (`b4f7c59`).
+5. **Empty screens and errors**: Campaigns and the Help Center got empty states, contact and team empties say what to do, and two vague errors were made specific.
+
+Corrections to the audit above:
+- **The setup checklist only lives in Account.** Home shows a small "Setup 2 of 5" link to it, so it was never duplicated.
+- **The Reports filters were already dropdowns.** The text scan listed their options, which made them look like buttons.
+- **The Deals column headers were fine.** Only the cents were dropped.
+
+Still to do: **test with real people** using the script above. That's the real test.
