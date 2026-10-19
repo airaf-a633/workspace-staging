@@ -14,6 +14,8 @@ import type { Format, TFor, Translator } from "@/i18n/types";
 /*
  * A manager's home after setup: "Needs you now" first, then the four numbers for their role.
  * One row per customer (decided 2026-09-30), built from the same conversations and access rules as the inbox.
+ * Simplicity pass (2026-10-19): each row says one thing, chat counts come from the same data as the list and the
+ * AI briefing so they always agree, and every number says whether it's good.
  */
 
 type Tone = "fail" | "warn" | "plain";
@@ -27,6 +29,8 @@ export interface NeedRow {
   waitingSince: number | null;
   meta: string | null;
   items: string[];
+  /** How many smaller things also wait on this customer (shown as "+2 more"). */
+  more?: number;
 }
 
 /* Sample numbers until reports exist. Values are typed so each language formats them its own way. */
@@ -43,11 +47,31 @@ const NUMBERS: Record<RoleTemplateKey, Stat[]> = {
   viewer: [["openChats", { n: 22 }], ["medianReply", { min: 6 }], ["resolvedWeek", { n: 48 }], ["overTarget", { n: 2 }]],
 };
 
+type StatKey = keyof typeof en.home.stats;
+
+/** Chat counts from the same conversations the list and the AI briefing use, so no two numbers disagree. */
+function liveCounts(data: InboxData): Partial<Record<StatKey, number>> {
+  const v = data.viewer;
+  const open = data.conversations.filter((c) => c.status === "open" && replyAccess(v, c) !== "hidden");
+  const lastReal = (c: InboxData["conversations"][number]) => c.messages.filter((m) => m.kind === "in" || m.kind === "out").at(-1);
+  const waiting = open.filter((c) => !c.holderId && c.lastCustomerAt).length;
+  return {
+    unassigned: waiting,
+    openChats: open.length,
+    yourOpenChats: open.filter((c) => c.holderId === v.memberId).length,
+    waitingCustomer: open.filter((c) => lastReal(c)?.kind === "out").length,
+    overTarget: data.sla ? open.filter((c) => slaClock(c, data.sla!, data.now)?.state === "breach").length : undefined,
+  };
+}
+
 function value(v: Value, fmt: Format, time: TFor<"time">) {
   return "usd" in v ? fmt.moneyWhole(v.usd) : "min" in v ? time("minutes", { count: v.min }) : fmt.number(v.n);
 }
-function hint(h: Hint, t: TFor<"home">, time: TFor<"time">) {
-  return "up" in h ? t("upOnLastMonth", { pct: h.up }) : t("target", { time: time("minutes", { count: h.target }) });
+/** "+12% on last month", or a goal with a verdict: "Goal 30 min. On track." */
+function hint(h: Hint, v: Value, t: TFor<"home">, time: TFor<"time">) {
+  if ("up" in h) return t("upOnLastMonth", { pct: h.up });
+  const goal = time("minutes", { count: h.target });
+  return "min" in v && v.min > h.target ? t("targetSlow", { time: goal }) : t("target", { time: goal });
 }
 
 const SHOWN = 5;
@@ -73,8 +97,8 @@ export function needsFor(data: InboxData, inboxHref: string, tAll: Translator, f
         tone: "fail",
         rank: -1,
         waitingSince: null,
-        meta: tAll(`channels.${inbox.channel}`),
-        items: [tAll(`omni.broken.${inbox.broken!}`, { inbox: inbox.name }), tAll("omni.broken.reconnect")],
+        meta: inbox.name === tAll(`channels.${inbox.channel}`) ? null : tAll(`channels.${inbox.channel}`),
+        items: [tAll(`home.broken.${inbox.broken!}`)],
       });
     }
   }
@@ -127,6 +151,13 @@ export function needsFor(data: InboxData, inboxHref: string, tAll: Translator, f
     if (items.length === 0) continue;
 
     items.sort((a, b) => a.rank - b.rank);
+    // Late and nobody on it is one problem, said once (simplicity pass 2026-10-19).
+    const late = clock?.state === "breach" ? fmt.minutesWaited(clock.used - clock.limit) : null;
+    const untaken = items.findIndex((i) => i.text === t("unclaimed"));
+    if (late && untaken >= 0) {
+      items.splice(untaken, 1);
+      items[0] = { text: t("lateNobody", { time: late }), rank: 0, tone: "fail" };
+    }
     const tone: Tone = items.some((i) => i.tone === "fail") ? "fail" : items.some((i) => i.tone === "warn") ? "warn" : "plain";
     rows.push({
       id: c.id,
@@ -136,7 +167,9 @@ export function needsFor(data: InboxData, inboxHref: string, tAll: Translator, f
       rank: items[0].rank,
       waitingSince,
       meta: waitingSince ? t("waiting", { time: fmt.waitedFor(waitingSince, now) }) : null,
-      items: items.map((i) => i.text),
+      // One status per row; anything else is one tap away in the chat.
+      items: [items[0].text],
+      more: items.length - 1,
     });
   }
   // Most urgent first; among equals, whoever has waited longest.
@@ -155,10 +188,9 @@ function Row({ n, t }: { n: NeedRow; t: TFor<"home"> }) {
             </span>
             {n.meta && <span className={`shrink-0 text-sm tabular-nums ${n.tone === "warn" ? "font-medium text-warn" : "text-muted"}`}>{n.meta}</span>}
           </span>
-          <span className="flex flex-wrap gap-x-2 gap-y-0.5 text-sm text-muted">
-            {n.items.map((t, i) => (
-              <span key={i}>{i > 0 && <span aria-hidden="true" className="me-2">·</span>}{t}</span>
-            ))}
+          <span className={`text-sm ${n.tone === "fail" ? "font-medium text-fail" : "text-muted"}`}>
+            {n.items.join(" · ")}
+            {!!n.more && <span className="text-muted"> · {t("more", { count: n.more })}</span>}
           </span>
         </span>
         <CaretRight size={18} className="shrink-0 text-muted transition-transform group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5" aria-hidden="true" />
@@ -193,6 +225,7 @@ export async function ManagerHome({
   const fmt = await getFormat();
   const needs = [...(extraNeeds ?? []), ...needsFor(data, inboxHref, tAll, fmt)].sort((a, b) => a.rank - b.rank || (a.waitingSince ?? Infinity) - (b.waitingSince ?? Infinity));
   const date = fmt.longDate(data.now);
+  const live = liveCounts(data);
 
   return (
     <>
@@ -207,7 +240,7 @@ export async function ManagerHome({
       <section aria-labelledby="needs" className="grid gap-3">
         <div className="flex items-baseline justify-between gap-3">
           <h2 id="needs" className="text-lg font-semibold">{t("needsNow")}</h2>
-          <span className="text-sm text-muted">{needs.length === 0 ? t("allClear") : t("customers", { count: needs.filter((n) => !n.id.startsWith("inbox-")).length })}</span>
+          <span className="text-sm text-muted">{needs.length === 0 ? t("allClear") : t("toLookAt", { count: needs.length })}</span>
         </div>
         {needs.length === 0 ? (
           <p className="rounded-[var(--radius-panel)] bg-surface p-6 text-muted shadow-[var(--shadow-1)]">{t("nothing")}</p>
@@ -226,7 +259,7 @@ export async function ManagerHome({
         )}
       </section>
 
-      {/* Agents come after people waiting (decided 2026-10-01). */}
+      {/* AI assistants come after people waiting (decided 2026-10-01). */}
       {briefings}
 
       <section aria-labelledby="numbers" className="grid gap-3">
@@ -235,13 +268,16 @@ export async function ManagerHome({
           <span className="text-sm text-muted">{t("sampleNumbers")}</span>
         </div>
         <dl className="grid grid-cols-2 overflow-hidden rounded-[var(--radius-panel)] bg-surface shadow-[var(--shadow-1)] ring-1 ring-border lg:grid-cols-4">
-          {NUMBERS[template].map(([label, v, h], i) => (
+          {NUMBERS[template].map(([label, sample, h], i) => {
+            const v: Value = live[label] !== undefined ? { n: live[label]! } : sample;
+            return (
             <div key={label} className={`grid content-start gap-1 p-5 ${i % 2 ? "border-s border-border" : ""} ${i >= 2 ? "border-t border-border lg:border-t-0" : ""} ${i === 2 ? "lg:border-s" : ""}`}>
               <dt className="text-sm text-muted">{t(`stats.${label}`)}</dt>
               <dd className="display whitespace-nowrap text-2xl sm:text-3xl">{value(v, fmt, time)}</dd>
-              {h && <dd className="text-xs text-muted">{hint(h, t, time)}</dd>}
+              {h && <dd className="text-xs text-muted">{hint(h, v, t, time)}</dd>}
             </div>
-          ))}
+            );
+          })}
         </dl>
       </section>
     </>

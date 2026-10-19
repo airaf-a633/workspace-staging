@@ -4,7 +4,6 @@ import { previewDeals, previewPerson } from "@/lib/preview";
 import { getT, getTimeZone } from "@/i18n/server";
 import { AgentBriefings } from "@/components/ai/briefings";
 import { previewAiWorld } from "@/lib/ai-sample";
-import { isolate } from "@/i18n/translate";
 
 export async function generateMetadata() {
   return { title: (await getT("nav"))("home") };
@@ -31,7 +30,7 @@ export default async function PreviewHome(props: PageProps<"/preview/[as]">) {
       waitingSince: null,
       meta: t("approval"),
       // The deal title is someone's own words: isolated so "8 x iPad…" keeps its order in an Arabic row.
-      items: [t("approveAsk", { name: name(d.approval!.byId), pct: d.approval!.pct }), isolate(d.title)],
+      items: [t("approveAsk", { name: name(d.approval!.byId), pct: d.approval!.pct })],
     }));
 
   // The sample business has connected WhatsApp and invited its team; hours, import and store are still open.

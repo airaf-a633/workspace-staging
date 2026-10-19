@@ -34,9 +34,20 @@ export function AgentBriefings({ world }: { world: AiWorld }) {
         <h2 id="agents" className="flex items-center gap-2 text-lg font-semibold"><Sparkle size={18} weight="fill" className="text-ai" aria-hidden="true" /> {t("title")}</h2>
         <Link href={`${world.base}/ai`} className="text-sm text-muted hover:text-text">{t("manage")}</Link>
       </div>
-      <div className="grid gap-3 lg:grid-cols-2">
-        {agents.map((a) => <Card key={a} agent={a} world={world} />)}
-      </div>
+      {/* One card leads; the rest wait one click away so Home stays about people (simplicity pass 2026-10-19). */}
+      <Card agent={agents[0]} world={world} />
+      {agents.length > 1 && (
+        <details className="group grid gap-3">
+          <summary className="flex min-h-11 w-fit cursor-pointer list-none items-center gap-1.5 rounded-full px-1 text-sm font-medium text-primary [&::-webkit-details-marker]:hidden">
+            <CaretDown size={16} className="transition-transform group-open:rotate-180" aria-hidden="true" />
+            <span className="group-open:hidden">{t("more", { count: agents.length - 1 })}</span>
+            <span className="hidden group-open:inline">{t("less")}</span>
+          </summary>
+          <div className="mt-3 grid gap-3 lg:grid-cols-2">
+            {agents.slice(1).map((a) => <Card key={a} agent={a} world={world} />)}
+          </div>
+        </details>
+      )}
     </section>
   );
 }
