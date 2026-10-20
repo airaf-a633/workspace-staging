@@ -63,7 +63,7 @@ _Decided with the founder in question rounds starting 2026-09-27. Each line is a
 
 ## 7. Onboarding and billing
 - **Number admin:** only the Owner can connect, reconnect or remove WhatsApp numbers and see Meta billing. Disconnecting needs a confirmation step.
-- **Trial:** 14 days with no card. Onboarding guides the owner to add a card on Meta's side, which is needed to send messages from 1 Oct 2026.
+- **Trial:** 14 days with no card, **starting when the business connects its first WhatsApp number** (decided 2026-09-29), not at sign-up. Until then the account is free and unlimited in time, so early sign-ups during Meta's review lose nothing. Onboarding guides the owner to add a card on Meta's side, which is needed to send messages from 1 Oct 2026.
 - **Seats:** a paid seat is any member who can reply or edit. Read-only viewers are free, up to 5 per workspace.
 
 ## 8. Data, privacy, audit
@@ -205,3 +205,332 @@ _Decided with the founder in question rounds starting 2026-09-27. Each line is a
 - Re-plan the engineering plan by milestones for the founder + Claude, with the private beta at the core milestone.
 - Set final prices (placeholders now) after talking to the deposit-paying leads.
 - Choose the inbound email provider for the Gmail capture address.
+
+## Relay pivot (2026-10-07)
+
+The product is now **Relay**. It is for a global market and is omnichannel, with 18 channels; see `apps/web/src/components/channels/catalog.ts`. The new identity is Geist type, a flat Petrol accent and the "arcs" mark.
+
+The omnichannel inbox (step 2) is built on these decisions:
+
+- **Demo business:** Northwind Home, a global online consumer brand selling home goods and small electronics, priced in USD.
+- **Sidebar:** Chatwoot style. Conversations come first, then one entry per connected inbox (each number or address), then teams and labels.
+- **Per-channel rules are real, not cosmetic:**
+  - Email has a subject, CC and quoted threads.
+  - WhatsApp has the 24-hour window and templates.
+  - Instagram shows story replies.
+  - Voice shows call logs and recordings.
+  - Slack and Discord have threads.
+- **Conversation side panel:** contact details with all their channels, previous conversations across channels, linked deals, orders and tasks, and the AI summary and copilot.
+- **Same person on two channels:** Relay suggests "looks like the same person" and an agent confirms the merge. There is never a silent auto-merge.
+- **Reply via:** an agent can answer on another of the contact's known channels from the composer. This starts a linked conversation, which is useful when the WhatsApp 24-hour window has closed.
+- **Broken channel** (expired token, bounced domain, flagged number), shown in three places:
+  - a banner in that inbox with Reconnect;
+  - an item on the owner's home under "Needs you now";
+  - a composer that says it can't send there and offers another channel.
+
+### Time zones and channels (2026-10-07)
+
+- **Time zones:** each person sees times in their own zone. It's set in their profile and detected from the browser at sign-up. Reports, business hours and SLAs use the workspace's zone.
+- **Channels page:**
+  - Connected inboxes come first, with health and quick settings.
+  - Below them, the catalogue of all 18 channels, grouped into Messaging, Social, Web, Work and Developer.
+- **Connect flows:**
+  - WhatsApp, website chat, email, Instagram and Messenger each get their own step-by-step flow.
+  - Website chat's flow includes a live widget preview and the install code.
+  - Email's flow covers forwarding and SMTP.
+  - The other 13 channels share one "connect with your account" flow.
+
+### Contacts (2026-10-07, step 4)
+
+**Areas:**
+- **One person, every channel:** all of a contact's identities in one place, with merged history and merge suggestions.
+- Segments and CSV import.
+- Companies.
+- Privacy tools.
+- Activity and notes.
+- Custom fields and tags.
+- Ownership and lifecycle.
+- Bulk actions.
+
+**Companies:** each contact belongs to at most one company. The company page lists its people, plus all their conversations, deals and orders. Matching by email domain is suggested, and a person confirms it.
+
+**Import:** a review step. Exact matches on email or phone update the existing contact. Likely matches are listed so a person can merge them or keep them apart. Nothing is overwritten silently.
+
+**Privacy, at production level:**
+- Marketing consent per channel, with date and source. Campaigns respect it.
+- A global "do not contact" flag.
+- One-click export of everything held about a person.
+- Erase on request (owner or admin, with a typed confirmation). The audit log records that it happened, without the data.
+- Workspace retention rules that auto-delete conversations after N months.
+
+### Reports and SLAs (2026-10-07, step 5)
+
+**Build order:** Reports, then SLAs, then Help Center, then Campaigns.
+
+**Reports cover four areas:**
+- **Conversations:** volume by channel, team and hour; first reply and resolution times; open backlog.
+- **Team and agents:** workload, reply times, ratings and handovers for each person.
+- **Satisfaction (CSAT):** ratings and comments by channel, team and agent.
+- **Sales and campaigns:** pipeline, won value, and campaign delivery, replies and conversions.
+
+**SLAs are policies, matched by team, channel and VIP:**
+- Examples: VIP first reply within 15 minutes; email within 4 hours.
+- The clock only counts business hours.
+- A warning shows at 80% of the target. Breaches are flagged in the inbox and in reports.
+
+**SLA details (2026-10-07):**
+- **Targets in each policy:** first reply, next reply and resolution.
+- **When the clock stops:**
+  - While the team is waiting on the customer, meaning the last message was ours.
+  - Outside business hours, measured in the workspace's zone.
+- **Who hears about it:**
+  - The person holding the chat: a warning at 80%, then an alert at breach.
+  - The team's manager: an alert at breach, which also appears under "Needs you now" on their home.
+  - Unclaimed chats that breach are reassigned to the next available teammate.
+- **When several policies match:** the strictest target wins, separately for each of the three targets.
+
+### Help Center (2026-10-07)
+
+**What's included:**
+- A public, branded help site with categories, search and articles. No login is needed.
+- An article editor with drafts and published articles, categories, and who wrote what and when.
+- Articles in several languages. AI drafts the translations and a person reviews them.
+- Feedback and gaps:
+  - "Was this helpful?" votes.
+  - Searches that found nothing.
+  - Questions the team keeps answering in chat.
+
+**How AI uses it:** in the reply box and in the widget, AI suggests relevant articles. It drafts answers only from published articles, and links the article it used.
+
+**Who publishes:** anyone on the team can draft. Owners, admins and managers publish.
+
+### Accent colour: Petrol → Relay blue (2026-10-07)
+
+The accent changed from Petrol #0A5670 to **Relay blue #006ACC** (dark mode #5AABFF with a near-black label).
+
+**Why:** blue feels familiar to Chatwoot users. We use Chatwoot's hue (209°), deepened, rather than their exact #1F93FF, for two reasons:
+- The exact blue fails our contrast rule: white text on it reaches only 3.15:1, and as text on the page only 2.93:1.
+- Copying their exact brand colour is not what we want.
+
+**Contrast:**
+
+| Check | Light | Dark |
+|---|---|---|
+| Label on the primary button | 5.34:1 (white) | 7.31:1 |
+| Blue as text on the surface | 5.34:1 (4.98:1 on the page background) | 7.33:1 |
+| Text on soft chips | 4.63:1 | 5.36:1 |
+
+**Related rules:**
+- **AI** uses the same blue, always with the sparkle icon and the "AI" label. There is no second tint and no violet.
+- **The hero band** is flat #0058AA in light and #0A4078 in dark. White text on it reaches 7.06:1, and 80%-white body text 5.12:1.
+- **The "in transit" deal badge** is now neutral grey, so blue only ever means action or selected.
+- **The sample "Wholesale" label** moved to teal #0E7490, so a label never looks like a selection.
+
+### English-only product (2026-10-07)
+
+Relay is a global product, not Arabic-centric. The founders will pitch Arabic-speaking customers themselves.
+
+**What changed:**
+- The interface is English only.
+- Removed:
+  - the Arabic text file;
+  - the language switch;
+  - right-to-left layout for the interface;
+  - the Arabic font;
+  - the Arabic notice on the legal pages.
+- The translation system (`i18n/`) stays, so a language can be added later: add its code to `LOCALES` and a messages file.
+
+**Customers still write in any language:**
+- Their messages keep `dir="auto"` and come with Translate.
+- The demo mixes languages: Aiko writes Japanese, Lucía Spanish (she replaces Lina's Arabic chat), Chloé French.
+- AI drafts replies in the customer's language, with an English gloss.
+
+**Help Center:**
+- The demo site is English only.
+- Languages remain a feature: a business adds one in Site settings, AI drafts the translations, and a person reviews them before they go live.
+
+### Campaigns (2026-10-07)
+
+**Channels:**
+- **WhatsApp:** approved templates only, with the cost per country shown before sending.
+- **Email:** subject, preview text and an unsubscribe link.
+- **SMS:** STOP opt-out, with the part count and cost shown.
+- **Messenger and Instagram:** only people who wrote within Meta's messaging window (shown as a limit).
+
+**Audience:** saved segments, with consent enforced. Relay leaves out:
+- anyone without opt-in on that channel;
+- anyone marked do-not-contact;
+- anyone with no handle on that channel.
+
+It shows how many people are left out, and why, before sending.
+
+**Replies:** go into the inbox as normal conversations. Each is labelled with its campaign and routed to the campaign's team. A STOP reply opts the person out automatically.
+
+**Sending controls:**
+- **Timing:** send now, at a set time, or at the same local time in each customer's time zone.
+- **Test send** to yourself first.
+- **A/B test:** two versions go to a slice of the audience, and the better one goes to the rest.
+- **Approval:** owners and admins approve sends over 1,000 recipients.
+
+### Onboarding, billing and admin console (2026-10-07, step 6)
+
+**Onboarding:** a short three-step wizard (business name and size, first channel, invite the team), then a checklist on Home: install the widget, import contacts, set reply targets, try AI.
+
+**Pricing:** per seat, three plans, with unlimited channels and AI credits included per plan. The sample prices are Starter $19, Growth $39 and Pro $79 per user per month. They stay sample until the founders set real prices.
+
+**Billing in Settings:**
+- Plan and seats: change plan and add or remove seats, prorated.
+- Usage: AI credits, plus WhatsApp and SMS message costs passed through at cost, with limits.
+- Invoices: card on file, invoice history, billing email, and VAT or tax ID.
+- Trial and cancel: a trial countdown, and cancel from Settings with no call needed. Access continues to the end of the period, and data can be exported.
+
+**Relay staff admin console:**
+- Workspaces and health: plan, seats, MRR, broken channels and last activity.
+- Support access: only after the workspace owner grants time-limited access, and every action is logged.
+- Plans and credits: extend trials, comp credits and change plans, each with a written reason.
+- Platform status: queue backlog, webhook failures and channel provider status.
+
+## Backend build order (decided 2026-10-09)
+
+Each preview feature gets real data in its own step (migration, tests, live page). The preview keeps running on sample data for partner demos.
+
+Order:
+1. Channels foundation.
+2. Customers and companies, assignment, and notes.
+3. SLAs and Reports.
+4. Help Center.
+5. Campaigns.
+6. Deals and Tasks.
+
+**Channels foundation (step 1):**
+- Every connection is a row in `channels`. WhatsApp keeps its own details table, which shares the channel's id. Team routing and connection status live on the channel.
+- One customer has many identities (WhatsApp number, email, handle) in `contact_identities`, so the same person on two channels is one customer card.
+- Threading: chat channels keep one thread per customer per channel. Email gets one thread per email thread, stored as `conversations.thread_key`.
+- Messages use provider-neutral names: `external_id`, `reply_to_external_id` and `sent_at`. The worker calls `ingest_inbound` for every channel.
+
+**Inbox actions (step 2a):**
+- Claim, hand over, resolve, reopen, spam and not-spam each go through a checked database function. Internal notes and "ask to collaborate" do too.
+- Taking a chat that someone else holds needs `conversations.override`.
+- A handoff needs a note of at least 10 characters, and it clears the collaborators.
+- Handover, spam and override are written to the audit log. Every action is recorded in the conversation's own trail (`conversation_events`).
+- Notes store the @mentions of active members. Notifications come in a later step.
+- Collaborators count as "own" for visibility.
+- Labels exist and show in the inbox. A screen for adding them comes later.
+
+## Frontend day (decided 2026-10-19)
+
+- **Labels:** Settings › Labels lets owners and admins (`crm.settings`) create, rename, recolour and delete labels. Anyone who can write notes on a chat can label it, from the customer panel's "This chat" section.
+- **Collaborators:** people with `conversations.collaborators` add or remove teammates who can reply. When someone asks to collaborate, the holder sees a banner and chooses Add or Not now.
+- **Notifications bell:** shows only things that need you: a chat handed to you, an @mention, a collaboration request on your chat, a missed reply target on your chat, and broken channels (owners and admins only). Items older than a day start as read. The preview builds them from sample data; the real app stores them later.
+- **Pricing (provisional):** $19 / $39 / $79 per user per month, with yearly billing at two months free. Every channel is on every plan. WhatsApp and SMS fees are passed through at cost. The trial is 14 days with no card. Plans live in `lib/plans.ts`, shared by the site and Billing.
+- **Public site:** new Features and Pricing pages, and comparison pages for Zendesk, Intercom, Front and Chatwoot. Comparisons use only the competitor's official list prices, with a "checked on" date and a link (`lib/competitors.ts`), and each says honestly when the competitor is a good fit. Chatwoot Cloud charges the same as our Starter and Growth, so that page competes on handovers, manager homes and hosting, not price.
+
+## Sending replies, M2.4 step 1 (decided 2026-10-19)
+
+- **One outbound path for every channel.**
+  - `send_reply()` checks who may reply: the holder or a helper with reply rights, or a manager whose override reaches the chat. Untaken chats must be taken first.
+  - It refuses empty or overlong text (4,096 characters), a disconnected channel, and WhatsApp replies more than 24 hours after the customer's last message.
+  - It stores the message as `queued` and adds a `send_message` job.
+- **A repeated click never sends twice:** each send carries a client id, and the same id returns the same message.
+- **The worker sends through a per-channel adapter**, starting with WhatsApp.
+  - Temporary problems (rate limits, Meta outages, network) retry with backoff.
+  - Permanent ones fail the message at once with a reason in plain words, shown under it.
+  - Channels without an adapter fail with "Sending on this channel isn't available yet."
+- **Queued messages show no tick** until WhatsApp accepts them. Delivery and read ticks come from the existing status webhooks.
+- **Next:** media, reactions, approved templates outside the 24-hour window, the 20-messages-per-second limit per number, and replying on a customer's other channel.
+
+## Website chat (decided 2026-10-19)
+
+- **The first channel that needs no outside approval.** Owners and admins add it in Settings › Channels (name, website, greeting, colour, button side), then paste one `<script>` line on their site.
+- **The widget is public.** It knows only its key. The chat panel runs in a Relay page inside a frame, so it never touches the site's own code.
+- **Visitors don't sign in.** Their browser keeps a random secret, sent in a header and never in the URL. Relay stores only its SHA-256 fingerprint as the contact identity, so a leaked row can't be used to pose as a visitor. They show in the inbox as "Website visitor" until they give a name or email.
+- **The email is optional.** It's offered after the first message, kept on the contact, and never takes over another contact's address.
+- **Messages and replies use the shared paths:** `ingest_inbound` for incoming and `send_reply` for outgoing. The worker's website-chat sender just marks a reply sent; the widget checks every 4 seconds while it's open and marks replies read when the visitor sees them.
+- **Guard rails:** 10 messages a minute per visitor, 4,000 characters per message, retried sends stored once, and unknown keys refused. The widget is switched off on the password-protected partner preview, which never touches the database.
+- **Later:** file uploads, typing indicators, a live connection instead of checking every few seconds, checking which site the widget runs on, and showing a reply by email when the visitor has left.
+
+## Email, part 1: receiving (decided 2026-10-19)
+
+- **Forwarding first.** Each email channel gets a forwarding address `{token}@{INBOUND_EMAIL_DOMAIN}` (e.g. `northwind-3fa9c2@in.…`), and the business forwards its own support address there. "Continue with Outlook" and "Continue with Google" come as separate steps.
+- **Postmark posts each email to `/api/webhooks/postmark`,** protected by Basic auth from the webhook URL. The email is stored and queued like Meta's webhooks; unauthorised calls are refused and not stored.
+- **The worker files each email into a conversation.**
+  - It finds the channel by token, and threads by References / In-Reply-To.
+  - It keeps only the new reply (Postmark's stripped reply, otherwise our own trim of the quoted "On … wrote:" history).
+  - It stores attachments up to 10 MB each in the private media bucket.
+  - A repeated email is ignored, because its Message-ID is the dedupe key.
+- **Replies come from the business's own address once its domain is verified.** Until then they come from a Relay address with Reply-To set to the business's. Each channel has one signature, plus the sender's name.
+
+## Email, part 2: sending (decided 2026-10-19)
+
+- **Replies go out through Postmark,** and threading headers come from the conversation:
+  - `In-Reply-To` names the customer's latest email.
+  - `References` carries the thread, oldest first.
+  - Our own `Message-ID` (`<relay-{message}@{EMAIL_SEND_DOMAIN}>`) is stored, so the customer's answer threads back. If a provider rewrote it, the thread's first email in References still matches.
+- **From line:** "Leo · Northwind Support". The address is the business's own once its domain is verified. Until then it's `{token}@{EMAIL_SEND_DOMAIN}`, with Reply-To set to the business's address, so answers still arrive through forwarding.
+- **Format:** plain text with the signature after the standard "-- " separator, plus a simple HTML version with everything escaped.
+- **Failures:**
+  - Postmark's permanent failures (bounced or spam-flagged address, invalid address, unconfirmed sender, account still awaiting approval) fail the reply at once in plain words. Outages retry.
+  - A server without email set up fails replies with "Email sending isn't set up on this Relay server yet."
+- **Domain verification from Settings:**
+  - "Verify {domain}" asks Postmark (account token) for a DKIM TXT and a Return-Path CNAME, and shows them. "Check again" re-checks, and once DKIM passes, replies come from the business's address.
+  - A changed address must be verified again.
+  - Free-mail addresses (gmail.com, outlook.com and so on) can't be verified, so the page explains that instead of offering a button that would always fail.
+
+## "Continue with Outlook" (decided 2026-10-20)
+
+- **Connecting:**
+  - Settings › Channels › Email offers "Use Outlook or Microsoft 365?". Microsoft sign-in uses the authorization code flow with PKCE and a state cookie. It works for work, school and personal accounts.
+  - The person then picks their own mailbox or a shared one (like support@). One channel per mailbox, across all of Relay.
+  - Microsoft's refresh token goes straight into Vault. The sign-in is held for 15 minutes for the person who signed in only.
+- **Receiving:**
+  - A push subscription on the inbox sends notifications to `/api/webhooks/microsoft`. A notification only queues a check when its per-mailbox secret matches.
+  - The worker reads new mail with a delta query, starting at the moment of connecting, so older mail stays where it is. It uses Microsoft's "unique body", so quoted history is left out, and files mail through the same threading and attachment path as forwarded email.
+  - Every minute the worker renews subscriptions with 12 hours to spare, and checks any mailbox it hasn't heard from in 5 minutes.
+- **Sending:**
+  - Replies go out as Outlook's own reply to the customer's latest email, threaded by Microsoft and saved in the mailbox's Sent folder.
+  - No domain verification is needed: the mailbox itself sends.
+- **When it breaks:**
+  - A revoked sign-in (for example after a password change) or a mailbox the sign-in can't open marks the channel "disconnected", with a plain reason and a "Reconnect Outlook" button.
+  - Everything already in Relay stays.
+
+## "Continue with Google" (decided 2026-10-20)
+
+- **Connecting:**
+  - Settings › Channels › Email offers "Use Gmail or Google Workspace?". Google sign-in uses PKCE, a state cookie and offline access. Scopes: openid, email, `gmail.modify`, `gmail.send`.
+  - If someone unticks Gmail access on Google's screen, we say so plainly instead of failing quietly.
+  - Only the signed-in mailbox is connected. Teams sign in as support@ itself; Workspace admin-wide delegation can come later.
+  - The refresh token lives in Vault. One channel per mailbox.
+- **Receiving:**
+  - Every minute the worker reads the mailbox's history feed (messages added to the inbox), starting from the moment of connecting.
+  - Quoted history is trimmed by our own rules, since Gmail has no "unique body". Mail is filed through the same threading and attachment path as other email.
+  - If the worker was off for over a week (Gmail keeps about a week of history), it starts again from now and logs it.
+  - Push through Google Pub/Sub can replace the minute-by-minute check later without other changes.
+- **Sending:**
+  - The reply is built as a standard email (text and HTML, names encoded for any language, threading headers) and sent through Gmail inside the customer's Gmail thread, so it shows in Sent.
+- **When it breaks:** a revoked sign-in marks the channel disconnected, with "Reconnect Gmail"; history stays.
+- **Until Google verifies the app** (restricted Gmail scopes need a CASA security assessment), only test users listed in Google Cloud can connect.
+
+## Customers and companies on real data, step 2b (decided 2026-10-20)
+
+- **Who can edit:** anyone who can see a customer can edit them, except Viewers. The Agent role's "edit contacts" widened from their own customers to all they can see. Template, existing roles and the shared role list all changed, and the drift test now follows later template changes.
+- **Customer details:**
+  - Stage, owner, company (one per person), tags (trimmed, de-duplicated), language, area, custom fields (only defined, non-empty fields are kept) and one pinned note.
+  - A new email or phone also becomes a way to reach them, never taken from another customer.
+  - Customers added by hand are owned by whoever added them, so an Agent sees them before any chat exists.
+- **Companies:** one per domain, kept as a bare domain whatever was typed. A customer whose email domain matches a company is offered the link.
+- **Custom fields:** owners and admins (`crm.settings`) define them in Settings › Contacts. Keys are letters, digits and underscores.
+- **Labels and helpers save for real:**
+  - Labelling follows `conversations.notes`.
+  - Adding a helper needs `conversations.collaborators` (or holding the chat), and a teammate who can reply.
+  - Add, remove and "not now" go into the trail.
+- **The real Contacts screens are the preview's components, with save hooks.**
+  - The customer timeline shows only what's real: chats, notes, handovers.
+  - Deals, tasks, orders, consent, do-not-contact, merging, export, erasing and bulk delete stay preview-only until their steps (2c and later).
+
+## Step 2c: privacy on real data (2026-10-20)
+
+- Erasing a customer removes their details, identities, consent, notes, message text and files; the contact stays as an anonymous "Erased customer" so reports keep counts. Owners and admins only (contacts.erase).
+- Bulk delete is the same as erasing, with a typed confirmation (the number of people).
+- Marketing consent per channel and do-not-contact are real and audited. "Unknown" removes the record.
+- Merge: the person picks which values to keep; same-channel threads are joined, identities, consent, tags and fields move over.
+- Import fills blanks only and never overwrites. Consent is recorded only when the column clearly says yes (source "Imported file"). Up to 2,000 rows per batch; larger files go in batches.

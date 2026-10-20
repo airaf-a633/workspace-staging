@@ -1,0 +1,146 @@
+import type { ChatEvent, Conversation, Message, Person, Team } from "./types";
+
+/**
+ * Session-only inbox state (sample chats, reset on reload). Each action matches a server call M2 will make,
+ * so swapping this reducer for real mutations doesn't change the screen.
+ */
+export type InboxAction =
+  /** Fresh data from the server (live inbox): replaces the local state. */
+  | { type: "reset"; conversations: Conversation[] }
+  | { type: "open"; id: string }
+  | { type: "claim"; id: string; by: string; at: number }
+  | { type: "handover"; id: string; by: string; toPerson: string | null; toTeam: string | null; note: string; at: number }
+  | { type: "resolve"; id: string; by: string; at: number }
+  | { type: "reopen"; id: string; by: string; at: number }
+  | { type: "spam"; id: string; by: string; at: number }
+  | { type: "notSpam"; id: string; by: string; at: number }
+  | { type: "note"; id: string; by: string; text: string; at: number; mentions?: string[] }
+  /** A text reply (M2.4). `clientId` makes a repeated click harmless: the server returns the same message. */
+  | { type: "reply"; id: string; by: string; text: string; at: number; clientId: string }
+  | { type: "askCollab"; id: string; by: string; at: number }
+  | { type: "addCollab"; id: string; by: string; member: string; at: number }
+  | { type: "removeCollab"; id: string; by: string; member: string; at: number }
+  | { type: "declineCollab"; id: string; by: string; member: string; at: number }
+  | { type: "setLabels"; id: string; labelIds: string[] }
+  | { type: "dismissPhoneReply"; id: string }
+  | { type: "addTask"; id: string; by: string; text: string; at: number }
+  | { type: "toggleTask"; id: string; taskId: string }
+  /** Merge the suggested contact into this one: every conversation with the person gains the channel. */
+  | { type: "merge"; contactId: string }
+  | { type: "dismissMerge"; contactId: string };
+
+export interface Ctx {
+  people: Person[];
+  teams: Team[];
+}
+
+let n = 0;
+const nextId = () => `local-${++n}`;
+const event = (e: ChatEvent, at: number): Message => ({ id: nextId(), kind: "event", event: e, at });
+
+/** Events are stored as who-did-what ids, so the reducer needs no names; screens word them per language. */
+export function reducer() {
+  return (state: Conversation[], a: InboxAction): Conversation[] =>
+    a.type === "reset"
+      ? a.conversations
+      : a.type === "merge" || a.type === "dismissMerge"
+      ? state.map((c) => {
+          if (c.contact.id !== a.contactId || !c.contact.merge) return c;
+          const { merge, ...contact } = c.contact;
+          if (a.type === "dismissMerge") return { ...c, contact };
+          const identities = contact.identities.some((i) => i.ch === merge.ch && i.handle === merge.handle) ? contact.identities : [...contact.identities, { ch: merge.ch, handle: merge.handle }];
+          const email = contact.email ?? (merge.ch === "email" ? merge.handle : undefined);
+          return { ...c, contact: { ...contact, email, identities } };
+        })
+      : state.map((c) => {
+      if (c.id !== a.id) return c;
+      switch (a.type) {
+        case "open":
+          return c.unread ? { ...c, unread: 0 } : c;
+        case "claim":
+          return { ...c, holderId: a.by, trail: [...c.trail, a.by], status: "open", messages: [...c.messages, event({ key: "claimed", by: a.by }, a.at)] };
+        case "handover": {
+          const e: ChatEvent = a.toPerson ? { key: "handedToPerson", by: a.by, to: a.toPerson } : { key: "handedToTeam", by: a.by, team: a.toTeam! };
+          return {
+            ...c,
+            holderId: a.toPerson,
+            teamId: a.toTeam ?? c.teamId,
+            trail: a.toPerson ? [...c.trail, a.toPerson] : c.trail,
+            collaboratorIds: [],
+            status: "open",
+            phoneReply: undefined,
+            handoffs: [...c.handoffs, { fromId: a.by, toId: a.toPerson, toTeamId: a.toTeam, note: a.note.trim(), at: a.at }],
+            messages: [...c.messages, event(e, a.at)],
+          };
+        }
+        case "resolve":
+          return { ...c, status: "resolved", phoneReply: undefined, messages: [...c.messages, event({ key: "resolved", by: a.by }, a.at)] };
+        case "reopen":
+          return { ...c, status: "open", messages: [...c.messages, event({ key: "reopened", by: a.by }, a.at)] };
+        case "spam":
+          return { ...c, status: "spam", messages: [...c.messages, event({ key: "spam", by: a.by }, a.at)] };
+        case "notSpam":
+          return { ...c, status: "open", messages: [...c.messages, event({ key: "notSpam", by: a.by }, a.at)] };
+        case "reply":
+          return {
+            ...c,
+            status: c.status === "resolved" ? "open" : c.status,
+            unread: 0,
+            messages: [...c.messages, { id: a.clientId, kind: "out", authorId: a.by, source: "inbox", text: a.text.trim(), at: a.at }],
+          };
+        case "note":
+          return { ...c, messages: [...c.messages, { id: nextId(), kind: "note", authorId: a.by, text: a.text.trim(), at: a.at }] };
+        case "askCollab":
+          return { ...c, messages: [...c.messages, event({ key: "askedCollab", by: a.by, holder: c.holderId }, a.at)] };
+        case "addCollab":
+          return c.collaboratorIds.includes(a.member)
+            ? c
+            : { ...c, collaboratorIds: [...c.collaboratorIds, a.member], messages: [...c.messages, event({ key: "collabAdded", by: a.by, to: a.member }, a.at)] };
+        case "removeCollab":
+          return { ...c, collaboratorIds: c.collaboratorIds.filter((x) => x !== a.member), messages: [...c.messages, event({ key: "collabRemoved", by: a.by, to: a.member }, a.at)] };
+        case "declineCollab":
+          return { ...c, messages: [...c.messages, event({ key: "collabDeclined", by: a.by, to: a.member }, a.at)] };
+        case "setLabels":
+          return { ...c, labels: a.labelIds };
+        case "dismissPhoneReply":
+          return { ...c, phoneReply: undefined };
+        case "addTask":
+          return { ...c, contact: { ...c.contact, tasks: [...c.contact.tasks, { id: nextId(), text: a.text.trim(), ownerId: a.by, due: "No date", done: false }] } };
+        case "toggleTask":
+          return { ...c, contact: { ...c.contact, tasks: c.contact.tasks.map((t) => (t.id === a.taskId ? { ...t, done: !t.done } : t)) } };
+      }
+      return c;
+    });
+}
+
+/** The last thing that happened, for sorting and the row snippet (internal events don't count). */
+export function lastActivity(c: Conversation) {
+  const real = c.messages.filter((m) => m.kind !== "event");
+  return (real[real.length - 1] ?? c.messages[c.messages.length - 1])?.at ?? 0;
+}
+
+/** Actions the live inbox saves to the database (the rest are sample-only for now). */
+export const SAVED_ACTIONS = new Set<InboxAction["type"]>([
+  "claim", "handover", "resolve", "reopen", "spam", "notSpam", "note", "askCollab", "reply",
+  "setLabels", "addCollab", "removeCollab", "declineCollab",
+]);
+
+/** People who asked to collaborate and are still waiting: not added, removed or turned down since they asked. */
+export function pendingCollabRequests(c: Conversation): string[] {
+  const waiting = new Set<string>();
+  for (const m of c.messages) {
+    const e = m.event;
+    if (!e) continue;
+    if (e.key === "askedCollab" && e.by) waiting.add(e.by);
+    if ((e.key === "collabAdded" || e.key === "collabDeclined") && e.to) waiting.delete(e.to);
+  }
+  return [...waiting].filter((id) => !c.collaboratorIds.includes(id) && id !== c.holderId);
+}
+
+/** Members named as @Name in a note. */
+export function mentionsIn(text: string, people: Person[]): string[] {
+  return people.filter((p) => text.includes(`@${p.name}`)).map((p) => p.id);
+}
+
+/** Timestamp for a user action. Called from event handlers only. */
+export const stamp = () => Date.now();
