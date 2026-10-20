@@ -34,7 +34,18 @@ function Swatches({ value, onChange, label }: { value: string; onChange: (c: str
   );
 }
 
-export function LabelsSettings({ initial, usage, canEdit }: { initial: Label[]; usage: Record<string, number>; canEdit: boolean }) {
+export function LabelsSettings({
+  initial,
+  usage,
+  canEdit,
+  saveTo,
+}: {
+  initial: Label[];
+  usage: Record<string, number>;
+  canEdit: boolean;
+  /** A real workspace saves labels; the preview leaves this out. */
+  saveTo?: { save: (id: string | null, name: string, color: string) => Promise<{ id?: string; error?: string }>; remove: (id: string) => Promise<string | null> };
+}) {
   const t = useT("labelsSettings");
   const [labels, setLabels] = useState(initial);
   const [editing, setEditing] = useState<string | null>(null);
@@ -61,9 +72,21 @@ export function LabelsSettings({ initial, usage, canEdit }: { initial: Label[]; 
     const clean = name.trim();
     if (!clean) return setError(t("errors.empty"));
     if (labels.some((l) => l.id !== editing && l.name.toLowerCase() === clean.toLowerCase())) return setError(t("errors.taken"));
-    if (editing === "new") setLabels([...labels, { id: `l-${Date.now()}`, name: clean, color }]);
+    const before = labels;
+    const tempId = `l-${labels.length}-${clean}`;
+    if (editing === "new") setLabels([...labels, { id: tempId, name: clean, color }]);
     else setLabels(labels.map((l) => (l.id === editing ? { ...l, name: clean, color } : l)));
+    const id = editing === "new" ? null : editing;
     setEditing(null);
+    if (saveTo) {
+      void saveTo.save(id, clean, color).then((r) => {
+        if (r.id && !id) setLabels((list) => list.map((l) => (l.id === tempId ? { ...l, id: r.id! } : l)));
+        if (r.error) {
+          setLabels(before);
+          setError(t(r.error === "name_taken" ? "errors.taken" : "errors.failed"));
+        }
+      });
+    }
   }
 
   const form = (
@@ -143,8 +166,10 @@ export function LabelsSettings({ initial, usage, canEdit }: { initial: Label[]; 
                       type="button"
                       className={buttonClass("destructive", "sm")}
                       onClick={() => {
+                        const before = labels;
                         setLabels(labels.filter((x) => x.id !== l.id));
                         setDeleting(null);
+                        if (saveTo) void saveTo.remove(l.id).then((e) => { if (e) { setLabels(before); setError(t("errors.failed")); } });
                       }}
                     >
                       {t("deleteConfirm")}

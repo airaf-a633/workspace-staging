@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import type { ListSave } from "./save";
 import { Buildings, CaretDown, DownloadSimple, Funnel, MagnifyingGlass, Plus, Tag, Trash, UploadSimple, UserCircle, X } from "@phosphor-icons/react";
 import { ChannelMark } from "@/components/channels/channel-mark";
 import { CHANNELS, type ChannelKey } from "@/components/channels/catalog";
@@ -28,13 +29,15 @@ interface Props {
   /** Owners and admins may delete contacts in bulk and export them. */
   canBulkDelete: boolean;
   initialTab?: "people" | "companies";
+  /** A real workspace: changes are saved. The preview leaves this out. */
+  save?: ListSave;
 }
 
 const LIFE_TONE: Record<Lifecycle, "new" | "done" | "warn"> = { lead: "new", customer: "done", repeat: "done", churned: "warn" };
 
 /* Contacts (decided 2026-10-07): people and companies, every channel each person uses, filters that can be
    saved as segments, and actions on many at once. A calm table on desktop, two-line rows on phones. */
-export function CustomerList({ customers: initial, companies, people, teams, viewer, now, base, canEdit, canBulkDelete, initialTab = "people" }: Props) {
+export function CustomerList({ customers: initial, companies, people, teams, viewer, now, base, canEdit, canBulkDelete, initialTab = "people", save }: Props) {
   const [customers, setCustomers] = useState(initial);
   const [tab, setTab] = useState(initialTab);
   const [segment, setSegment] = useState<string>("all");
@@ -125,6 +128,16 @@ export function CustomerList({ customers: initial, companies, people, teams, vie
     setAdding(false);
     setTried(false);
     setDraft({ name: "", phone: "", email: "", company: "", tag: "" });
+    if (save) {
+      // Saved in the background; the new row takes its real id so its page opens.
+      void save.add(draft).then((r) => {
+        if (r.id) setCustomers((list) => list.map((x) => (x.id === c.id ? { ...x, id: r.id! } : x)));
+        else {
+          setCustomers((list) => list.filter((x) => x.id !== c.id));
+          setToast(t(r.error === "need_reach" ? "saveNeedReach" : "saveFailed"));
+        }
+      });
+    }
   }
 
   function saveSegment() {
@@ -152,6 +165,9 @@ export function CustomerList({ customers: initial, companies, people, teams, vie
       setCustomers(customers.map((c) => (picked.includes(c.id) ? { ...c, lifecycle: bulkValue as Lifecycle } : c)));
       setToast(t("bulk.staged", { count: n, stage: t(`lifecycle.${bulkValue as Lifecycle}`) }));
     } else return;
+    if (save && bulk !== "delete") {
+      void save.bulk(bulk!, picked, bulkValue).then((error) => error && setToast(t("saveFailed")));
+    }
     setPicked([]);
     setBulk(null);
     setBulkValue("");

@@ -448,6 +448,8 @@ export const en = {
   stages: { new: "New", quoted: "Quoted", negotiating: "Negotiating", won: "Won", lost: "Lost" },
 
   customers: {
+    saveFailed: "That didn't save. Reload the page to see what's stored.",
+    saveNeedReach: "Add an email or a phone number so you can reach them.",
     title: "Contacts",
     segment: "List",
     segments: { all: "All contacts", b2b: "Businesses", vip: "VIP", "open-deal": "Open deal", quiet: "No contact in 30 days" },
@@ -516,6 +518,9 @@ export const en = {
   },
 
   customer: {
+    edit: "Edit",
+    saved: "Saved.",
+    saveFailed: "That didn't save. Reload the page to see what's stored.",
     back: "Contacts",
     openChat: "Open chat",
     newDeal: "New deal",
@@ -1992,6 +1997,8 @@ export const en = {
   },
 
   contactSettings: {
+    fieldRemoved: "Field removed.",
+    saveFailed: "That didn't save. Try again.",
     title: "Contacts and privacy",
     description: "The fields every contact has, the tags your team uses, and how long conversations are kept.",
     previewNote: "In the preview nothing is stored.",
@@ -2423,7 +2430,7 @@ export const en = {
     delete: "Delete {name}",
     confirmDelete: { one: "Delete {name}? It comes off {count} chat. The chat itself stays.", other: "Delete {name}? It comes off {count} chats. The chats themselves stay." },
     deleteConfirm: "Delete label",
-    errors: { empty: "Give the label a name.", taken: "There's already a label with that name." },
+    errors: { empty: "Give the label a name.", taken: "There's already a label with that name.", failed: "That didn't save. Try again." },
   },
 
   notifications: {
@@ -2791,6 +2798,34 @@ export const en = {
       missingScopes: "Relay needs both email boxes ticked on Google's screen to read and send. Please continue with Google again and keep them ticked.",
       needName: "Give it a name.",
       failed: "Something went wrong signing in with Google. Try again.",
+    },
+  },
+
+  customerEdit: {
+    title: "Edit details",
+    name: "Name",
+    email: "Email",
+    phone: "Phone",
+    owner: "Owner",
+    nobody: "Nobody",
+    tags: "Tags",
+    tagsPlaceholder: "VIP, Wholesale",
+    language: "Language",
+    area: "Area",
+    areaPlaceholder: "City or region",
+    pinned: "Pinned note",
+    pinnedPlaceholder: "Something everyone should know, like \"Prefers calls after 5pm\"",
+    pinnedHelp: "Shown at the top of this customer's page and in the inbox.",
+    save: "Save",
+    saving: "Saving…",
+    cancel: "Cancel",
+    errors: {
+      need_name: "Give them a name.",
+      bad_email: "That email doesn't look right.",
+      bad_phone: "That phone number doesn't look right. Include the country code, like +44.",
+      not_allowed: "Your role can't change this customer.",
+      too_long: "That name is too long.",
+      failed: "That didn't save. Try again.",
     },
   },
 

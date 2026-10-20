@@ -2,23 +2,9 @@
 
 import Link from "next/link";
 import { Fragment, useState } from "react";
-import {
-  ArrowLeft,
-  ArrowsLeftRight,
-  Buildings,
-  ChatCircle,
-  CheckSquare,
-  ClockCounterClockwise,
-  DotsThree,
-  DownloadSimple,
-  EnvelopeSimple,
-  Handshake,
-  NotePencil,
-  PushPin,
-  ShieldCheck,
-  ShoppingBag,
-  WarningCircle,
-} from "@phosphor-icons/react";
+import type { ContactPatch, CustomerSave } from "./save";
+import { CustomerEdit } from "./customer-edit";
+import { ArrowLeft, ArrowsLeftRight, Buildings, ChatCircle, CheckSquare, ClockCounterClockwise, DotsThree, DownloadSimple, EnvelopeSimple, Handshake, NotePencil, PencilSimple, PushPin, ShieldCheck, ShoppingBag, WarningCircle } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
 import { canSeeDealValue, type Viewer } from "@app/domain";
 import { buttonClass } from "@/components/ui/button";
@@ -60,6 +46,8 @@ interface Props {
   canMerge: boolean;
   /** Owners and admins: erase and export a person's data (decided 2026-10-07). */
   canErase: boolean;
+  /** A real workspace: changes are saved. The preview leaves this out and keeps changes on screen. */
+  save?: CustomerSave;
 }
 
 function Card({ title, icon, children }: { title: string; icon?: React.ReactNode; children: React.ReactNode }) {
@@ -72,7 +60,7 @@ function Card({ title, icon, children }: { title: string; icon?: React.ReactNode
 }
 
 /* The contact page: who they are and how to reach them on the side, everything that happened in one timeline. */
-export function CustomerPage({ c: initial, duplicate, company: initialCompany, suggestedCompany, fields, people, teams, viewer, now, base, canEdit, canMerge, canErase }: Props) {
+export function CustomerPage({ c: initial, duplicate, company: initialCompany, suggestedCompany, fields, people, teams, viewer, now, base, canEdit, canMerge, canErase, save }: Props) {
   const [c, setC] = useState(initial);
   const [company, setCompany] = useState(initialCompany);
   const [suggestion, setSuggestion] = useState(suggestedCompany);
@@ -82,6 +70,14 @@ export function CustomerPage({ c: initial, duplicate, company: initialCompany, s
   const [erased, setErased] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  /** Saves in a real workspace; a refusal is said plainly and the screen keeps what the database holds. */
+  async function persist(patch: ContactPatch) {
+    if (!save) return null;
+    const error = await save.patch(c.id, patch);
+    if (error) setStatus(t("saveFailed"));
+    return error;
+  }
   const t = useT("customer");
   const tc = useT("customers");
   const tAll = useT();
@@ -97,6 +93,7 @@ export function CustomerPage({ c: initial, duplicate, company: initialCompany, s
   }
   function setLifecycle(l: Lifecycle) {
     setC({ ...c, lifecycle: l, timeline: [log("timeline.stageChanged", { stage: { t: `customers.lifecycle.${l}` } }), ...c.timeline] });
+    void persist({ lifecycle: l });
   }
   function setConsent(ch: ChannelKey, status: Consent["status"]) {
     setC({
@@ -158,8 +155,10 @@ export function CustomerPage({ c: initial, duplicate, company: initialCompany, s
         </div>
         <div className="flex items-center gap-2">
           {c.conversationId && <Link href={`${base}/inbox?c=${c.conversationId}`} className={buttonClass("primary", "sm")}>{t("openChat")}</Link>}
-          <Link href={`${base}/deals`} className={buttonClass("secondary", "sm")}>{t("newDeal")}</Link>
-          {(canMerge || canErase) && (
+          {canEdit && !editing && <button type="button" onClick={() => setEditing(true)} className={buttonClass("secondary", "sm")}><PencilSimple size={16} aria-hidden="true" /> {t("edit")}</button>}
+          {!save && <Link href={`${base}/deals`} className={buttonClass("secondary", "sm")}>{t("newDeal")}</Link>}
+          {/* Merging, export and erasing come with step 2c; until then they're preview-only. */}
+          {!save && (canMerge || canErase) && (
             <details className="relative">
               <summary className={buttonClass("ghost", "sm", "!px-2 list-none [&::-webkit-details-marker]:hidden")} aria-label={tAll("common.moreActions")}>
                 <DotsThree size={22} weight="bold" aria-hidden="true" />
@@ -177,6 +176,37 @@ export function CustomerPage({ c: initial, duplicate, company: initialCompany, s
       </header>
 
       {status && <p role="status" className="rounded-[var(--radius-control)] bg-done-soft px-4 py-2 text-sm">{status}</p>}
+      {editing && (
+        <CustomerEdit
+          c={c}
+          fields={fields}
+          people={people}
+          onCancel={() => setEditing(false)}
+          onSave={async (patch, pinned) => {
+            const error = await persist(patch);
+            if (error) return error;
+            if (save && pinned !== (c.pinned?.text ?? "")) {
+              const pinError = await save.pin(c.id, pinned);
+              if (pinError) return pinError;
+            }
+            setC({
+              ...c,
+              name: patch.name ?? c.name,
+              email: patch.email ?? undefined,
+              phone: patch.phone ?? undefined,
+              ownerId: patch.owner ?? null,
+              tags: patch.tags ?? c.tags,
+              language: patch.language ?? "",
+              area: patch.area ?? undefined,
+              fields: patch.fields ?? c.fields,
+              pinned: pinned.trim() ? { text: pinned.trim(), byId: viewer.memberId, at: stamp() } : undefined,
+            });
+            setEditing(false);
+            setStatus(t("saved"));
+            return null;
+          }}
+        />
+      )}
 
       {erasing && (
         <div role="alert" className="grid gap-3 rounded-[var(--radius-panel)] bg-fail-soft p-4">
@@ -213,7 +243,7 @@ export function CustomerPage({ c: initial, duplicate, company: initialCompany, s
           {canEdit && (
             <span className="flex gap-2">
               <button type="button" onClick={() => setSuggestion(null)} className={buttonClass("ghost", "sm")}>{t("companyNo")}</button>
-              <button type="button" onClick={() => { setCompany(suggestion); setC({ ...c, company: suggestion.name, companyId: suggestion.id }); }} className={buttonClass("secondary", "sm")}>{t("companyYes")}</button>
+              <button type="button" onClick={() => { setCompany(suggestion); setC({ ...c, company: suggestion.name, companyId: suggestion.id }); void persist({ company: suggestion.id }); }} className={buttonClass("secondary", "sm")}>{t("companyYes")}</button>
             </span>
           )}
         </div>
@@ -299,7 +329,8 @@ export function CustomerPage({ c: initial, duplicate, company: initialCompany, s
             </Card>
           )}
 
-          {/* Privacy: marketing consent per channel and the do-not-contact switch (decided 2026-10-07). */}
+          {/* Privacy: marketing consent per channel and the do-not-contact switch (decided 2026-10-07). Real data in step 2c. */}
+          {!save && (
           <Card title={t("privacy.title")} icon={<ShieldCheck size={14} aria-hidden="true" />}>
             <ul className="grid gap-2 text-sm">
               {c.identities.filter((i) => i.ch !== "voice" && i.ch !== "webchat").map((i) => {
@@ -324,11 +355,12 @@ export function CustomerPage({ c: initial, duplicate, company: initialCompany, s
               <input type="checkbox" role="switch" checked={!!c.doNotContact} disabled={!canEdit} onChange={(e) => setC({ ...c, doNotContact: e.target.checked })} className="mt-0.5 size-5 accent-[var(--primary)]" />
             </label>
           </Card>
+          )}
         </aside>
 
         {/* Everything that happened */}
         <section aria-label={t("timeline")} className="grid gap-4">
-          {canEdit && (
+          {canEdit && !save && (
             note === null ? (
               <button type="button" onClick={() => setNote("")} className="flex min-h-11 items-center gap-2 rounded-[var(--radius-panel)] border border-dashed border-border px-4 text-start text-sm text-muted hover:text-text">
                 <NotePencil size={18} aria-hidden="true" /> {t("addNote")}

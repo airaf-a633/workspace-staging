@@ -64,7 +64,7 @@ interface MsgRow {
 }
 
 /** How an identity shows on the customer card: phone numbers get their "+", handles show as the provider names them. */
-function identity(i: { kind: string; address: string; display: string | null }): Identity {
+export function identity(i: { kind: string; address: string; display: string | null }): Identity {
   const ch: ChannelKey = i.kind === "phone" ? "sms" : (i.kind as ChannelKey);
   // A website visitor's address is a fingerprint of their browser's secret: never show it.
   const handle = i.kind === "whatsapp" || i.kind === "phone" ? `+${i.address}` : i.kind === "webchat" ? (i.display ?? "Website visitor") : (i.display ?? i.address);
@@ -77,7 +77,7 @@ const BROKEN = { disconnected: "tokenExpired" } as const;
 interface EventRow {
   id: string;
   conversation_id: string;
-  kind: "claimed" | "handed_to_person" | "handed_to_team" | "resolved" | "reopened" | "spam" | "not_spam" | "asked_collab";
+  kind: "claimed" | "handed_to_person" | "handed_to_team" | "resolved" | "reopened" | "spam" | "not_spam" | "asked_collab" | "collab_added" | "collab_removed" | "collab_declined";
   actor_member_id: string | null;
   to_member_id: string | null;
   to_team_id: string | null;
@@ -95,6 +95,9 @@ const EVENT_KEY: Record<EventRow["kind"], ChatEvent["key"]> = {
   spam: "spam",
   not_spam: "notSpam",
   asked_collab: "askedCollab",
+  collab_added: "collabAdded",
+  collab_removed: "collabRemoved",
+  collab_declined: "collabDeclined",
 };
 
 function chatEvent(e: EventRow): ChatEvent {
@@ -133,11 +136,15 @@ export async function loadLiveInbox(
   teams: Team[],
   viewer: ViewerInfo,
   tz: string,
+  /** Only this customer's conversations (the customer page's timeline). */
+  contactId?: string,
 ): Promise<InboxData | null> {
-  const { data: convs } = await supabase
+  let query = supabase
     .from("conversations")
     .select("id, contact_id, channel_id, subject, team_id, holder_member_id, status, unread_count, last_customer_message_at, imported, channels(type), contacts(name, profile_name, email, phone, contact_identities(kind, address, display))")
-    .eq("workspace_id", workspaceId)
+    .eq("workspace_id", workspaceId);
+  if (contactId) query = query.eq("contact_id", contactId);
+  const { data: convs } = await query
     .order("last_message_at", { ascending: false, nullsFirst: false })
     .limit(300);
   if (!convs || convs.length === 0) return null;

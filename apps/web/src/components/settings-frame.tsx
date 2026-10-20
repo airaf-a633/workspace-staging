@@ -28,14 +28,10 @@ export async function SettingsFrame({ base, active, isOwner, children }: { base:
       key: "business",
       items: [
         { key: "channels", label: t("channels"), href: `${base}/channels` },
-        // Labels, contacts, reply targets and billing exist in the preview only until they're stored for real.
-        ...(preview
-          ? [
-              { key: "labels" as const, label: t("labels"), href: `${base}/labels` },
-              { key: "contacts" as const, label: t("contacts"), href: `${base}/contact-settings` },
-              { key: "sla" as const, label: t("sla"), href: `${base}/sla` },
-            ]
-          : []),
+        { key: "labels" as const, label: t("labels"), href: `${base}/labels` },
+        { key: "contacts" as const, label: t("contacts"), href: `${base}/contact-settings` },
+        // Reply targets and billing exist in the preview only until they're stored for real.
+        ...(preview ? [{ key: "sla" as const, label: t("sla"), href: `${base}/sla` }] : []),
         { key: "ai", label: t("ai"), href: `${base}/ai` },
         // Billing is for owners and admins; others are sent back to Account if they open the link.
         ...(preview && isOwner ? [{ key: "billing" as const, label: t("billing"), href: `${base}/billing` }] : []),

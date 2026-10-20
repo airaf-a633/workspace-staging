@@ -120,7 +120,10 @@ export function lastActivity(c: Conversation) {
 }
 
 /** Actions the live inbox saves to the database (the rest are sample-only for now). */
-export const SAVED_ACTIONS = new Set<InboxAction["type"]>(["claim", "handover", "resolve", "reopen", "spam", "notSpam", "note", "askCollab", "reply"]);
+export const SAVED_ACTIONS = new Set<InboxAction["type"]>([
+  "claim", "handover", "resolve", "reopen", "spam", "notSpam", "note", "askCollab", "reply",
+  "setLabels", "addCollab", "removeCollab", "declineCollab",
+]);
 
 /** People who asked to collaborate and are still waiting: not added, removed or turned down since they asked. */
 export function pendingCollabRequests(c: Conversation): string[] {

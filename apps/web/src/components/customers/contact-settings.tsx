@@ -14,7 +14,20 @@ type Retention = (typeof RETENTION)[number];
  * to companies by email domain, and how long conversations are kept. Fields and tags need crm.settings;
  * retention is for owners and admins.
  */
-export function ContactSettings({ initialFields, tags: initialTags, canFields, canRetention }: { initialFields: CustomFieldDef[]; tags: string[]; canFields: boolean; canRetention: boolean }) {
+export function ContactSettings({
+  initialFields,
+  tags: initialTags,
+  canFields,
+  canRetention,
+  saveFields,
+}: {
+  initialFields: CustomFieldDef[];
+  tags: string[];
+  canFields: boolean;
+  canRetention: boolean;
+  /** A real workspace saves the custom fields; tags, company matching and retention stay preview-only until step 2c. */
+  saveFields?: (defs: CustomFieldDef[]) => Promise<string | null>;
+}) {
   const t = useT("contactSettings");
   const tAll = useT();
   const [fields, setFields] = useState(initialFields);
@@ -34,14 +47,30 @@ export function ContactSettings({ initialFields, tags: initialTags, canFields, c
     if (!draft.label.trim() || labelTaken) return;
     const options = draft.type === "select" ? draft.options.split(",").map((o) => o.trim()).filter(Boolean) : undefined;
     if (draft.type === "select" && !options?.length) return;
-    setFields([...fields, { key: `f${fields.length}-${draft.label.trim().toLowerCase().replace(/\W+/g, "-")}`, label: draft.label.trim(), type: draft.type, options }]);
+    // Keys are letters, digits and underscores ("loyalty_tier"), unique, starting with a letter.
+    const base = `f_${draft.label.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "")}`.slice(0, 36);
+    let key = base;
+    for (let n = 2; fields.some((f) => f.key === key); n++) key = `${base}_${n}`;
+    void store([...fields, { key, label: draft.label.trim(), type: draft.type, options }], t("fieldAdded"));
     setDraft({ label: "", type: "text", options: "" });
-    setSaved(t("fieldAdded"));
+  }
+
+  /** Shows the change at once; in a real workspace saves it, and puts the old list back if that fails. */
+  async function store(next: CustomFieldDef[], message: string) {
+    const before = fields;
+    setFields(next);
+    setSaved(message);
+    if (!saveFields) return;
+    const error = await saveFields(next);
+    if (error) {
+      setFields(before);
+      setSaved(t("saveFailed"));
+    }
   }
 
   return (
     <div className="grid gap-6">
-      {saved && <p role="status" className="flex items-center gap-2 rounded-[var(--radius-control)] bg-done-soft px-4 py-2 text-sm"><Info size={16} aria-hidden="true" />{saved} {t("previewNote")}</p>}
+      {saved && <p role="status" className="flex items-center gap-2 rounded-[var(--radius-control)] bg-done-soft px-4 py-2 text-sm"><Info size={16} aria-hidden="true" />{saved} {!saveFields && t("previewNote")}</p>}
 
       <section className={card} aria-labelledby="cs-fields">
         <div className="grid gap-1">
@@ -56,7 +85,7 @@ export function ContactSettings({ initialFields, tags: initialTags, canFields, c
                 <span className="text-xs text-muted">{t(`types.${f.type}`)}{f.options ? `: ${f.options.join(", ")}` : ""}</span>
               </span>
               {canFields && (
-                <button type="button" onClick={() => setFields(fields.filter((x) => x.key !== f.key))} className={buttonClass("ghost", "sm", "!px-2")} aria-label={t("removeField", { name: f.label })}>
+                <button type="button" onClick={() => void store(fields.filter((x) => x.key !== f.key), t("fieldRemoved"))} className={buttonClass("ghost", "sm", "!px-2")} aria-label={t("removeField", { name: f.label })}>
                   <X size={16} aria-hidden="true" />
                 </button>
               )}
@@ -87,6 +116,7 @@ export function ContactSettings({ initialFields, tags: initialTags, canFields, c
         )}
       </section>
 
+      {!saveFields && (<>
       <section className={card} aria-labelledby="cs-tags">
         <div className="grid gap-1">
           <h2 id="cs-tags" className="text-base font-semibold">{t("tags")}</h2>
@@ -148,6 +178,7 @@ export function ContactSettings({ initialFields, tags: initialTags, canFields, c
         )}
         {!canRetention && <p className="text-sm text-muted">{t("retentionOwner")}</p>}
       </section>
+      </>)}
     </div>
   );
 }

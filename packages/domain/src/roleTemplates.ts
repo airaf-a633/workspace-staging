@@ -2,8 +2,9 @@ import type { Scope } from "./conversationAccess";
 
 /**
  * The permission catalogue and the built-in role templates, copied from
- * supabase/migrations/20260927000001_foundations.sql (the source of truth).
- * roleTemplates.test.ts fails if this copy drifts from the migration.
+ * supabase/migrations/20260927000001_foundations.sql (the source of truth), plus later template changes
+ * (e.g. 20261020000007_customers.sql: Agents edit any customer they can see).
+ * roleTemplates.test.ts fails if this copy drifts from the migrations.
  *
  * Admin (supabase/migrations/20261007000001_admin_role.sql) holds exactly the owner's scopes, so it has no
  * column of its own: what an admin can't do is about owners themselves, enforced by the database.
@@ -39,7 +40,7 @@ export const PERMISSIONS: readonly PermissionInfo[] = [
   { key: "conversations.spam", description: "Mark spam and block numbers", ownerOnly: false, scopes: ["all", "team", "team", "none", "none", "none"] },
   { key: "conversations.resolve", description: "Resolve and reopen", ownerOnly: false, scopes: ["all", "team", "team", "own", "own", "none"] },
   { key: "contacts.view", description: "See contacts", ownerOnly: false, scopes: ["all", "all", "all", "all", "all", "team"] },
-  { key: "contacts.edit", description: "Create and edit contacts", ownerOnly: false, scopes: ["all", "all", "all", "all", "own", "none"] },
+  { key: "contacts.edit", description: "Create and edit contacts", ownerOnly: false, scopes: ["all", "all", "all", "all", "all", "none"] },
   { key: "contacts.merge", description: "Merge contacts", ownerOnly: false, scopes: ["all", "all", "all", "none", "none", "none"] },
   { key: "contacts.erase", description: "Erase a contact (PDPL)", ownerOnly: true, scopes: ["all", "none", "none", "none", "none", "none"] },
   { key: "deals.view", description: "See deals and stages", ownerOnly: false, scopes: ["all", "all", "all", "all", "own", "none"] },

@@ -509,3 +509,20 @@ Order:
   - The reply is built as a standard email (text and HTML, names encoded for any language, threading headers) and sent through Gmail inside the customer's Gmail thread, so it shows in Sent.
 - **When it breaks:** a revoked sign-in marks the channel disconnected, with "Reconnect Gmail"; history stays.
 - **Until Google verifies the app** (restricted Gmail scopes need a CASA security assessment), only test users listed in Google Cloud can connect.
+
+## Customers and companies on real data, step 2b (decided 2026-10-20)
+
+- **Who can edit:** anyone who can see a customer can edit them, except Viewers. The Agent role's "edit contacts" widened from their own customers to all they can see. Template, existing roles and the shared role list all changed, and the drift test now follows later template changes.
+- **Customer details:**
+  - Stage, owner, company (one per person), tags (trimmed, de-duplicated), language, area, custom fields (only defined, non-empty fields are kept) and one pinned note.
+  - A new email or phone also becomes a way to reach them, never taken from another customer.
+  - Customers added by hand are owned by whoever added them, so an Agent sees them before any chat exists.
+- **Companies:** one per domain, kept as a bare domain whatever was typed. A customer whose email domain matches a company is offered the link.
+- **Custom fields:** owners and admins (`crm.settings`) define them in Settings › Contacts. Keys are letters, digits and underscores.
+- **Labels and helpers save for real:**
+  - Labelling follows `conversations.notes`.
+  - Adding a helper needs `conversations.collaborators` (or holding the chat), and a teammate who can reply.
+  - Add, remove and "not now" go into the trail.
+- **The real Contacts screens are the preview's components, with save hooks.**
+  - The customer timeline shows only what's real: chats, notes, handovers.
+  - Deals, tasks, orders, consent, do-not-contact, merging, export, erasing and bulk delete stay preview-only until their steps (2c and later).

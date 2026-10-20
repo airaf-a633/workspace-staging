@@ -71,7 +71,11 @@ function withTime(c: Partial<Record<ChannelKey, Consent>> | undefined, now: numb
   return Object.fromEntries(Object.entries(c ?? {}).map(([k, v]) => [k, v.at === 0 ? { ...v, at: now - 12 * DAY } : v]));
 }
 
-function fromConversation(c: Conversation, data: InboxData): Customer {
+/**
+ * What happened in one conversation, as timeline entries: a line per day of chat, notes, handovers. Shared by the
+ * preview and real customer pages (decided 2026-10-20), so both read the same way.
+ */
+export function conversationTimeline(c: Conversation, data: Pick<InboxData, "people" | "tz">): TimelineItem[] {
   const name = (id: string | undefined | null) => data.people.find((p) => p.id === id)?.name ?? "";
   const timeline: TimelineItem[] = [];
   const messages = (count: number): Line => ({ key: "timeline.messages", vars: { channel: { t: `channels.${c.channel}` }, count } });
@@ -113,6 +117,12 @@ function fromConversation(c: Conversation, data: InboxData): Customer {
   for (const h of c.handoffs) {
     timeline.push({ id: `${c.id}-ho-${h.at}`, at: h.at, kind: "handoff", title: { key: "timeline.handoff", vars: { from: name(h.fromId), to: h.toId ? name(h.toId) : { t: "events.aTeam" } } }, body: h.note });
   }
+  return timeline;
+}
+
+function fromConversation(c: Conversation, data: InboxData): Customer {
+  const name = (id: string | undefined | null) => data.people.find((p) => p.id === id)?.name ?? "";
+  const timeline: TimelineItem[] = conversationTimeline(c, data);
   for (const d of c.contact.deals) {
     timeline.push({ id: `${c.id}-deal-${d.id}`, at: c.messages[Math.min(5, c.messages.length - 1)]?.at ?? data.now, kind: "deal", title: { key: "timeline.deal", vars: { title: d.title } }, body: d.stage, by: name(d.ownerId) });
   }
