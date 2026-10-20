@@ -15,6 +15,10 @@ const schema = z.object({
   /** Email channel, sending: Postmark's server token, and Relay's own verified sending domain (e.g. mail.relayinbox.com). */
   POSTMARK_SERVER_TOKEN: z.string().optional(),
   EMAIL_SEND_DOMAIN: z.string().optional(),
+  /** "Continue with Outlook": the Microsoft app, and the app's public address for Microsoft's push notifications. */
+  MICROSOFT_CLIENT_ID: z.string().optional(),
+  MICROSOFT_CLIENT_SECRET: z.string().optional(),
+  APP_URL: z.url().optional(),
 });
 
 export type WorkerEnv = z.infer<typeof schema>;

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
 import { SectionHeader, SettingsFrame } from "@/components/settings-frame";
@@ -8,7 +7,7 @@ import { EmailForm } from "@/components/channels/email-form";
 import { serverEnv } from "@/env";
 import { Notice } from "@/components/ui/surface";
 import { getT } from "@/i18n/server";
-import { publicEnv } from "@/lib/public-env";
+import { appOrigin } from "@/lib/app-origin";
 import { can, loadWorkspace } from "@/lib/workspace";
 import { updateWebchat } from "../webchat-actions";
 import { updateEmailChannel, verifyEmailDomain } from "../email-actions";
@@ -18,13 +17,6 @@ export async function generateMetadata() {
   return { title: (await getT("settings"))("channels") };
 }
 
-/** Where the install code points: the configured site address, else the address this page was opened on. */
-async function appOrigin() {
-  const configured = publicEnv().siteUrl;
-  if (configured) return configured.replace(/\/$/, "");
-  const h = await headers();
-  return `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host") ?? h.get("host")}`;
-}
 
 /* One channel in a real workspace. WhatsApp has its own page; website chat shows its install code and settings. */
 export default async function ChannelPage(props: PageProps<"/w/[slug]/channels/[id]">) {
@@ -84,13 +76,14 @@ const EMAIL_ERRORS = ["needName", "badAddress", "notAllowed", "domainNotConfigur
 /* An email channel: the forwarding address to point the business's mailbox at, then how replies look. */
 async function EmailChannel({ slug, ch, sp, workspaceId }: {
   slug: string;
-  ch: { id: string; name: string; external_id: string | null; settings: unknown };
+  ch: { id: string; name: string; external_id: string | null; settings: unknown; status: string };
   sp: Record<string, string | string[] | undefined>;
   workspaceId: string;
 }) {
   const t = await getT("emailSetup");
   const canManage = await can(workspaceId, "numbers.manage");
   const s = (ch.settings ?? {}) as {
+    provider?: string; account?: string;
     address?: string; fromName?: string; signature?: string; domainVerified?: boolean;
     domain?: { name: string; dkimHost: string; dkimValue: string; returnPathHost: string; returnPathTarget: string; verified: boolean };
   };
@@ -111,6 +104,15 @@ async function EmailChannel({ slug, ch, sp, workspaceId }: {
       {sp.saved && <Notice tone="success" title={t("saved")} />}
       {error && <Notice tone="error" title={t(`errors.${error}`)} />}
 
+      {s.provider === "outlook" ? (
+        <section className="grid gap-3 rounded-[var(--radius-panel)] bg-surface p-5 shadow-[var(--shadow-1)] ring-1 ring-border">
+          <h2 className="font-semibold">{t("outlookTitle")}</h2>
+          <p className="text-sm text-muted">{ch.status === "disconnected" ? t("outlookBroken", { address: s.address ?? "" }) : t("outlookOk", { address: s.address ?? "", account: s.account ?? "" })}</p>
+          {ch.status === "disconnected" && canManage && (
+            <a href={`/api/oauth/microsoft/start?slug=${slug}`} className="w-fit rounded-[var(--radius-control)] bg-primary px-4 py-2.5 text-sm font-medium text-on-primary">{t("reconnect")}</a>
+          )}
+        </section>
+      ) : (<>
       <section className="grid gap-3 rounded-[var(--radius-panel)] bg-surface p-5 shadow-[var(--shadow-1)] ring-1 ring-border">
         <h2 className="font-semibold">{t("forwardTitle")}</h2>
         {forward ? (
@@ -156,6 +158,7 @@ async function EmailChannel({ slug, ch, sp, workspaceId }: {
           </form>
         )}
       </section>
+      </>)}
 
       <section className="grid gap-3">
         <h2 className="font-semibold">{t("settingsTitle")}</h2>

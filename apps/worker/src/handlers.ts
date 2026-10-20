@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { parseInbound } from "./email";
+import { parseInbound, type InboundEmail } from "./email";
+import { classifyGraphError, createSubscription, GraphMailError, inboxDelta, isNoMailbox, isRevoked, readMessage, refreshAccess, renewSubscription, replyInOutlook } from "./outlook";
 import { buildEmail, classifyEmailError, sendEmail } from "./postmark";
 import { classifySendError, downloadMedia, extensionFor, parseMessagesValue, routeChanges, sendText, webhookEnvelope, type RoutedChange } from "@app/whatsapp";
 
@@ -16,6 +17,12 @@ export interface Ctx {
   /** Email sending (Postmark); unset until email is configured. */
   postmarkToken?: string | undefined;
   sendDomain?: string | undefined;
+  /** Outlook (Microsoft Graph); unset until configured. */
+  microsoft?: { clientId: string; clientSecret: string } | undefined;
+  /** The app's public address, for Microsoft's push notifications. */
+  appUrl?: string | undefined;
+  /** "Now", swappable in tests. */
+  now?: () => number;
   log: (msg: string) => void;
   /** Swappable in tests; the real fetch otherwise. */
   fetch?: typeof fetch;
@@ -173,14 +180,38 @@ type Adapter = (ctx: Ctx, m: Outbound) => Promise<{ externalId: string }>;
 
 /** A channel that can't send on this server yet: fails the message at once with the reason. */
 class NotConfigured extends Error {}
+
+/**
+ * Outlook replies go out as Outlook's own reply to the customer's latest email: Microsoft threads it, quotes the
+ * history and files it in the mailbox's Sent folder. A revoked sign-in fails the reply and marks the channel broken.
+ */
+async function sendViaOutlook(ctx: Ctx, m: Outbound, settings: Record<string, unknown>): Promise<{ externalId: string }> {
+  if (!ctx.microsoft) throw new NotConfigured("Outlook isn't set up on this Relay server yet.");
+  const { data, error } = await ctx.db.rpc("outbound_outlook", { p_message: m.message_id });
+  if (error) throw new Error(`outbound_outlook: ${error.message}`);
+  const target = (data as { mailbox: string; graph_id: string | null }[] | null)?.[0];
+  if (!target?.graph_id) throw new NotConfigured("There's no email from the customer in Outlook to reply to.");
+  const c = await connection(ctx, m.channel_id);
+  if (!c) throw new NotConfigured("This Outlook mailbox is no longer connected.");
+  const token = await access(ctx, c);
+  if (!token) throw new NotConfigured("Relay lost access to this Outlook mailbox. Reconnect it in Settings › Channels, then send again.");
+  const signature = typeof settings.signature === "string" ? settings.signature.trim() : "";
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const html =
+    (m.body ?? "").trim().split(/\n{2,}/).map((p) => `<p>${esc(p).replace(/\n/g, "<br>")}</p>`).join("") +
+    (signature ? `<p style="color:#56616A">${esc(signature).replace(/\n/g, "<br>")}</p>` : "");
+  await replyInOutlook(token, target.mailbox, target.graph_id, html, ctx.fetch);
+  return { externalId: `<outlook-reply-${m.message_id}>` };
+}
 const ADAPTERS: Record<string, Adapter> = {
   // Email goes out through Postmark. Our own Message-ID is stored, so the customer's reply threads back to it.
   email: async (ctx, m) => {
-    if (!ctx.postmarkToken || !ctx.sendDomain) throw new NotConfigured("Email sending isn't set up on this Relay server yet.");
     const { data, error } = await ctx.db.rpc("outbound_email", { p_message: m.message_id });
     if (error) throw new Error(`outbound_email: ${error.message}`);
     const e = (data as { subject: string | null; thread_key: string; in_reply_to: string | null; refs: string[]; settings: Record<string, unknown>; token: string; sender: string | null }[] | null)?.[0];
     if (!e) throw new NotConfigured("This email thread couldn't be found.");
+    if (e.settings.provider === "outlook") return sendViaOutlook(ctx, m, e.settings);
+    if (!ctx.postmarkToken || !ctx.sendDomain) throw new NotConfigured("Email sending isn't set up on this Relay server yet.");
     const messageId = `<relay-${m.message_id}@${ctx.sendDomain}>`;
     await sendEmail(
       ctx.postmarkToken,
@@ -243,6 +274,7 @@ export async function processSendMessage(ctx: Ctx, job: { message_id: string }, 
   } catch (e) {
     const c =
       e instanceof NotConfigured ? { temporary: false, code: "not_configured", reason: e.message }
+      : e instanceof GraphMailError ? classifyGraphError(e)
       : m.channel_type === "email" ? classifyEmailError(e)
       : classifySendError(e);
     if (c.temporary && !lastAttempt) throw e;
@@ -269,6 +301,16 @@ export async function processPostmarkEvent(ctx: Ctx, eventId: number): Promise<O
     ctx.log(`SECURITY: email for unknown forwarding token ${mail.token}`);
     return { outcome: "ignored", note: `unknown token ${mail.token}` };
   }
+  const filed = await fileEmail(ctx, channel, mail, {});
+  if (!filed) return { outcome: "processed", note: "repeat email" };
+  return { outcome: "processed", note: `email from ${mail.from}, ${mail.attachments.length} attachments` };
+}
+
+/**
+ * Files one email (forwarded or from Outlook) into its conversation: threads by References, stores attachments.
+ * Returns the message id, or null when it was already filed (its Message-ID is the dedupe key).
+ */
+async function fileEmail(ctx: Ctx, channel: string, mail: InboundEmail, extra: Record<string, unknown>): Promise<string | null> {
   const thread = (mail.refs.length ? await rpc<string | null>(ctx, "email_thread_for", { p_channel: channel, p_refs: mail.refs }) : null) ?? mail.messageId;
   const id = await rpc<string | null>(ctx, "ingest_inbound", {
     p_channel: channel,
@@ -279,13 +321,13 @@ export async function processPostmarkEvent(ctx: Ctx, eventId: number): Promise<O
     p_type: "text",
     p_body: mail.body,
     p_caption: null,
-    p_data: { subject: mail.subject, cc: mail.cc },
+    p_data: { subject: mail.subject, cc: mail.cc, ...extra },
     p_reply_to: mail.inReplyTo,
     p_sent_at: mail.sentAt.toISOString(),
     p_thread_key: thread,
     p_subject: mail.subject || null,
   });
-  if (!id) return { outcome: "processed", note: "repeat email" };
+  if (!id) return null;
 
   const { data: msg } = await ctx.db.from("messages").select("workspace_id, conversation_id").eq("id", id).single();
   for (const [i, a] of mail.attachments.entries()) {
@@ -298,5 +340,110 @@ export async function processPostmarkEvent(ctx: Ctx, eventId: number): Promise<O
       await rpc(ctx, "add_message_attachment", { p_message: id, p_path: path, p_name: a.name, p_mime: a.mime, p_size: a.bytes.byteLength });
     }
   }
-  return { outcome: "processed", note: `email from ${mail.from}, ${mail.attachments.length} attachments` };
+  return id;
+}
+
+// ---------------------------------------------------------------------------
+// Outlook (decided 2026-10-20)
+// ---------------------------------------------------------------------------
+
+interface MailConnection {
+  channel_id: string;
+  workspace_id: string;
+  provider: string;
+  mailbox: string;
+  refresh_token: string;
+  subscription_id: string | null;
+  subscription_expires: string | null;
+  client_state: string;
+  delta_link: string | null;
+  channel_status: string;
+}
+
+async function connection(ctx: Ctx, channel: string) {
+  const { data, error } = await ctx.db.rpc("mail_connection", { p_channel: channel });
+  if (error) throw new Error(`mail_connection: ${error.message}`);
+  return (data as MailConnection[] | null)?.[0] ?? null;
+}
+
+/** A fresh access token; Microsoft's rotated refresh token is saved. A revoked sign-in marks the channel broken. */
+async function access(ctx: Ctx, c: MailConnection): Promise<string | null> {
+  if (!ctx.microsoft) throw new Error("MICROSOFT_CLIENT_ID / MICROSOFT_CLIENT_SECRET are not set");
+  try {
+    const t = await refreshAccess(ctx.microsoft.clientId, ctx.microsoft.clientSecret, c.refresh_token, ctx.fetch);
+    if (t.refresh !== c.refresh_token) await rpc(ctx, "save_mail_refresh_token", { p_channel: c.channel_id, p_token: t.refresh });
+    return t.access;
+  } catch (e) {
+    if (!isRevoked(e)) throw e;
+    await rpc(ctx, "mark_mail_broken", { p_channel: c.channel_id, p_problem: "Microsoft no longer lets Relay read this mailbox (often after a password change). Reconnect it." });
+    return null;
+  }
+}
+
+async function noMailbox(ctx: Ctx, c: MailConnection) {
+  await rpc(ctx, "mark_mail_broken", { p_channel: c.channel_id, p_problem: `Relay can't open ${c.mailbox} with this sign-in. Check you have access to it in Outlook, then reconnect.` });
+}
+
+/** Starts or renews Microsoft's push subscription for the mailbox, and sets the starting point for reading mail. */
+export async function processMailSubscribe(ctx: Ctx, channel: string): Promise<string> {
+  const c = await connection(ctx, channel);
+  if (!c || c.provider !== "outlook") return "no outlook connection";
+  if (!ctx.appUrl) throw new Error("APP_URL is not set");
+  const token = await access(ctx, c);
+  if (!token) return "sign-in revoked";
+  const now = (ctx.now ?? Date.now)();
+  try {
+    let sub;
+    try {
+      sub = c.subscription_id ? await renewSubscription(token, c.subscription_id, now, ctx.fetch) : null;
+    } catch {
+      sub = null; // expired or deleted on Microsoft's side: make a new one
+    }
+    sub ??= await createSubscription(token, c.mailbox, `${ctx.appUrl.replace(/\/$/, "")}/api/webhooks/microsoft`, c.client_state, now, ctx.fetch);
+    await rpc(ctx, "set_mail_subscription", { p_channel: channel, p_subscription: sub.id, p_expires: sub.expires });
+    if (!c.delta_link) {
+      // Start from now: mail already in the mailbox stays there.
+      const first = await inboxDelta(token, c.mailbox, null, new Date(now), ctx.fetch);
+      await rpc(ctx, "set_mail_delta", { p_channel: channel, p_delta: first.deltaLink });
+    }
+    return `subscribed until ${sub.expires}`;
+  } catch (e) {
+    if (!isNoMailbox(e)) throw e;
+    await noMailbox(ctx, c);
+    return "mailbox not accessible";
+  }
+}
+
+/** Reads new mail since the last check and files it. Safe to run any number of times. */
+export async function processMailSync(ctx: Ctx, channel: string): Promise<string> {
+  const c = await connection(ctx, channel);
+  if (!c || c.provider !== "outlook" || c.channel_status !== "connected") return "not connected";
+  if (!c.delta_link) return "not subscribed yet";
+  const token = await access(ctx, c);
+  if (!token) return "sign-in revoked";
+  try {
+    const { ids, deltaLink } = await inboxDelta(token, c.mailbox, c.delta_link, new Date(), ctx.fetch);
+    let filed = 0;
+    for (const id of ids) {
+      const mail = await readMessage(token, c.mailbox, id, ctx.fetch);
+      if (mail && (await fileEmail(ctx, channel, mail, { graphId: mail.graphId }))) filed++;
+    }
+    await rpc(ctx, "set_mail_delta", { p_channel: channel, p_delta: deltaLink });
+    return `${filed} new of ${ids.length}`;
+  } catch (e) {
+    if (!isNoMailbox(e)) throw e;
+    await noMailbox(ctx, c);
+    return "mailbox not accessible";
+  }
+}
+
+/** Every minute: renew subscriptions before they lapse, and check mailboxes nobody has heard from in a while. */
+export async function scheduleMail(ctx: Ctx): Promise<number> {
+  const { data, error } = await ctx.db.rpc("mail_connections_due");
+  if (error) throw new Error(`mail_connections_due: ${error.message}`);
+  const due = (data ?? []) as { channel_id: string; renew: boolean }[];
+  for (const d of due) {
+    await rpc(ctx, "enqueue_job", { p_queue: d.renew ? "mail_subscribe" : "mail_sync", p_payload: { channel_id: d.channel_id } });
+  }
+  return due.length;
 }

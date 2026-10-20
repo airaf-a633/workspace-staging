@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
+import { ArrowLeft, MicrosoftOutlookLogo } from "@phosphor-icons/react/dist/ssr";
 import { SectionHeader, SettingsFrame } from "@/components/settings-frame";
 import { EmailForm } from "@/components/channels/email-form";
 import { Notice } from "@/components/ui/surface";
@@ -30,6 +30,11 @@ export default async function NewEmail(props: PageProps<"/w/[slug]/channels/new/
       </Link>
       <SectionHeader title={t("addTitle")} description={t("addHelp")} />
       {error && <Notice tone="error" title={t(`errors.${error}`)} />}
+      <Link href={`/w/${slug}/channels/new/outlook`} className="flex w-fit items-center gap-3 rounded-[var(--radius-panel)] bg-surface p-4 shadow-[var(--shadow-1)] ring-1 ring-border hover:bg-surface-2">
+        <MicrosoftOutlookLogo size={28} className="text-primary" aria-hidden="true" />
+        <span className="grid"><span className="font-medium">{t("useOutlook")}</span><span className="text-sm text-muted">{t("useOutlookHelp")}</span></span>
+      </Link>
+      <h2 className="font-semibold">{t("orForward")}</h2>
       <EmailForm action={createEmailChannel} slug={slug} initial={{ name: t("defaultName"), address: "", fromName: workspace.name, signature: "" }} submit={t("create")} />
     </SettingsFrame>
   );

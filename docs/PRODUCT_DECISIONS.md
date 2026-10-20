@@ -475,3 +475,20 @@ Order:
   - "Verify {domain}" asks Postmark (account token) for a DKIM TXT and a Return-Path CNAME, and shows them. "Check again" re-checks, and once DKIM passes, replies come from the business's address.
   - A changed address must be verified again.
   - Free-mail addresses (gmail.com, outlook.com and so on) can't be verified, so the page explains that instead of offering a button that would always fail.
+
+## "Continue with Outlook" (decided 2026-10-20)
+
+- **Connecting:**
+  - Settings › Channels › Email offers "Use Outlook or Microsoft 365?". Microsoft sign-in uses the authorization code flow with PKCE and a state cookie. It works for work, school and personal accounts.
+  - The person then picks their own mailbox or a shared one (like support@). One channel per mailbox, across all of Relay.
+  - Microsoft's refresh token goes straight into Vault. The sign-in is held for 15 minutes for the person who signed in only.
+- **Receiving:**
+  - A push subscription on the inbox sends notifications to `/api/webhooks/microsoft`. A notification only queues a check when its per-mailbox secret matches.
+  - The worker reads new mail with a delta query, starting at the moment of connecting, so older mail stays where it is. It uses Microsoft's "unique body", so quoted history is left out, and files mail through the same threading and attachment path as forwarded email.
+  - Every minute the worker renews subscriptions with 12 hours to spare, and checks any mailbox it hasn't heard from in 5 minutes.
+- **Sending:**
+  - Replies go out as Outlook's own reply to the customer's latest email, threaded by Microsoft and saved in the mailbox's Sent folder.
+  - No domain verification is needed: the mailbox itself sends.
+- **When it breaks:**
+  - A revoked sign-in (for example after a password change) or a mailbox the sign-in can't open marks the channel "disconnected", with a plain reason and a "Reconnect Outlook" button.
+  - Everything already in Relay stays.

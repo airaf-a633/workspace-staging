@@ -36,7 +36,10 @@ Needed for the email channel I'm building next.
   - **Supported account types:** "Accounts in any organizational directory and personal Microsoft accounts".
   - **Redirect URI** (Web): `https://YOUR-APP/api/oauth/microsoft/callback`, plus `http://localhost:3000/api/oauth/microsoft/callback` for development.
   - **API permissions** (Microsoft Graph, delegated): `Mail.ReadWrite`, `Mail.Send`, `offline_access`, `User.Read`.
-  - Create a **client secret**. Put the Application (client) ID and the secret in `.env` as `MICROSOFT_CLIENT_ID` and `MICROSOFT_CLIENT_SECRET`.
+  - Add the delegated permissions `Mail.ReadWrite.Shared` and `Mail.Send.Shared` as well, for shared mailboxes like support@.
+  - Create a **client secret**. Put the Application (client) ID and the secret in `.env` as `MICROSOFT_CLIENT_ID` and `MICROSOFT_CLIENT_SECRET`, for both the app and the worker.
+  - Set `APP_URL` in the worker's settings to the app's public address. Microsoft sends new-mail notifications to `APP_URL/api/webhooks/microsoft`, which Relay sets up by itself.
+  - Client secrets expire (at most 2 years). Put the expiry date in your calendar.
 - [ ] **Publisher verification.** *(1–3 days.)*
   - Join the free Microsoft AI Cloud Partner Program to get a Partner ID.
   - Link that ID to the app (App registration › Branding & properties).

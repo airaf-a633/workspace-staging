@@ -14,6 +14,11 @@ function fakeDb(overrides: Partial<Record<string, unknown>> = {}) {
       calls.push({ fn, args });
       if (fn === "outbound_message") return { data: [row], error: null };
       if (fn === "whatsapp_token") return { data: "token", error: null };
+      if (fn === "outbound_outlook") return { data: [{ mailbox: "support@n.example", graph_id: "AAMk-1" }], error: null };
+      if (fn === "mail_connection")
+        return { data: [{ channel_id: "ch1", workspace_id: "w1", provider: "outlook", mailbox: "support@n.example", refresh_token: "rt", subscription_id: null, subscription_expires: null, client_state: "cs", delta_link: "d", channel_status: "connected" }], error: null };
+      if (fn === "outbound_email" && overrides.outlook)
+        return { data: [{ subject: "Hello", thread_key: "<o1@x>", in_reply_to: "<o1@x>", refs: ["<o1@x>"], settings: { provider: "outlook", address: "support@n.example", signature: "Northwind" }, token: "outlook:support@n.example", sender: "Leo" }], error: null };
       if (fn === "outbound_email")
         return { data: [{ subject: "Order 4821", thread_key: "<root@x>", in_reply_to: "<root@x>", refs: ["<root@x>"], settings: { address: "support@n.example", fromName: "Northwind" }, token: "northwind-abc123", sender: "Leo" }], error: null };
       return { data: null, error: null };
@@ -74,6 +79,22 @@ describe("sending a queued reply", () => {
     expect(sent.To).toBe("mariam@example.com");
     expect(sent.Subject).toBe("Re: Order 4821");
     expect(calls.find((x) => x.fn === "mark_message_sent")?.args.p_external_id).toBe("<relay-m1@mail.relay.test>");
+  });
+
+  it("replies through Outlook itself for an Outlook mailbox", async () => {
+    const { db } = fakeDb({ channel_type: "email", to_address: "mariam@example.com", outlook: true });
+    const urls: string[] = [];
+    let reply: Record<string, unknown> = {};
+    const microsoft = (async (url: string, init: RequestInit) => {
+      urls.push(url);
+      if (url.includes("/token")) return new Response(JSON.stringify({ access_token: "at", refresh_token: "rt" }), { status: 200 });
+      reply = JSON.parse(String(init.body));
+      return new Response(null, { status: 202 });
+    }) as unknown as typeof fetch;
+    const c = { ...ctx(db, microsoft), microsoft: { clientId: "id", clientSecret: "secret" } };
+    expect(await processSendMessage(c, { message_id: "m1" }, false)).toBe("sent <outlook-reply-m1>");
+    expect(urls.at(-1)).toBe("https://graph.microsoft.com/v1.0/users/support%40n.example/messages/AAMk-1/reply");
+    expect(String(reply.comment)).toContain("Northwind");
   });
 
   it("explains when email isn't set up on this server", async () => {

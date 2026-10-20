@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import { loadEnv } from "./env";
-import { processMediaDownload, processPostmarkEvent, processSendMessage, processWhatsappEvent, type Ctx } from "./handlers";
+import { processMailSubscribe, processMailSync, processMediaDownload, processPostmarkEvent, processSendMessage, processWhatsappEvent, scheduleMail, type Ctx } from "./handlers";
 
 config({ path: fileURLToPath(new URL("../../../.env", import.meta.url)) });
 const env = loadEnv();
@@ -16,6 +16,8 @@ const ctx: Ctx = {
   inboundDomain: env.INBOUND_EMAIL_DOMAIN,
   postmarkToken: env.POSTMARK_SERVER_TOKEN,
   sendDomain: env.EMAIL_SEND_DOMAIN,
+  microsoft: env.MICROSOFT_CLIENT_ID && env.MICROSOFT_CLIENT_SECRET ? { clientId: env.MICROSOFT_CLIENT_ID, clientSecret: env.MICROSOFT_CLIENT_SECRET } : undefined,
+  appUrl: env.APP_URL,
   log: (m) => console.log(m),
 };
 
@@ -41,6 +43,12 @@ const HANDLERS: Record<string, (job: Job) => Promise<void>> = {
     const result = await processPostmarkEvent(ctx, id);
     await markEvent(id, result.outcome, result.note);
   },
+  mail_subscribe: async (job) => {
+    ctx.log(`mail_subscribe ${String(job.payload.channel_id)}: ${await processMailSubscribe(ctx, String(job.payload.channel_id))}`);
+  },
+  mail_sync: async (job) => {
+    ctx.log(`mail_sync ${String(job.payload.channel_id)}: ${await processMailSync(ctx, String(job.payload.channel_id))}`);
+  },
   send_message: async (job) => {
     ctx.log(`send ${String(job.payload.message_id)}: ${await processSendMessage(ctx, job.payload as { message_id: string }, job.attempts >= job.max_attempts)}`);
   },
@@ -65,9 +73,17 @@ async function tick(queue: string): Promise<number> {
   return jobs?.length ?? 0;
 }
 
+const SCHEDULE_MS = 60_000;
+let lastSchedule = 0;
+
 async function main() {
   console.log(`worker started against ${new URL(env.SUPABASE_URL).host}`);
   while (running) {
+    // Once a minute: Outlook subscription renewals and safety-net checks.
+    if (ctx.microsoft && Date.now() - lastSchedule > SCHEDULE_MS) {
+      lastSchedule = Date.now();
+      await scheduleMail(ctx).catch((e) => console.error("scheduleMail", e instanceof Error ? e.message : e));
+    }
     let busy = false;
     for (const queue of Object.keys(HANDLERS)) {
       try {

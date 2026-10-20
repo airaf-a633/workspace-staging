@@ -24,6 +24,9 @@ const serverSchema = z.object({
   POSTMARK_INBOUND_PASSWORD: z.string().min(16).optional(),
   /** Postmark account-level token: verifying businesses' sending domains. */
   POSTMARK_ACCOUNT_TOKEN: z.string().optional(),
+  /** "Continue with Outlook": the Microsoft Entra app (multi-tenant). */
+  MICROSOFT_CLIENT_ID: z.string().optional(),
+  MICROSOFT_CLIENT_SECRET: z.string().optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;
