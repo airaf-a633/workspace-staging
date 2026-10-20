@@ -503,3 +503,16 @@ export async function scheduleMail(ctx: Ctx): Promise<number> {
   }
   return due.length;
 }
+
+/**
+ * Erasing a customer (step 2c): removes their stored files from the private bucket. The database has already
+ * removed every reference to them; this only frees the storage. Safe to run twice.
+ */
+export async function processEraseMedia(ctx: Ctx, job: { paths: string[] }): Promise<string> {
+  const paths = (job.paths ?? []).filter((p) => typeof p === "string" && /^[0-9a-f-]{36}\//.test(p));
+  for (let i = 0; i < paths.length; i += 100) {
+    const { error } = await ctx.db.storage.from("media").remove(paths.slice(i, i + 100));
+    if (error) throw new Error(`storage remove: ${error.message}`);
+  }
+  return `removed ${paths.length} files`;
+}

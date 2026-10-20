@@ -84,3 +84,46 @@ export async function deleteLabel(slug: string, id: string) {
   const { error } = await supabase.rpc("delete_label", { p_label: z.uuid().parse(id) });
   return error ? key(error.message) : null;
 }
+
+// ---------------------------------------------------------------------------
+// Step 2c: consent, do-not-contact, merging, erasing, import
+// ---------------------------------------------------------------------------
+
+export async function setConsent(slug: string, id: string, channel: string, status: "in" | "out" | "unknown") {
+  const { supabase } = await loadWorkspace(slug);
+  const { error } = await supabase.rpc("set_consent", { p_contact: z.uuid().parse(id), p_channel: channel, p_status: status, p_source: "Changed by the team" });
+  return error ? key(error.message) : null;
+}
+
+export async function setDoNotContact(slug: string, id: string, on: boolean) {
+  const { supabase } = await loadWorkspace(slug);
+  const { error } = await supabase.rpc("set_do_not_contact", { p_contact: z.uuid().parse(id), p_on: on });
+  return error ? key(error.message) : null;
+}
+
+export async function mergeCustomers(slug: string, keep: string, drop: string, take: string[]) {
+  const { supabase } = await loadWorkspace(slug);
+  const allowed = ["name", "email", "phone", "company", "owner", "lifecycle", "language", "area"];
+  const { error } = await supabase.rpc("merge_contacts", { p_keep: z.uuid().parse(keep), p_drop: z.uuid().parse(drop), p_take: take.filter((t) => allowed.includes(t)) });
+  return error ? key(error.message) : null;
+}
+
+export async function eraseCustomers(slug: string, ids: string[]) {
+  const { supabase } = await loadWorkspace(slug);
+  const { error } = await supabase.rpc("erase_contacts", { p_contacts: z.array(z.uuid()).max(500).parse(ids) });
+  return error ? key(error.message) : null;
+}
+
+export async function importCustomers(slug: string, rows: Record<string, unknown>[]) {
+  const { supabase, workspace } = await loadWorkspace(slug);
+  const total = { created: 0, updated: 0, skipped: 0 };
+  for (let i = 0; i < rows.length; i += 2000) {
+    const { data, error } = await supabase.rpc("import_contacts", { p_workspace: workspace.id, p_rows: rows.slice(i, i + 2000) });
+    if (error) return { error: key(error.message), ...total };
+    const r = data as typeof total;
+    total.created += r.created;
+    total.updated += r.updated;
+    total.skipped += r.skipped;
+  }
+  return total;
+}

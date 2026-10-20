@@ -12,7 +12,7 @@ import type { CustomFieldDef, Customer } from "./types";
  * (same email or phone) update the existing contact; likely matches (same name) wait for a person to merge or
  * keep apart; rows without a name or a way to reach them are skipped with a reason. Nothing is silently overwritten.
  */
-type Target = "name" | "email" | "phone" | "company" | "tags" | "skip" | `field:${string}`;
+type Target = "name" | "email" | "phone" | "company" | "tags" | "consent" | "skip" | `field:${string}`;
 type Kind = "new" | "update" | "likely" | "invalid";
 const STEP_KEYS = ["upload", "map", "review", "done"] as const;
 
@@ -58,13 +58,25 @@ function guess(header: string, fields: CustomFieldDef[]): Target {
   if (/phone|mobile|whatsapp|tel/.test(h)) return "phone";
   if (/company|business|organi/.test(h)) return "company";
   if (/tag|label/.test(h)) return "tags";
+  if (/consent|opt.?in|marketing|subscri/.test(h)) return "consent";
   const f = fields.find((x) => x.label.toLowerCase() === h);
   return f ? `field:${f.key}` : "skip";
 }
 
 const digits = (s = "") => s.replace(/\D/g, "");
 
-export function ImportFlow({ base, existing, fields }: { base: string; existing: Customer[]; fields: CustomFieldDef[] }) {
+export function ImportFlow({
+  base,
+  existing,
+  fields,
+  onImport,
+}: {
+  base: string;
+  existing: Customer[];
+  fields: CustomFieldDef[];
+  /** A real workspace imports for real and reports the database's own counts. */
+  onImport?: (rows: Record<string, unknown>[]) => Promise<{ created: number; updated: number; skipped: number; error?: string }>;
+}) {
   const t = useT("importContacts");
   const tAll = useT();
   const [step, setStep] = useState(0);
@@ -72,6 +84,8 @@ export function ImportFlow({ base, existing, fields }: { base: string; existing:
   const [rows, setRows] = useState<string[][]>([]);
   const [map, setMap] = useState<Target[]>([]);
   const [decisions, setDecisions] = useState<Record<number, "merge" | "apart">>({});
+  const [result, setResult] = useState<{ created: number; updated: number; skipped: number } | null>(null);
+  const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function load(text: string, name: string) {
@@ -158,7 +172,7 @@ export function ImportFlow({ base, existing, fields }: { base: string; existing:
                   </span>
                   <span className="hidden text-muted sm:block" aria-hidden="true">→</span>
                   <select value={map[k]} onChange={(e) => setMap(map.map((m, j) => (j === k ? (e.target.value as Target) : m)))} className={field} aria-label={t("mapTo", { column: h })}>
-                    {(["name", "email", "phone", "company", "tags"] as const).map((x) => <option key={x} value={x}>{t(`targets.${x}`)}</option>)}
+                    {(["name", "email", "phone", "company", "tags", "consent"] as const).map((x) => <option key={x} value={x}>{t(`targets.${x}`)}</option>)}
                     {fields.map((f) => <option key={f.key} value={`field:${f.key}`}>{f.label}</option>)}
                     <option value="skip">{t("targets.skip")}</option>
                   </select>
@@ -220,13 +234,13 @@ export function ImportFlow({ base, existing, fields }: { base: string; existing:
           <div className="grid justify-items-start gap-3">
             <p className="flex items-center gap-2 text-lg font-semibold"><CheckCircle size={24} weight="fill" className="text-done" aria-hidden="true" />{t("doneTitle")}</p>
             <p className="text-muted">
-              {t("doneBody", {
+              {t("doneBody", result ?? {
                 created: count("new") + review.filter((x) => x.kind === "likely" && decisions[x.i] === "apart").length,
                 updated: count("update") + review.filter((x) => x.kind === "likely" && decisions[x.i] === "merge").length,
                 skipped: count("invalid"),
               })}
             </p>
-            <p className="text-sm text-muted">{t("previewNote")}</p>
+            {!onImport && <p className="text-sm text-muted">{t("previewNote")}</p>}
             <Link href={`${base}/customers`} className={buttonClass("primary", "md")}>{t("back")}</Link>
           </div>
         )}
@@ -236,7 +250,38 @@ export function ImportFlow({ base, existing, fields }: { base: string; existing:
         <div className="flex flex-wrap items-center justify-end gap-2">
           {step === 2 && undecided > 0 && <span className="me-auto text-sm text-muted">{t("decideAll", { count: undecided })}</span>}
           <button type="button" onClick={() => setStep(step - 1)} className={buttonClass("ghost", "md")}>{tAll("connect.backStep")}</button>
-          <button type="button" disabled={(step === 1 && !mapped) || (step === 2 && undecided > 0)} onClick={() => setStep(step + 1)} className={buttonClass("primary", "md")}>
+          <button
+            type="button"
+            disabled={(step === 1 && !mapped) || (step === 2 && (undecided > 0 || importing))}
+            onClick={() => {
+              if (step !== 2 || !onImport) return setStep(step + 1);
+              // Send the rows: "same person" rows carry the chosen customer's id; invalid rows stay behind.
+              const rows = review
+                .filter((x) => x.kind !== "invalid")
+                .map((x) => {
+                  const r = body[x.i]!;
+                  const custom = Object.fromEntries(map.flatMap((m, ci) => (m.startsWith("field:") ? [[m.slice(6), r[ci] ?? ""]] : [])));
+                  return {
+                    ...(x.kind === "likely" && decisions[x.i] === "merge" && x.match ? { id: x.match.id } : {}),
+                    name: value(r, "name"),
+                    email: value(r, "email"),
+                    phone: value(r, "phone"),
+                    company: value(r, "company"),
+                    tags: value(r, "tags").split(/[,;]/).map((s) => s.trim()).filter(Boolean),
+                    consent: value(r, "consent"),
+                    fields: custom,
+                  };
+                });
+              setImporting(true);
+              void onImport(rows).then((res) => {
+                setImporting(false);
+                if (res.error) return setError(t("errors.failed"));
+                setResult({ ...res, skipped: res.skipped + count("invalid") });
+                setStep(3);
+              });
+            }}
+            className={buttonClass("primary", "md")}
+          >
             {step === 2 ? t("importN", { count: body.length - count("invalid") }) : tAll("connect.next")}
           </button>
         </div>

@@ -96,6 +96,7 @@ export function CustomerPage({ c: initial, duplicate, company: initialCompany, s
     void persist({ lifecycle: l });
   }
   function setConsent(ch: ChannelKey, status: Consent["status"]) {
+    if (save) void save.consent(c.id, ch, status).then((e) => e && setStatus(t("saveFailed")));
     setC({
       ...c,
       consent: { ...c.consent, [ch]: { status, at: stamp(), source: t("privacy.changedByTeam") } },
@@ -157,8 +158,7 @@ export function CustomerPage({ c: initial, duplicate, company: initialCompany, s
           {c.conversationId && <Link href={`${base}/inbox?c=${c.conversationId}`} className={buttonClass("primary", "sm")}>{t("openChat")}</Link>}
           {canEdit && !editing && <button type="button" onClick={() => setEditing(true)} className={buttonClass("secondary", "sm")}><PencilSimple size={16} aria-hidden="true" /> {t("edit")}</button>}
           {!save && <Link href={`${base}/deals`} className={buttonClass("secondary", "sm")}>{t("newDeal")}</Link>}
-          {/* Merging, export and erasing come with step 2c; until then they're preview-only. */}
-          {!save && (canMerge || canErase) && (
+          {(canMerge || canErase) && (
             <details className="relative">
               <summary className={buttonClass("ghost", "sm", "!px-2 list-none [&::-webkit-details-marker]:hidden")} aria-label={tAll("common.moreActions")}>
                 <DotsThree size={22} weight="bold" aria-hidden="true" />
@@ -217,7 +217,10 @@ export function CustomerPage({ c: initial, duplicate, company: initialCompany, s
           </label>
           <div className="flex justify-end gap-2">
             <button type="button" onClick={() => { setErasing(false); setTyped(""); }} className={buttonClass("ghost", "sm")}>{tAll("common.cancel")}</button>
-            <button type="button" disabled={typed.trim() !== c.name} onClick={() => setErased(true)} className={buttonClass("destructive", "sm")}>{t("eraseButton", { name: first })}</button>
+            <button type="button" disabled={typed.trim() !== c.name} onClick={() => {
+              if (!save) return setErased(true);
+              void save.erase(c.id).then((err) => (err ? setStatus(t("saveFailed")) : setErased(true)));
+            }} className={buttonClass("destructive", "sm")}>{t("eraseButton", { name: first })}</button>
           </div>
         </div>
       )}
@@ -329,8 +332,8 @@ export function CustomerPage({ c: initial, duplicate, company: initialCompany, s
             </Card>
           )}
 
-          {/* Privacy: marketing consent per channel and the do-not-contact switch (decided 2026-10-07). Real data in step 2c. */}
-          {!save && (
+          {/* Privacy: marketing consent per channel and the do-not-contact switch (decided 2026-10-07). */}
+          {(
           <Card title={t("privacy.title")} icon={<ShieldCheck size={14} aria-hidden="true" />}>
             <ul className="grid gap-2 text-sm">
               {c.identities.filter((i) => i.ch !== "voice" && i.ch !== "webchat").map((i) => {
@@ -352,7 +355,11 @@ export function CustomerPage({ c: initial, duplicate, company: initialCompany, s
             </ul>
             <label className="flex items-start justify-between gap-3 text-sm">
               <span className="grid"><span>{t("privacy.dncLabel")}</span><span className="text-xs text-muted">{t("privacy.dncHelp")}</span></span>
-              <input type="checkbox" role="switch" checked={!!c.doNotContact} disabled={!canEdit} onChange={(e) => setC({ ...c, doNotContact: e.target.checked })} className="mt-0.5 size-5 accent-[var(--primary)]" />
+              <input type="checkbox" role="switch" checked={!!c.doNotContact} disabled={!canEdit} onChange={(e) => {
+                  const on = e.target.checked;
+                  setC({ ...c, doNotContact: on });
+                  if (save) void save.doNotContact(c.id, on).then((err) => err && setStatus(t("saveFailed")));
+                }} className="mt-0.5 size-5 accent-[var(--primary)]" />
             </label>
           </Card>
           )}

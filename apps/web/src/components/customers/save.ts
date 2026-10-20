@@ -18,9 +18,14 @@ export interface ContactPatch {
 export interface ListSave {
   add: (draft: { name: string; email: string; phone: string; company: string; tag: string }) => Promise<{ id?: string; error?: string }>;
   bulk: (kind: "tag" | "owner" | "stage", ids: string[], value: string) => Promise<string | null>;
+  /** Owners and admins: erase people (the same as erasing one, decided 2026-10-20). */
+  erase: (ids: string[]) => Promise<string | null>;
 }
 
 export interface CustomerSave {
   patch: (id: string, patch: ContactPatch) => Promise<string | null>;
   pin: (id: string, text: string) => Promise<string | null>;
+  consent: (id: string, channel: string, status: "in" | "out" | "unknown") => Promise<string | null>;
+  doNotContact: (id: string, on: boolean) => Promise<string | null>;
+  erase: (id: string) => Promise<string | null>;
 }

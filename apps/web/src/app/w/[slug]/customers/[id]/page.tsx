@@ -5,7 +5,7 @@ import { getTimeZone } from "@/i18n/server";
 import { loadCustomer, loadFieldDefs } from "@/lib/customers-live";
 import { loadLiveInbox } from "@/lib/inbox-live";
 import { loadPeople } from "@/lib/viewer";
-import { loadWorkspace } from "@/lib/workspace";
+import { can, loadWorkspace } from "@/lib/workspace";
 import { requestNow } from "@/lib/now";
 
 /* One customer on real data (step 2b): details, editing, and a timeline of what really happened (chats, notes, handovers). */
@@ -27,7 +27,7 @@ export default async function CustomerRoute(props: PageProps<"/w/[slug]/customer
       key={found.customer.id}
       slug={slug}
       c={{ ...found.customer, timeline }}
-      duplicate={null}
+      duplicate={found.duplicate}
       company={found.company}
       suggestedCompany={found.suggested}
       fields={fields}
@@ -37,8 +37,8 @@ export default async function CustomerRoute(props: PageProps<"/w/[slug]/customer
       now={requestNow()}
       base={`/w/${slug}`}
       canEdit={(viewer.scopes["contacts.edit"] ?? "none") !== "none"}
-      canMerge={false}
-      canErase={false}
+      canMerge={(viewer.scopes["contacts.merge"] ?? "none") !== "none"}
+      canErase={await can(workspace.id, "contacts.erase")}
     />
   );
 }

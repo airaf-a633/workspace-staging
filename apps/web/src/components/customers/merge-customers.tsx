@@ -16,7 +16,22 @@ const FIELDS: Field[] = ["name", "phone", "email", "company", "language", "area"
  * Merging is always manual (PRODUCT_DECISIONS §5). Both records side by side; where they differ, pick which value to keep.
  * Timelines, deals, follow-ups, orders and tags combine. Logged; not undone automatically.
  */
-export function MergeCustomers({ a, b, people, base, now }: { a: Customer; b: Customer; people: Person[]; base: string; now: number }) {
+export function MergeCustomers({
+  a,
+  b,
+  people,
+  base,
+  now,
+  onMerge,
+}: {
+  a: Customer;
+  b: Customer;
+  people: Person[];
+  base: string;
+  now: number;
+  /** A real workspace merges for real: the values picked from the duplicate. */
+  onMerge?: (take: string[]) => Promise<string | null>;
+}) {
   const t = useT("merge");
   const tAll = useT();
   const fmt = useFormat();
@@ -29,6 +44,15 @@ export function MergeCustomers({ a, b, people, base, now }: { a: Customer; b: Cu
   const [pick, setPick] = useState<Record<string, "a" | "b">>(Object.fromEntries(differing.map((f) => [f, "a"])));
   const [confirming, setConfirming] = useState(false);
   const [done, setDone] = useState(false);
+  const [failed, setFailed] = useState(false);
+  async function merge() {
+    if (!onMerge) return setDone(true);
+    const DB: Partial<Record<Field, string>> = { name: "name", phone: "phone", email: "email", company: "company", language: "language", area: "area", ownerId: "owner" };
+    const take = Object.entries(pick).filter(([, side]) => side === "b").map(([f]) => DB[f as Field]).filter((x): x is string => !!x);
+    const error = await onMerge(take);
+    if (error) setFailed(true);
+    else setDone(true);
+  }
   const tags = [...new Set([...a.tags, ...b.tags])];
 
   const kept = FIELDS.map((f) => {
@@ -103,12 +127,13 @@ export function MergeCustomers({ a, b, people, base, now }: { a: Customer; b: Cu
         </ul>
       </section>
 
+      {failed && <p role="alert" className="text-sm text-fail">{t("failed")}</p>}
       {confirming ? (
         <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-panel)] bg-warn-soft p-4 text-sm">
           <span>{t.rich("confirm", { b: <strong className="font-semibold">{b.name}</strong>, a: <strong className="font-semibold">{a.name}</strong> })}</span>
           <span className="flex gap-2">
             <button type="button" onClick={() => setConfirming(false)} className={buttonClass("ghost", "sm")}>{tAll("common.cancel")}</button>
-            <button type="button" onClick={() => setDone(true)} className={buttonClass("primary", "sm")}>{t("yes")}</button>
+            <button type="button" onClick={() => void merge()} className={buttonClass("primary", "sm")}>{t("yes")}</button>
           </span>
         </div>
       ) : (

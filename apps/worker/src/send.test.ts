@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { processSendMessage, type Ctx } from "./handlers";
+import { processEraseMedia, processSendMessage, type Ctx } from "./handlers";
 
 /** A stand-in database: one queued WhatsApp reply, and a record of every function the worker calls. */
 function fakeDb(overrides: Partial<Record<string, unknown>> = {}) {
@@ -124,5 +124,16 @@ describe("sending a queued reply", () => {
     const { db, calls } = fakeDb({ channel_type: "telegram" });
     await processSendMessage(ctx(db, graph(200, {})), { message_id: "m1" }, false);
     expect(String(calls.find((c) => c.fn === "mark_message_failed")!.args.p_text)).toMatch(/isn't available yet/);
+  });
+});
+
+describe("erasing a customer's files", () => {
+  it("removes only paths inside a workspace folder", async () => {
+    const removed: string[][] = [];
+    const db = { storage: { from: () => ({ remove: async (p: string[]) => { removed.push(p); return { error: null }; } }) } } as unknown as SupabaseClient;
+    const ws = "11111111-1111-1111-1111-111111111111";
+    const r = await processEraseMedia({ db, apiVersion: "v", log: () => {} }, { paths: [`${ws}/c/m.jpg`, "../etc/passwd", `${ws}/c/n.pdf`] });
+    expect(r).toBe("removed 2 files");
+    expect(removed).toEqual([[`${ws}/c/m.jpg`, `${ws}/c/n.pdf`]]);
   });
 });

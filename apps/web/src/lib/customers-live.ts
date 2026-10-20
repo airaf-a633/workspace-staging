@@ -28,6 +28,9 @@ interface ContactRow {
   pinned_at: string | null;
   created_at: string;
   created_from: "channel" | "import" | "manual";
+  do_not_contact: boolean;
+  erased_at: string | null;
+  contact_consent: { channel: ChannelKey; status: "in" | "out"; source: string; set_at: string }[];
   contact_identities: { kind: string; address: string; display: string | null }[];
 }
 
@@ -42,7 +45,7 @@ interface ConvRow {
 }
 
 const CONTACT_COLUMNS =
-  "id, name, profile_name, email, phone, lifecycle, owner_member_id, company_id, tags, language, area, fields, pinned_note, pinned_by, pinned_at, created_at, created_from, contact_identities(kind, address, display)";
+  "id, name, profile_name, email, phone, lifecycle, owner_member_id, company_id, tags, language, area, fields, pinned_note, pinned_by, pinned_at, created_at, created_from, do_not_contact, erased_at, contact_identities(kind, address, display), contact_consent(channel, status, source, set_at)";
 const MAX = 1000;
 
 function toCustomer(c: ContactRow, convs: ConvRow[], companies: Map<string, Company>): Customer {
@@ -68,7 +71,8 @@ function toCustomer(c: ContactRow, convs: ConvRow[], companies: Map<string, Comp
     source: c.created_from === "manual" ? "Added by hand" : c.created_from === "import" ? "Imported" : first?.channels?.type ?? "",
     createdAt: Date.parse(c.created_at),
     identities: c.contact_identities.map(identity),
-    consent: {},
+    consent: Object.fromEntries((c.contact_consent ?? []).map((x) => [x.channel, { status: x.status, at: Date.parse(x.set_at), source: x.source }])),
+    doNotContact: c.do_not_contact || undefined,
     fields: c.fields ?? {},
     pinned: c.pinned_note && c.pinned_by && c.pinned_at ? { text: c.pinned_note, byId: c.pinned_by, at: Date.parse(c.pinned_at) } : undefined,
     lastContact: latest?.last_message_at && latest.channels ? { at: Date.parse(latest.last_message_at), channel: latest.channels.type } : null,
@@ -117,7 +121,8 @@ export async function loadFieldDefs(supabase: SupabaseClient, workspaceId: strin
 /** Every customer this person may see, newest contact first, with their companies. */
 export async function loadCustomers(supabase: SupabaseClient, workspaceId: string) {
   const [{ data }, companies, convs] = await Promise.all([
-    supabase.from("contacts").select(CONTACT_COLUMNS).eq("workspace_id", workspaceId).order("updated_at", { ascending: false }).limit(MAX),
+    // Erased customers stay only as anonymous placeholders for reports; the list never shows them.
+    supabase.from("contacts").select(CONTACT_COLUMNS).eq("workspace_id", workspaceId).is("erased_at", null).order("updated_at", { ascending: false }).limit(MAX),
     loadCompanies(supabase, workspaceId),
     loadConversations(supabase, workspaceId),
   ]);
@@ -131,7 +136,7 @@ export async function loadCustomers(supabase: SupabaseClient, workspaceId: strin
 /** One customer, their company, and a company that shares their email domain (to suggest a link). */
 export async function loadCustomer(supabase: SupabaseClient, workspaceId: string, id: string) {
   const [{ data }, companies, convs] = await Promise.all([
-    supabase.from("contacts").select(CONTACT_COLUMNS).eq("workspace_id", workspaceId).eq("id", id).maybeSingle(),
+    supabase.from("contacts").select(CONTACT_COLUMNS).eq("workspace_id", workspaceId).eq("id", id).is("erased_at", null).maybeSingle(),
     loadCompanies(supabase, workspaceId),
     loadConversations(supabase, workspaceId, [id]),
   ]);
@@ -139,5 +144,9 @@ export async function loadCustomer(supabase: SupabaseClient, workspaceId: string
   const customer = toCustomer(data as unknown as ContactRow, convs, companies);
   const domain = customer.email?.split("@")[1];
   const suggested = !customer.companyId && domain ? [...companies.values()].find((co) => co.domain === domain) ?? null : null;
-  return { customer, company: customer.companyId ? companies.get(customer.companyId) ?? null : null, suggested, companies: [...companies.values()] };
+  // A likely duplicate: another customer with exactly the same name (merging is always a person's choice).
+  const { data: twin } = await supabase
+    .from("contacts").select(CONTACT_COLUMNS).eq("workspace_id", workspaceId).is("erased_at", null).neq("id", id).ilike("name", customer.name).limit(1).maybeSingle();
+  const duplicate = twin && customer.name !== "Website visitor" ? toCustomer(twin as unknown as ContactRow, [], companies) : null;
+  return { customer, company: customer.companyId ? companies.get(customer.companyId) ?? null : null, suggested, duplicate, companies: [...companies.values()] };
 }

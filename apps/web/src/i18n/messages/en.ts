@@ -491,6 +491,7 @@ export const en = {
     reachError: "Add a phone number or an email address so your team can reach them.",
     lifecycle: { lead: "Lead", customer: "Customer", repeat: "Repeat customer", churned: "Hasn't bought lately" },
     bulk: {
+      typeToConfirm: "Type {count} to confirm",
       selected: { one: "{count} selected", other: "{count} selected" },
       selectAll: "Select all shown",
       select: "Select {name}",
@@ -502,7 +503,7 @@ export const en = {
       export: "Export",
       delete: "Delete",
       apply: "Apply",
-      deleteConfirm: { one: "Delete {count} contact? Their conversations stay in the inbox history, read-only.", other: "Delete {count} contacts? Their conversations stay in the inbox history, read-only." },
+      deleteConfirm: { one: "Delete {count} contact? Their details, messages and files are erased for good. Reports keep anonymous counts only.", other: "Delete {count} contacts? Their details, messages and files are erased for good. Reports keep anonymous counts only." },
       deleteButton: { one: "Delete {count} contact", other: "Delete {count} contacts" },
       deleted: { one: "{count} contact deleted. In the preview it comes back when you reload.", other: "{count} contacts deleted. In the preview they come back when you reload." },
       tagged: { one: "Tagged {count} contact with {tag}.", other: "Tagged {count} contacts with {tag}." },
@@ -587,6 +588,7 @@ export const en = {
   },
 
   merge: {
+    failed: "That didn't merge. Reload the page and try again.",
     title: "Merge customers",
     intro: "Check these are the same person. Where the details differ, choose what to keep. Everything else joins together.",
     thisCustomer: "This customer",
@@ -1973,7 +1975,7 @@ export const en = {
     mapHelp: "{file}: {count} rows. Tell Relay what each column holds.",
     unnamed: "(no header)",
     mapTo: "Column {column} holds",
-    targets: { name: "Name", email: "Email", phone: "Phone", company: "Company", tags: "Tags", skip: "Don't import" },
+    targets: { name: "Name", email: "Email", phone: "Phone", company: "Company", tags: "Tags", consent: "Marketing consent (yes / no)", skip: "Don't import" },
     kinds: { new: "New contacts", update: "Update existing", likely: "Maybe the same person", invalid: "Skipped" },
     likelyTitle: "Decide for each one",
     likelyRow: "{row} has the same name as {existing}.",
@@ -1989,6 +1991,7 @@ export const en = {
     doneBody: "{created} created, {updated} updated, {skipped} skipped.",
     previewNote: "In the preview nothing is saved.",
     errors: {
+      failed: "The import didn't finish. Nothing after the problem row was added; try again.",
       empty: "That file has no rows under the header.",
       tooMany: "That file has more than 10,000 rows. Split it and import the parts.",
       tooBig: "That file is over 5 MB.",

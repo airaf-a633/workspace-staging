@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import { loadEnv } from "./env";
-import { processMailSubscribe, processMailSync, processMediaDownload, processPostmarkEvent, processSendMessage, processWhatsappEvent, scheduleMail, type Ctx } from "./handlers";
+import { processEraseMedia, processMailSubscribe, processMailSync, processMediaDownload, processPostmarkEvent, processSendMessage, processWhatsappEvent, scheduleMail, type Ctx } from "./handlers";
 
 config({ path: fileURLToPath(new URL("../../../.env", import.meta.url)) });
 const env = loadEnv();
@@ -49,6 +49,9 @@ const HANDLERS: Record<string, (job: Job) => Promise<void>> = {
   },
   mail_sync: async (job) => {
     ctx.log(`mail_sync ${String(job.payload.channel_id)}: ${await processMailSync(ctx, String(job.payload.channel_id))}`);
+  },
+  erase_media: async (job) => {
+    ctx.log(`erase_media: ${await processEraseMedia(ctx, job.payload as { paths: string[] })}`);
   },
   send_message: async (job) => {
     ctx.log(`send ${String(job.payload.message_id)}: ${await processSendMessage(ctx, job.payload as { message_id: string }, job.attempts >= job.max_attempts)}`);

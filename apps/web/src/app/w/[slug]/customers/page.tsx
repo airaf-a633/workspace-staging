@@ -2,7 +2,7 @@ import { CustomerListLive } from "@/components/customers/live";
 import { getT } from "@/i18n/server";
 import { loadCustomers } from "@/lib/customers-live";
 import { loadPeople } from "@/lib/viewer";
-import { loadWorkspace } from "@/lib/workspace";
+import { can, loadWorkspace } from "@/lib/workspace";
 import { requestNow } from "@/lib/now";
 
 export async function generateMetadata() {
@@ -29,8 +29,8 @@ export default async function Customers(props: PageProps<"/w/[slug]/customers">)
       now={requestNow()}
       base={`/w/${slug}`}
       canEdit={(viewer.scopes["contacts.edit"] ?? "none") !== "none"}
-      // Deleting and exporting come with step 2c.
-      canBulkDelete={false}
+      // Erasing many at once: owners and admins (contacts.erase), with a typed confirmation.
+      canBulkDelete={await can(workspace.id, "contacts.erase")}
       initialTab={sp.tab === "companies" ? "companies" : "people"}
     />
   );

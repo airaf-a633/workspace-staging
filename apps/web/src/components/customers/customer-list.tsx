@@ -153,6 +153,12 @@ export function CustomerList({ customers: initial, companies, people, teams, vie
   function applyBulk() {
     const n = picked.length;
     if (bulk === "delete") {
+      // Typed confirmation: the number of people being erased (decided 2026-10-20).
+      if (bulkValue.trim() !== String(n)) return;
+      if (save) {
+        const ids = picked;
+        void save.erase(ids).then((error) => error && setToast(t("saveFailed")));
+      }
       setCustomers(customers.filter((c) => !picked.includes(c.id)));
       setToast(t("bulk.deleted", { count: n }));
     } else if (bulk === "tag" && bulkValue.trim()) {
@@ -353,9 +359,15 @@ export function CustomerList({ customers: initial, companies, people, teams, vie
                     </select>
                   )}
                   {bulk === "delete" && (
-                    <p className="text-sm">{t("bulk.deleteConfirm", { count: picked.length })}</p>
+                    <>
+                      <p className="text-sm">{t("bulk.deleteConfirm", { count: picked.length })}</p>
+                      <label className="grid gap-1 text-sm">
+                        {t("bulk.typeToConfirm", { count: picked.length })}
+                        <input value={bulkValue} onChange={(e) => setBulkValue(e.target.value)} inputMode="numeric" autoComplete="off" className={`${input} max-w-32`} />
+                      </label>
+                    </>
                   )}
-                  <button type="submit" disabled={bulk !== "delete" && !bulkValue.trim()} className={buttonClass(bulk === "delete" ? "destructive" : "primary", "sm")}>
+                  <button type="submit" disabled={bulk === "delete" ? bulkValue.trim() !== String(picked.length) : !bulkValue.trim()} className={buttonClass(bulk === "delete" ? "destructive" : "primary", "sm")}>
                     {bulk === "delete" ? t("bulk.deleteButton", { count: picked.length }) : t("bulk.apply")}
                   </button>
                 </form>

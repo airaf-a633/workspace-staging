@@ -526,3 +526,11 @@ Order:
 - **The real Contacts screens are the preview's components, with save hooks.**
   - The customer timeline shows only what's real: chats, notes, handovers.
   - Deals, tasks, orders, consent, do-not-contact, merging, export, erasing and bulk delete stay preview-only until their steps (2c and later).
+
+## Step 2c: privacy on real data (2026-10-20)
+
+- Erasing a customer removes their details, identities, consent, notes, message text and files; the contact stays as an anonymous "Erased customer" so reports keep counts. Owners and admins only (contacts.erase).
+- Bulk delete is the same as erasing, with a typed confirmation (the number of people).
+- Marketing consent per channel and do-not-contact are real and audited. "Unknown" removes the record.
+- Merge: the person picks which values to keep; same-channel threads are joined, identities, consent, tags and fields move over.
+- Import fills blanks only and never overwrites. Consent is recorded only when the column clearly says yes (source "Imported file"). Up to 2,000 rows per batch; larger files go in batches.
