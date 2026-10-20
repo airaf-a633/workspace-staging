@@ -11,7 +11,8 @@ import { getT } from "@/i18n/server";
 import { publicEnv } from "@/lib/public-env";
 import { can, loadWorkspace } from "@/lib/workspace";
 import { updateWebchat } from "../webchat-actions";
-import { updateEmailChannel } from "../email-actions";
+import { updateEmailChannel, verifyEmailDomain } from "../email-actions";
+import { Submit } from "@/components/ui/submit";
 
 export async function generateMetadata() {
   return { title: (await getT("settings"))("channels") };
@@ -76,7 +77,9 @@ export default async function ChannelPage(props: PageProps<"/w/[slug]/channels/[
 }
 
 const STEPS = ["one", "two", "three"] as const;
-const EMAIL_ERRORS = ["needName", "badAddress", "notAllowed"] as const;
+/** Shared mailbox providers: nobody but the provider can verify these domains, so we don't offer it. */
+const FREE_MAIL = ["gmail.com", "googlemail.com", "outlook.com", "hotmail.com", "live.com", "msn.com", "yahoo.com", "icloud.com", "me.com", "aol.com", "proton.me", "protonmail.com", "gmx.com", "zoho.com"];
+const EMAIL_ERRORS = ["needName", "badAddress", "notAllowed", "domainNotConfigured", "domainFailed"] as const;
 
 /* An email channel: the forwarding address to point the business's mailbox at, then how replies look. */
 async function EmailChannel({ slug, ch, sp, workspaceId }: {
@@ -87,7 +90,13 @@ async function EmailChannel({ slug, ch, sp, workspaceId }: {
 }) {
   const t = await getT("emailSetup");
   const canManage = await can(workspaceId, "numbers.manage");
-  const s = (ch.settings ?? {}) as { address?: string; fromName?: string; signature?: string; domainVerified?: boolean };
+  const s = (ch.settings ?? {}) as {
+    address?: string; fromName?: string; signature?: string; domainVerified?: boolean;
+    domain?: { name: string; dkimHost: string; dkimValue: string; returnPathHost: string; returnPathTarget: string; verified: boolean };
+  };
+  const domainName = (s.address ?? "").split("@")[1] ?? "";
+  const pending = s.domain && s.domain.name === domainName && !s.domain.verified ? s.domain : null;
+  const freeMail = FREE_MAIL.includes(domainName.toLowerCase());
   const domain = serverEnv().INBOUND_EMAIL_DOMAIN;
   const forward = domain ? `${ch.external_id}@${domain}` : null;
   const error = typeof sp.error === "string" ? (EMAIL_ERRORS.find((e) => e === sp.error) ?? "failed") : null;
@@ -117,9 +126,35 @@ async function EmailChannel({ slug, ch, sp, workspaceId }: {
         )}
       </section>
 
-      <section className="grid gap-2 rounded-[var(--radius-panel)] bg-surface p-5 shadow-[var(--shadow-1)] ring-1 ring-border">
+      {sp.verified && <Notice tone="success" title={t("verifiedNow", { domain: domainName })} />}
+      {sp.checked && <Notice tone="warn" title={t("notYet")}>{t("notYetBody")}</Notice>}
+      <section className="grid gap-3 rounded-[var(--radius-panel)] bg-surface p-5 shadow-[var(--shadow-1)] ring-1 ring-border">
         <h2 className="font-semibold">{t("fromTitle")}</h2>
-        <p className="text-sm text-muted">{s.domainVerified ? t("fromVerified", { address: s.address ?? "" }) : t("fromPending", { address: s.address ?? "" })}</p>
+        <p className="text-sm text-muted">
+          {s.domainVerified ? t("fromVerified", { address: s.address ?? "" }) : freeMail ? t("fromFreeMail", { domain: domainName, address: s.address ?? "" }) : t("fromPending", { address: s.address ?? "" })}
+        </p>
+        {!s.domainVerified && !freeMail && pending && (
+          <div className="grid gap-2 text-sm">
+            <p>{t("recordsIntro", { domain: domainName })}</p>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[32rem] border-collapse text-start" dir="ltr">
+                <thead><tr className="border-b border-border text-xs text-muted"><th className="py-2 pe-3 text-start font-medium">{t("recordType")}</th><th className="py-2 pe-3 text-start font-medium">{t("recordHost")}</th><th className="py-2 text-start font-medium">{t("recordValue")}</th></tr></thead>
+                <tbody className="font-mono text-xs">
+                  <tr className="border-b border-border align-top"><td className="py-2 pe-3">TXT</td><td className="break-all py-2 pe-3">{pending.dkimHost}</td><td className="break-all py-2">{pending.dkimValue}</td></tr>
+                  <tr className="align-top"><td className="py-2 pe-3">CNAME</td><td className="break-all py-2 pe-3">{pending.returnPathHost}</td><td className="break-all py-2">{pending.returnPathTarget}</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-muted">{t("recordsNote")}</p>
+          </div>
+        )}
+        {!s.domainVerified && !freeMail && canManage && (
+          <form action={verifyEmailDomain}>
+            <input type="hidden" name="slug" value={slug} />
+            <input type="hidden" name="id" value={ch.id} />
+            <Submit variant={pending ? "secondary" : "primary"}>{pending ? t("checkAgain") : t("verify", { domain: domainName })}</Submit>
+          </form>
+        )}
       </section>
 
       <section className="grid gap-3">

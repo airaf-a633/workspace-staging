@@ -14,6 +14,8 @@ function fakeDb(overrides: Partial<Record<string, unknown>> = {}) {
       calls.push({ fn, args });
       if (fn === "outbound_message") return { data: [row], error: null };
       if (fn === "whatsapp_token") return { data: "token", error: null };
+      if (fn === "outbound_email")
+        return { data: [{ subject: "Order 4821", thread_key: "<root@x>", in_reply_to: "<root@x>", refs: ["<root@x>"], settings: { address: "support@n.example", fromName: "Northwind" }, token: "northwind-abc123", sender: "Leo" }], error: null };
       return { data: null, error: null };
     },
   } as unknown as SupabaseClient;
@@ -60,8 +62,28 @@ describe("sending a queued reply", () => {
     expect(calls.some((c) => c.fn === "mark_message_sent")).toBe(true);
   });
 
+  it("sends an email reply through Postmark and stores our Message-ID for threading", async () => {
+    const { db, calls } = fakeDb({ channel_type: "email", to_address: "mariam@example.com" });
+    let sent: Record<string, unknown> = {};
+    const postmark = (async (_url: string, init: RequestInit) => {
+      sent = JSON.parse(String(init.body));
+      return new Response(JSON.stringify({ ErrorCode: 0, MessageID: "pm-1" }), { status: 200 });
+    }) as unknown as typeof fetch;
+    const c = { ...ctx(db, postmark), postmarkToken: "pm-token", sendDomain: "mail.relay.test" };
+    expect(await processSendMessage(c, { message_id: "m1" }, false)).toBe("sent <relay-m1@mail.relay.test>");
+    expect(sent.To).toBe("mariam@example.com");
+    expect(sent.Subject).toBe("Re: Order 4821");
+    expect(calls.find((x) => x.fn === "mark_message_sent")?.args.p_external_id).toBe("<relay-m1@mail.relay.test>");
+  });
+
+  it("explains when email isn't set up on this server", async () => {
+    const { db, calls } = fakeDb({ channel_type: "email", to_address: "mariam@example.com" });
+    await processSendMessage(ctx(db, graph(200, {})), { message_id: "m1" }, false);
+    expect(String(calls.find((c) => c.fn === "mark_message_failed")!.args.p_text)).toMatch(/isn't set up/);
+  });
+
   it("explains channels that can't send yet", async () => {
-    const { db, calls } = fakeDb({ channel_type: "email" });
+    const { db, calls } = fakeDb({ channel_type: "telegram" });
     await processSendMessage(ctx(db, graph(200, {})), { message_id: "m1" }, false);
     expect(String(calls.find((c) => c.fn === "mark_message_failed")!.args.p_text)).toMatch(/isn't available yet/);
   });

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseInbound } from "./email";
+import { buildEmail, classifyEmailError, sendEmail } from "./postmark";
 import { classifySendError, downloadMedia, extensionFor, parseMessagesValue, routeChanges, sendText, webhookEnvelope, type RoutedChange } from "@app/whatsapp";
 
 /**
@@ -12,6 +13,9 @@ export interface Ctx {
   apiVersion: string;
   /** Where email forwarding addresses live (email channel); unset until email is configured. */
   inboundDomain?: string | undefined;
+  /** Email sending (Postmark); unset until email is configured. */
+  postmarkToken?: string | undefined;
+  sendDomain?: string | undefined;
   log: (msg: string) => void;
   /** Swappable in tests; the real fetch otherwise. */
   fetch?: typeof fetch;
@@ -166,7 +170,36 @@ interface Outbound {
 
 /** One adapter per channel type. WhatsApp first; email and website chat plug in here later. */
 type Adapter = (ctx: Ctx, m: Outbound) => Promise<{ externalId: string }>;
+
+/** A channel that can't send on this server yet: fails the message at once with the reason. */
+class NotConfigured extends Error {}
 const ADAPTERS: Record<string, Adapter> = {
+  // Email goes out through Postmark. Our own Message-ID is stored, so the customer's reply threads back to it.
+  email: async (ctx, m) => {
+    if (!ctx.postmarkToken || !ctx.sendDomain) throw new NotConfigured("Email sending isn't set up on this Relay server yet.");
+    const { data, error } = await ctx.db.rpc("outbound_email", { p_message: m.message_id });
+    if (error) throw new Error(`outbound_email: ${error.message}`);
+    const e = (data as { subject: string | null; thread_key: string; in_reply_to: string | null; refs: string[]; settings: Record<string, unknown>; token: string; sender: string | null }[] | null)?.[0];
+    if (!e) throw new NotConfigured("This email thread couldn't be found.");
+    const messageId = `<relay-${m.message_id}@${ctx.sendDomain}>`;
+    await sendEmail(
+      ctx.postmarkToken,
+      buildEmail({
+        body: m.body ?? "",
+        sender: e.sender,
+        to: m.to_address!,
+        subject: e.subject,
+        inReplyTo: e.in_reply_to,
+        refs: e.refs?.length ? e.refs : [e.thread_key].filter(Boolean),
+        settings: e.settings as Parameters<typeof buildEmail>[0]["settings"],
+        token: e.token,
+        sendDomain: ctx.sendDomain,
+        messageId,
+      }),
+      ctx.fetch,
+    );
+    return { externalId: messageId };
+  },
   // Website chat has nothing to call: the visitor's widget fetches the reply. Marking it sent makes it visible there.
   webchat: async (_ctx, m) => ({ externalId: `wc-out:${m.message_id}` }),
   whatsapp: async (ctx, m) => {
@@ -208,7 +241,10 @@ export async function processSendMessage(ctx: Ctx, job: { message_id: string }, 
     await rpc(ctx, "mark_message_sent", { p_message: m.message_id, p_external_id: sent.externalId });
     return `sent ${sent.externalId}`;
   } catch (e) {
-    const c = classifySendError(e);
+    const c =
+      e instanceof NotConfigured ? { temporary: false, code: "not_configured", reason: e.message }
+      : m.channel_type === "email" ? classifyEmailError(e)
+      : classifySendError(e);
     if (c.temporary && !lastAttempt) throw e;
     await fail(c.code, c.reason);
     return `failed ${c.code}`;

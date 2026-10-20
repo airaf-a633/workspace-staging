@@ -12,6 +12,9 @@ const schema = z.object({
   SENTRY_DSN: z.url().optional(),
   /** The domain forwarding addresses live on, e.g. in.relayinbox.com (email channel). */
   INBOUND_EMAIL_DOMAIN: z.string().optional(),
+  /** Email channel, sending: Postmark's server token, and Relay's own verified sending domain (e.g. mail.relayinbox.com). */
+  POSTMARK_SERVER_TOKEN: z.string().optional(),
+  EMAIL_SEND_DOMAIN: z.string().optional(),
 });
 
 export type WorkerEnv = z.infer<typeof schema>;

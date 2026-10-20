@@ -10,7 +10,14 @@ import { processMediaDownload, processPostmarkEvent, processSendMessage, process
 config({ path: fileURLToPath(new URL("../../../.env", import.meta.url)) });
 const env = loadEnv();
 const db = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
-const ctx: Ctx = { db, apiVersion: env.WHATSAPP_API_VERSION, inboundDomain: env.INBOUND_EMAIL_DOMAIN, log: (m) => console.log(m) };
+const ctx: Ctx = {
+  db,
+  apiVersion: env.WHATSAPP_API_VERSION,
+  inboundDomain: env.INBOUND_EMAIL_DOMAIN,
+  postmarkToken: env.POSTMARK_SERVER_TOKEN,
+  sendDomain: env.EMAIL_SEND_DOMAIN,
+  log: (m) => console.log(m),
+};
 
 const POLL_MS = 1000;
 const BATCH = 20;

@@ -22,6 +22,8 @@ Needed for the email channel I'm building next.
   - Postmark reviews new accounts before they can send to anyone. Reply to their approval email with what Relay is. *(Usually 1 business day.)*
 - [ ] **Pick and buy Relay's own domain**, if you haven't (e.g. `relayinbox.com`). *(15 minutes.)*
 - [ ] **Add a sending domain in Postmark** (e.g. `mail.yourdomain.com`), and add the DKIM and Return-Path DNS records it shows you. *(15 minutes, plus up to a few hours for DNS.)*
+  Then set `EMAIL_SEND_DOMAIN` to it in the worker's settings. Replies come from addresses on it until a business verifies its own domain.
+- [ ] **Copy Postmark's Account API token** (Account › API Tokens; not the server token) into the app's `.env` as `POSTMARK_ACCOUNT_TOKEN`. It lets businesses verify their own domains from Settings, so replies come from their address. *(2 minutes.)*
 - [ ] **Set up the inbound domain** (e.g. `in.yourdomain.com`). *(20 minutes.)*
   - Add an MX record pointing to `inbound.postmarkapp.com`.
   - In Postmark › Server › Inbound, set the domain and this webhook URL, with the username and password from the next step: `https://USER:PASSWORD@YOUR-APP/api/webhooks/postmark`.

@@ -459,3 +459,19 @@ Order:
   - It stores attachments up to 10 MB each in the private media bucket.
   - A repeated email is ignored, because its Message-ID is the dedupe key.
 - **Replies come from the business's own address once its domain is verified.** Until then they come from a Relay address with Reply-To set to the business's. Each channel has one signature, plus the sender's name.
+
+## Email, part 2: sending (decided 2026-10-19)
+
+- **Replies go out through Postmark,** and threading headers come from the conversation:
+  - `In-Reply-To` names the customer's latest email.
+  - `References` carries the thread, oldest first.
+  - Our own `Message-ID` (`<relay-{message}@{EMAIL_SEND_DOMAIN}>`) is stored, so the customer's answer threads back. If a provider rewrote it, the thread's first email in References still matches.
+- **From line:** "Leo · Northwind Support". The address is the business's own once its domain is verified. Until then it's `{token}@{EMAIL_SEND_DOMAIN}`, with Reply-To set to the business's address, so answers still arrive through forwarding.
+- **Format:** plain text with the signature after the standard "-- " separator, plus a simple HTML version with everything escaped.
+- **Failures:**
+  - Postmark's permanent failures (bounced or spam-flagged address, invalid address, unconfirmed sender, account still awaiting approval) fail the reply at once in plain words. Outages retry.
+  - A server without email set up fails replies with "Email sending isn't set up on this Relay server yet."
+- **Domain verification from Settings:**
+  - "Verify {domain}" asks Postmark (account token) for a DKIM TXT and a Return-Path CNAME, and shows them. "Check again" re-checks, and once DKIM passes, replies come from the business's address.
+  - A changed address must be verified again.
+  - Free-mail addresses (gmail.com, outlook.com and so on) can't be verified, so the page explains that instead of offering a button that would always fail.

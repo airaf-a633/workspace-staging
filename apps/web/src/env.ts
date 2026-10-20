@@ -22,6 +22,8 @@ const serverSchema = z.object({
   INBOUND_EMAIL_DOMAIN: z.string().optional(),
   POSTMARK_INBOUND_USER: z.string().min(16).optional(),
   POSTMARK_INBOUND_PASSWORD: z.string().min(16).optional(),
+  /** Postmark account-level token: verifying businesses' sending domains. */
+  POSTMARK_ACCOUNT_TOKEN: z.string().optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;

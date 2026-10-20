@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { loadWorkspace } from "@/lib/workspace";
+import { checkDomain, DomainError, startDomain, type DomainState } from "@/lib/email/postmark-domains";
 
 /** Email channel setup (decided 2026-10-19). The database checks the person may manage channels. */
 const form = z.object({
@@ -45,4 +46,26 @@ export async function updateEmailChannel(data: FormData) {
   });
   if (error) redirect(`/w/${slug}/channels/${id}?error=${reason(error.message)}`);
   redirect(`/w/${slug}/channels/${id}?saved=1`);
+}
+
+/** Starts or re-checks verification of the business's domain, so replies can come from its own address. */
+export async function verifyEmailDomain(data: FormData) {
+  const slug = String(data.get("slug"));
+  const id = z.uuid().parse(data.get("id"));
+  const { supabase, workspace } = await loadWorkspace(slug);
+  const { data: ch } = await supabase.from("channels").select("settings").eq("id", id).eq("workspace_id", workspace.id).eq("type", "email").maybeSingle();
+  const settings = (ch?.settings ?? {}) as { address?: string; domain?: { id: number; name: string } };
+  const name = (settings.address ?? "").split("@")[1];
+  if (!name) redirect(`/w/${slug}/channels/${id}?error=badAddress`);
+
+  let state: DomainState;
+  try {
+    // A changed address means a different domain: start again for it.
+    state = settings.domain?.id && settings.domain.name === name ? await checkDomain(settings.domain.id) : await startDomain(name);
+  } catch (e) {
+    redirect(`/w/${slug}/channels/${id}?error=${e instanceof DomainError && e.message === "notConfigured" ? "domainNotConfigured" : "domainFailed"}`);
+  }
+  const { error } = await supabase.rpc("set_email_domain", { p_channel: id, p_domain: state });
+  if (error) redirect(`/w/${slug}/channels/${id}?error=${reason(error.message)}`);
+  redirect(`/w/${slug}/channels/${id}?${state.verified ? "verified=1" : "checked=1"}`);
 }
