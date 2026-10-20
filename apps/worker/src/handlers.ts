@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseInbound, type InboundEmail } from "./email";
+import { classifyGmailError, currentHistoryId, GmailError, gmailRevoked, historyExpired, newInboxMessages, readGmail, refreshGoogle, sendGmail, toMime } from "./gmail";
 import { classifyGraphError, createSubscription, GraphMailError, inboxDelta, isNoMailbox, isRevoked, readMessage, refreshAccess, renewSubscription, replyInOutlook } from "./outlook";
 import { buildEmail, classifyEmailError, sendEmail } from "./postmark";
 import { classifySendError, downloadMedia, extensionFor, parseMessagesValue, routeChanges, sendText, webhookEnvelope, type RoutedChange } from "@app/whatsapp";
@@ -19,6 +20,8 @@ export interface Ctx {
   sendDomain?: string | undefined;
   /** Outlook (Microsoft Graph); unset until configured. */
   microsoft?: { clientId: string; clientSecret: string } | undefined;
+  /** Gmail (Google API); unset until configured. */
+  google?: { clientId: string; clientSecret: string } | undefined;
   /** The app's public address, for Microsoft's push notifications. */
   appUrl?: string | undefined;
   /** "Now", swappable in tests. */
@@ -211,6 +214,23 @@ const ADAPTERS: Record<string, Adapter> = {
     const e = (data as { subject: string | null; thread_key: string; in_reply_to: string | null; refs: string[]; settings: Record<string, unknown>; token: string; sender: string | null }[] | null)?.[0];
     if (!e) throw new NotConfigured("This email thread couldn't be found.");
     if (e.settings.provider === "outlook") return sendViaOutlook(ctx, m, e.settings);
+    if (e.settings.provider === "gmail") {
+      if (!ctx.google) throw new NotConfigured("Gmail isn't set up on this Relay server yet.");
+      const c = await connection(ctx, m.channel_id);
+      if (!c) throw new NotConfigured("This Gmail mailbox is no longer connected.");
+      const token = await access(ctx, c);
+      if (!token) throw new NotConfigured("Relay lost access to this Gmail mailbox. Reconnect it in Settings › Channels, then send again.");
+      const { data: g } = await ctx.db.rpc("outbound_gmail", { p_message: m.message_id });
+      const thread = (g as { thread_id: string | null }[] | null)?.[0]?.thread_id ?? null;
+      const messageId = `<relay-${m.message_id}@${c.mailbox.split("@")[1]}>`;
+      const email = buildEmail({
+        body: m.body ?? "", sender: e.sender, to: m.to_address!, subject: e.subject, inReplyTo: e.in_reply_to,
+        refs: e.refs?.length ? e.refs : [e.thread_key].filter(Boolean), settings: e.settings as Parameters<typeof buildEmail>[0]["settings"],
+        token: e.token, sendDomain: c.mailbox.split("@")[1]!, messageId,
+      });
+      await sendGmail(token, toMime(email, c.mailbox), thread, ctx.fetch);
+      return { externalId: messageId };
+    }
     if (!ctx.postmarkToken || !ctx.sendDomain) throw new NotConfigured("Email sending isn't set up on this Relay server yet.");
     const messageId = `<relay-${m.message_id}@${ctx.sendDomain}>`;
     await sendEmail(
@@ -275,6 +295,7 @@ export async function processSendMessage(ctx: Ctx, job: { message_id: string }, 
     const c =
       e instanceof NotConfigured ? { temporary: false, code: "not_configured", reason: e.message }
       : e instanceof GraphMailError ? classifyGraphError(e)
+      : e instanceof GmailError ? classifyGmailError(e)
       : m.channel_type === "email" ? classifyEmailError(e)
       : classifySendError(e);
     if (c.temporary && !lastAttempt) throw e;
@@ -368,6 +389,16 @@ async function connection(ctx: Ctx, channel: string) {
 
 /** A fresh access token; Microsoft's rotated refresh token is saved. A revoked sign-in marks the channel broken. */
 async function access(ctx: Ctx, c: MailConnection): Promise<string | null> {
+  if (c.provider === "gmail") {
+    if (!ctx.google) throw new Error("GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET are not set");
+    try {
+      return await refreshGoogle(ctx.google.clientId, ctx.google.clientSecret, c.refresh_token, ctx.fetch);
+    } catch (e) {
+      if (!gmailRevoked(e)) throw e;
+      await rpc(ctx, "mark_mail_broken", { p_channel: c.channel_id, p_problem: "Google no longer lets Relay read this mailbox (often after a password change or removing access). Reconnect it." });
+      return null;
+    }
+  }
   if (!ctx.microsoft) throw new Error("MICROSOFT_CLIENT_ID / MICROSOFT_CLIENT_SECRET are not set");
   try {
     const t = await refreshAccess(ctx.microsoft.clientId, ctx.microsoft.clientSecret, c.refresh_token, ctx.fetch);
@@ -387,7 +418,14 @@ async function noMailbox(ctx: Ctx, c: MailConnection) {
 /** Starts or renews Microsoft's push subscription for the mailbox, and sets the starting point for reading mail. */
 export async function processMailSubscribe(ctx: Ctx, channel: string): Promise<string> {
   const c = await connection(ctx, channel);
-  if (!c || c.provider !== "outlook") return "no outlook connection";
+  if (!c) return "no mail connection";
+  if (c.provider === "gmail") {
+    const token = await access(ctx, c);
+    if (!token) return "sign-in revoked";
+    // Start from now: mail already in the mailbox stays there.
+    await rpc(ctx, "set_mail_delta", { p_channel: channel, p_delta: await currentHistoryId(token, ctx.fetch) });
+    return "gmail starting point set";
+  }
   if (!ctx.appUrl) throw new Error("APP_URL is not set");
   const token = await access(ctx, c);
   if (!token) return "sign-in revoked";
@@ -417,10 +455,28 @@ export async function processMailSubscribe(ctx: Ctx, channel: string): Promise<s
 /** Reads new mail since the last check and files it. Safe to run any number of times. */
 export async function processMailSync(ctx: Ctx, channel: string): Promise<string> {
   const c = await connection(ctx, channel);
-  if (!c || c.provider !== "outlook" || c.channel_status !== "connected") return "not connected";
+  if (!c || c.channel_status !== "connected") return "not connected";
   if (!c.delta_link) return "not subscribed yet";
   const token = await access(ctx, c);
   if (!token) return "sign-in revoked";
+  if (c.provider === "gmail") {
+    try {
+      const { ids, historyId } = await newInboxMessages(token, c.delta_link, ctx.fetch);
+      let filed = 0;
+      for (const id of ids) {
+        const mail = await readGmail(token, c.mailbox, id, ctx.fetch);
+        if (mail && (await fileEmail(ctx, channel, mail, { gmailThreadId: mail.gmailThreadId }))) filed++;
+      }
+      await rpc(ctx, "set_mail_delta", { p_channel: channel, p_delta: historyId });
+      return `${filed} new of ${ids.length}`;
+    } catch (e) {
+      if (!historyExpired(e)) throw e;
+      // Gmail only keeps about a week of history: start again from now (the worker was off for days).
+      ctx.log(`gmail ${channel}: history expired, starting again from now`);
+      await rpc(ctx, "set_mail_delta", { p_channel: channel, p_delta: await currentHistoryId(token, ctx.fetch) });
+      return "history expired; restarted";
+    }
+  }
   try {
     const { ids, deltaLink } = await inboxDelta(token, c.mailbox, c.delta_link, new Date(), ctx.fetch);
     let filed = 0;

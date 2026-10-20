@@ -104,12 +104,18 @@ async function EmailChannel({ slug, ch, sp, workspaceId }: {
       {sp.saved && <Notice tone="success" title={t("saved")} />}
       {error && <Notice tone="error" title={t(`errors.${error}`)} />}
 
-      {s.provider === "outlook" ? (
+      {s.provider === "outlook" || s.provider === "gmail" ? (
         <section className="grid gap-3 rounded-[var(--radius-panel)] bg-surface p-5 shadow-[var(--shadow-1)] ring-1 ring-border">
-          <h2 className="font-semibold">{t("outlookTitle")}</h2>
-          <p className="text-sm text-muted">{ch.status === "disconnected" ? t("outlookBroken", { address: s.address ?? "" }) : t("outlookOk", { address: s.address ?? "", account: s.account ?? "" })}</p>
+          <h2 className="font-semibold">{t(s.provider === "gmail" ? "gmailTitle" : "outlookTitle")}</h2>
+          <p className="text-sm text-muted">
+            {ch.status === "disconnected"
+              ? t(s.provider === "gmail" ? "gmailBroken" : "outlookBroken", { address: s.address ?? "" })
+              : t(s.provider === "gmail" ? "gmailOk" : "outlookOk", { address: s.address ?? "", account: s.account ?? "" })}
+          </p>
           {ch.status === "disconnected" && canManage && (
-            <a href={`/api/oauth/microsoft/start?slug=${slug}`} className="w-fit rounded-[var(--radius-control)] bg-primary px-4 py-2.5 text-sm font-medium text-on-primary">{t("reconnect")}</a>
+            <a href={`/api/oauth/${s.provider === "gmail" ? "google" : "microsoft"}/start?slug=${slug}`} className="w-fit rounded-[var(--radius-control)] bg-primary px-4 py-2.5 text-sm font-medium text-on-primary">
+              {t(s.provider === "gmail" ? "reconnectGmail" : "reconnect")}
+            </a>
           )}
         </section>
       ) : (<>

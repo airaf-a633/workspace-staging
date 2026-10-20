@@ -19,6 +19,9 @@ const schema = z.object({
   MICROSOFT_CLIENT_ID: z.string().optional(),
   MICROSOFT_CLIENT_SECRET: z.string().optional(),
   APP_URL: z.url().optional(),
+  /** "Continue with Google": the Google Cloud OAuth client. */
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
 });
 
 export type WorkerEnv = z.infer<typeof schema>;

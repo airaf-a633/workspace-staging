@@ -16,7 +16,10 @@ function fakeDb(overrides: Partial<Record<string, unknown>> = {}) {
       if (fn === "whatsapp_token") return { data: "token", error: null };
       if (fn === "outbound_outlook") return { data: [{ mailbox: "support@n.example", graph_id: "AAMk-1" }], error: null };
       if (fn === "mail_connection")
-        return { data: [{ channel_id: "ch1", workspace_id: "w1", provider: "outlook", mailbox: "support@n.example", refresh_token: "rt", subscription_id: null, subscription_expires: null, client_state: "cs", delta_link: "d", channel_status: "connected" }], error: null };
+        return { data: [{ channel_id: "ch1", workspace_id: "w1", provider: overrides.gmail ? "gmail" : "outlook", mailbox: "support@n.example", refresh_token: "rt", subscription_id: null, subscription_expires: null, client_state: "cs", delta_link: "d", channel_status: "connected" }], error: null };
+      if (fn === "outbound_gmail") return { data: [{ mailbox: "support@n.example", thread_id: "18f2a" }], error: null };
+      if (fn === "outbound_email" && overrides.gmail)
+        return { data: [{ subject: "Hello", thread_key: "<g1@x>", in_reply_to: "<g1@x>", refs: ["<g1@x>"], settings: { provider: "gmail", address: "support@n.example" }, token: "gmail:support@n.example", sender: "Leo" }], error: null };
       if (fn === "outbound_email" && overrides.outlook)
         return { data: [{ subject: "Hello", thread_key: "<o1@x>", in_reply_to: "<o1@x>", refs: ["<o1@x>"], settings: { provider: "outlook", address: "support@n.example", signature: "Northwind" }, token: "outlook:support@n.example", sender: "Leo" }], error: null };
       if (fn === "outbound_email")
@@ -95,6 +98,20 @@ describe("sending a queued reply", () => {
     expect(await processSendMessage(c, { message_id: "m1" }, false)).toBe("sent <outlook-reply-m1>");
     expect(urls.at(-1)).toBe("https://graph.microsoft.com/v1.0/users/support%40n.example/messages/AAMk-1/reply");
     expect(String(reply.comment)).toContain("Northwind");
+  });
+
+  it("replies inside the customer's Gmail thread", async () => {
+    const { db } = fakeDb({ channel_type: "email", to_address: "mariam@example.com", gmail: true });
+    let sent: Record<string, unknown> = {};
+    const google = (async (url: string, init: RequestInit) => {
+      if (url.includes("oauth2")) return new Response(JSON.stringify({ access_token: "at" }), { status: 200 });
+      sent = JSON.parse(String(init.body));
+      return new Response(JSON.stringify({ id: "gm-1" }), { status: 200 });
+    }) as unknown as typeof fetch;
+    const c = { ...ctx(db, google), google: { clientId: "id", clientSecret: "secret" } };
+    expect(await processSendMessage(c, { message_id: "m1" }, false)).toBe("sent <relay-m1@n.example>");
+    expect(sent.threadId).toBe("18f2a");
+    expect(typeof sent.raw).toBe("string");
   });
 
   it("explains when email isn't set up on this server", async () => {

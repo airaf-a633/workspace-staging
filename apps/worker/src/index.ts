@@ -18,6 +18,7 @@ const ctx: Ctx = {
   sendDomain: env.EMAIL_SEND_DOMAIN,
   microsoft: env.MICROSOFT_CLIENT_ID && env.MICROSOFT_CLIENT_SECRET ? { clientId: env.MICROSOFT_CLIENT_ID, clientSecret: env.MICROSOFT_CLIENT_SECRET } : undefined,
   appUrl: env.APP_URL,
+  google: env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET ? { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET } : undefined,
   log: (m) => console.log(m),
 };
 
@@ -79,8 +80,8 @@ let lastSchedule = 0;
 async function main() {
   console.log(`worker started against ${new URL(env.SUPABASE_URL).host}`);
   while (running) {
-    // Once a minute: Outlook subscription renewals and safety-net checks.
-    if (ctx.microsoft && Date.now() - lastSchedule > SCHEDULE_MS) {
+    // Once a minute: Outlook subscription renewals and safety-net checks, and Gmail's minute-by-minute check.
+    if ((ctx.microsoft || ctx.google) && Date.now() - lastSchedule > SCHEDULE_MS) {
       lastSchedule = Date.now();
       await scheduleMail(ctx).catch((e) => console.error("scheduleMail", e instanceof Error ? e.message : e));
     }

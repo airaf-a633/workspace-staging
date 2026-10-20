@@ -27,6 +27,9 @@ const serverSchema = z.object({
   /** "Continue with Outlook": the Microsoft Entra app (multi-tenant). */
   MICROSOFT_CLIENT_ID: z.string().optional(),
   MICROSOFT_CLIENT_SECRET: z.string().optional(),
+  /** "Continue with Google": the Google Cloud OAuth client. */
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;

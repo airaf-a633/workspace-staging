@@ -53,7 +53,8 @@ Needed for the email channel I'm building next.
   - Add yourself and pilot customers as **test users** (up to 100).
 - [ ] **Create an OAuth client** (Web application). *(10 minutes.)*
   - **Redirect URI:** `https://YOUR-APP/api/oauth/google/callback`, plus localhost.
-  - Put the ID and secret in `.env` as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+  - Put the ID and secret in `.env` as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`, for both the app and the worker.
+  - On the consent screen, add the scopes `openid`, `email`, `gmail.modify` and `gmail.send`.
 - [ ] **Submit for verification** when ready to go beyond 100 test users. *(Several weeks, plus a yearly cost.)*
   - Gmail scopes are "restricted", so Google requires a **CASA security assessment** by an approved lab. Expect roughly $500–$4,500 a year, depending on the lab and tier.
   - Until then: test users only, behind an "unverified app" warning. Fine for pilots.

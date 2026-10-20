@@ -492,3 +492,20 @@ Order:
 - **When it breaks:**
   - A revoked sign-in (for example after a password change) or a mailbox the sign-in can't open marks the channel "disconnected", with a plain reason and a "Reconnect Outlook" button.
   - Everything already in Relay stays.
+
+## "Continue with Google" (decided 2026-10-20)
+
+- **Connecting:**
+  - Settings › Channels › Email offers "Use Gmail or Google Workspace?". Google sign-in uses PKCE, a state cookie and offline access. Scopes: openid, email, `gmail.modify`, `gmail.send`.
+  - If someone unticks Gmail access on Google's screen, we say so plainly instead of failing quietly.
+  - Only the signed-in mailbox is connected. Teams sign in as support@ itself; Workspace admin-wide delegation can come later.
+  - The refresh token lives in Vault. One channel per mailbox.
+- **Receiving:**
+  - Every minute the worker reads the mailbox's history feed (messages added to the inbox), starting from the moment of connecting.
+  - Quoted history is trimmed by our own rules, since Gmail has no "unique body". Mail is filed through the same threading and attachment path as other email.
+  - If the worker was off for over a week (Gmail keeps about a week of history), it starts again from now and logs it.
+  - Push through Google Pub/Sub can replace the minute-by-minute check later without other changes.
+- **Sending:**
+  - The reply is built as a standard email (text and HTML, names encoded for any language, threading headers) and sent through Gmail inside the customer's Gmail thread, so it shows in Sent.
+- **When it breaks:** a revoked sign-in marks the channel disconnected, with "Reconnect Gmail"; history stays.
+- **Until Google verifies the app** (restricted Gmail scopes need a CASA security assessment), only test users listed in Google Cloud can connect.
