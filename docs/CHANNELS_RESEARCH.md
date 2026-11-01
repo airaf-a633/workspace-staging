@@ -266,3 +266,29 @@ Sources: docs.slack.dev pages for the Events API, request verification, URL veri
 - Whether a distributed app can be installed by other workspaces without a Marketplace listing.
 - The exact error text for a message that is too long, and rate limits for conversations.history and conversations.replies.
 - Which fields users.info withholds for external users beyond email and locale.
+
+## Discord: verified facts (2026-11-02)
+
+Sources: docs.discord.com (the old discord.com/developers addresses redirect there): Gateway, Gateway events, Webhook events, Intents, Rate limits, OAuth2, Message, Channel, User, Reference.
+
+**Confirmed**
+- Messages reach a bot only through the Gateway, a long-lived WebSocket. The pages describe no HTTP way to receive message events. HTTP "webhook events" cover only: application authorized and deauthorized, entitlements, quests, lobby messages and game direct messages. Ordinary MESSAGE_CREATE is not among them.
+- Gateway life cycle: GET /gateway/bot gives a wss address. Discord sends Hello (opcode 10) with heartbeat_interval. Send heartbeats with the last sequence number; if no ACK (opcode 11) arrives, close with a code other than 1000 or 1001 and reconnect. Identify (opcode 2) sends token, intents and properties; Ready returns session_id and resume_gateway_url. After a drop, Resume (opcode 6) with token, session_id and the last sequence number replays missed events; on Invalid Session (opcode 9) with d false, reconnect and identify again. Closing with 1000 or 1001 ends the session.
+- Intents: GUILD_MESSAGES (1<<9) and DIRECT_MESSAGES (1<<12) give message events. MESSAGE_CONTENT (1<<15) is privileged: without it, content fields are empty, except messages the app sends, DMs with the app, messages that mention the app, and context-menu targets. Privileged intents are switched on in the Developer Portal. Apps in 100 or more servers must be verified, and verified apps need approval for privileged intents; apps under 10,000 unique users can enable them directly. Close code 4013 is invalid intents, 4014 is a privileged intent that is not allowed.
+- Limits: 1,000 identifies per 24 hours (resumes don't count; going over resets the token); 120 gateway events per connection per 60 seconds; one shard per 2,500 servers; events with no guild_id, including DMs, go to shard 0.
+- REST: base https://discord.com/api, versions 9 and 10 available. Header "Authorization: Bot <token>". A User-Agent of the form "DiscordBot ($url, $versionNumber)" is required or requests may be blocked.
+- Create message: POST /channels/{id}/messages, content up to 2,000 characters; message_reference with message_id makes a reply (fail_if_not_exists defaults to true); needs SEND_MESSAGES, and READ_MESSAGE_HISTORY for a reply. allowed_mentions defaults to parsing users, roles and everyone.
+- Message object: id, channel_id, author, content, attachments (id, filename, content_type, size, url, proxy_url), message_reference, type (0 default, 19 reply), referenced_message, webhook_id. MESSAGE_CREATE adds guild_id (absent for ephemeral), member, mentions, channel_type. User object: id, username, global_name (may be null), avatar, bot.
+- Create DM: POST /users/@me/channels with recipient_id returns the existing channel if there is one. Discord warns that DMs should generally be started by a user action, and opening many too fast can get the bot rate limited or blocked.
+- Rate limits: X-RateLimit-* headers; 429 with retry_after and global; 50 requests per second globally; 10,000 invalid requests (401, 403, 429) per 10 minutes restricts the IP.
+- Adding a bot: https://discord.com/oauth2/authorize?client_id=...&scope=bot&permissions=N; "Public Bot" must be on for anyone else to add it. Verified bots have no server limit, which implies others do.
+- Channel types: 0 text, 1 DM, 5 announcement, 11 public thread, 12 private thread, 15 forum. Users must be added to a thread before sending in it (the API adds them automatically when they send); a thread must be unarchived first.
+
+**Not stated in the pages read (so not assumed)**
+- The exact limit on servers for a bot that is not verified.
+- Whether messages inside threads arrive as MESSAGE_CREATE with the thread's id as channel_id, and what permission posting in a thread needs.
+- The Gateway close-code table (which codes can be resumed); the pages say "a resumable close code" without listing them.
+- The error Discord returns when a user can't be sent a DM (code 50007 is widely known but not on the pages read).
+- How long an attachment's url stays valid.
+- Whether the message author object carries global_name in a MESSAGE_CREATE (the User object lists it).
+- Who in a server may add a bot (the page says only "proper permissions").

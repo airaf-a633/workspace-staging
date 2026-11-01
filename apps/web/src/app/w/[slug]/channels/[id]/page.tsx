@@ -27,6 +27,9 @@ import { getAccount } from "@/lib/channels/twilio";
 import { VoiceReplaceCredentials, VoiceSettingsForm } from "@/components/channels/voice-forms";
 import { disconnectVoice, replaceVoiceCredentials, updateVoice } from "../voice-actions";
 import { disconnectSlack, updateSlack } from "../slack-actions";
+import { DiscordReplaceToken } from "@/components/channels/discord-forms";
+import { disconnectDiscord, replaceDiscordToken, updateDiscord } from "../discord-actions";
+import { healthOf, inviteUrl } from "@/lib/channels/discord-api";
 import { DEFAULT_GREETING, DEFAULT_NOTICE, ring as ringSeconds, voiceUrls } from "@/lib/channels/voice-twiml";
 import { requestNow } from "@/lib/now";
 import { updateEmailChannel, verifyEmailDomain } from "../email-actions";
@@ -42,7 +45,7 @@ export default async function ChannelPage(props: PageProps<"/w/[slug]/channels/[
   const { slug, id } = await props.params;
   const sp = await props.searchParams;
   const { supabase, workspace } = await loadWorkspace(slug);
-  const { data: ch } = await supabase.from("channels").select("id, type, name, external_id, settings, status").eq("id", id).eq("workspace_id", workspace.id).maybeSingle();
+  const { data: ch } = await supabase.from("channels").select("id, type, name, external_id, settings, status, health").eq("id", id).eq("workspace_id", workspace.id).maybeSingle();
   if (!ch) notFound();
   if (ch.type === "whatsapp") redirect(`/w/${slug}/whatsapp`);
   if (ch.type === "email") return <EmailChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
@@ -52,6 +55,7 @@ export default async function ChannelPage(props: PageProps<"/w/[slug]/channels/[
   if (ch.type === "sms") return <SmsChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
   if (ch.type === "voice") return <VoiceChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
   if (ch.type === "slack") return <SlackChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
+  if (ch.type === "discord") return <DiscordChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
   if (ch.type !== "webchat") notFound();
 
   const t = await getT("webchatSetup");
@@ -748,6 +752,102 @@ async function SlackChannel({ slug, ch, sp, workspaceId }: {
           <h2 className="font-semibold">{t("disconnectTitle")}</h2>
           <p className="text-sm text-muted">{t("disconnectHelp")}</p>
           <form action={disconnectSlack}>
+            <input type="hidden" name="slug" value={slug} />
+            <input type="hidden" name="id" value={ch.id} />
+            <Submit variant="secondary">{t("disconnect")}</Submit>
+          </form>
+        </section>
+      )}
+    </SettingsFrame>
+  );
+}
+
+/* A Discord bot: whether the Gateway connection is up, the link that adds the bot to a server, and disconnecting. */
+async function DiscordChannel({ slug, ch, sp, workspaceId }: {
+  slug: string;
+  ch: { id: string; name: string; settings: unknown; status: string; health: unknown };
+  sp: Record<string, string | string[] | undefined>;
+  workspaceId: string;
+}) {
+  const t = await getT("discordSetup");
+  const canManage = await can(workspaceId, "numbers.manage");
+  const s = (ch.settings ?? {}) as { application_id?: string };
+  const disconnected = ch.status === "disconnected";
+  const error = typeof sp.error === "string" ? sp.error : null;
+  const health = healthOf(ch.health);
+  const field = "min-h-11 rounded-[var(--radius-control)] border border-input bg-surface px-3 font-normal";
+
+  return (
+    <SettingsFrame base={`/w/${slug}`} active="channels" isOwner={await can(workspaceId, "members.manage")}>
+      <Link href={`/w/${slug}/channels`} className="flex w-fit items-center gap-1.5 text-sm text-muted hover:text-text">
+        <ArrowLeft size={16} className="rtl:rotate-180" aria-hidden="true" /> {t("backToList")}
+      </Link>
+      <SectionHeader title={ch.name} description={t("pageHelp")} />
+      {sp.created && <Notice tone="success" title={t("created")}>{t("createdBody")}</Notice>}
+      {sp.saved && <Notice tone="success" title={t("saved")} />}
+      {error && <Notice tone="error" title={t(error === "needName" ? "errors.needName" : error === "notAllowed" ? "errors.notAllowed" : "errors.failed")} />}
+      {disconnected && <Notice tone="warn" title={t("disconnected")}>{t("disconnectedBody")}</Notice>}
+
+      {!disconnected && (
+        <section className="grid gap-2">
+          <h2 className="font-semibold">{t("statusTitle")}</h2>
+          {health === "ok" && <Notice tone="success" title={t("ok")}>{t("okNote")}</Notice>}
+          {health === "waiting" && <Notice tone="info" title={t("waiting")}>{t("waitingMore")}</Notice>}
+          {health === "rejected" && <Notice tone="error" title={t("rejected")} />}
+          {health === "unstable" && <Notice tone="warn" title={t("unstable")} />}
+          {health === "intents" && <Notice tone="error" title={t("intents")} />}
+          {health === "privileged_intents" && <Notice tone="error" title={t("privileged_intents")} />}
+        </section>
+      )}
+
+      {!disconnected && s.application_id && (
+        <section className="grid gap-3 rounded-[var(--radius-panel)] bg-surface p-5 shadow-[var(--shadow-1)] ring-1 ring-border">
+          <h2 className="font-semibold">{t("inviteTitle")}</h2>
+          <p className="text-sm text-muted">{t("inviteBody")}</p>
+          <div>
+            <a href={inviteUrl(s.application_id)} target="_blank" rel="noopener noreferrer" className={buttonClass("primary", "md")}>{t("invite")}</a>
+          </div>
+        </section>
+      )}
+
+      {!disconnected && (
+        <section className="grid gap-3 rounded-[var(--radius-panel)] bg-surface p-5 shadow-[var(--shadow-1)] ring-1 ring-border">
+          <h2 className="font-semibold">{t("useTitle")}</h2>
+          <ol className="grid list-decimal gap-1.5 ps-5 text-sm">
+            <li>{t("use1")}</li>
+            <li>{t("use2")}</li>
+            <li>{t("use3")}</li>
+          </ol>
+        </section>
+      )}
+      <Notice tone="info" title={t("limitsTitle")}>{t("limitsBody")}</Notice>
+
+      <section className="grid gap-3">
+        <form action={updateDiscord} className="grid gap-4 sm:max-w-lg">
+          <input type="hidden" name="slug" value={slug} />
+          <input type="hidden" name="id" value={ch.id} />
+          <fieldset disabled={!canManage} className="grid gap-4">
+            <label className="grid gap-1.5 text-sm font-medium">
+              {t("nameLabel")}
+              <input name="name" defaultValue={ch.name} required maxLength={80} className={field} />
+            </label>
+          </fieldset>
+          {canManage && <div><Submit>{t("save")}</Submit></div>}
+        </form>
+      </section>
+
+      {canManage && (
+        <section className="grid gap-3">
+          <h2 className="font-semibold">{t("replaceTitle")}</h2>
+          <DiscordReplaceToken action={replaceDiscordToken} slug={slug} id={ch.id} reconnect={disconnected} />
+        </section>
+      )}
+
+      {canManage && !disconnected && (
+        <section className="grid gap-3">
+          <h2 className="font-semibold">{t("disconnectTitle")}</h2>
+          <p className="text-sm text-muted">{t("disconnectHelp")}</p>
+          <form action={disconnectDiscord}>
             <input type="hidden" name="slug" value={slug} />
             <input type="hidden" name="id" value={ch.id} />
             <Submit variant="secondary">{t("disconnect")}</Submit>

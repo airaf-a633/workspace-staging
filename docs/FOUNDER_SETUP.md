@@ -142,6 +142,20 @@ Slack is different from the other channels: you create the one Relay Slack app o
 - [ ] **Send a file** from the other side and check it appears in the chat.
 - [ ] **Things I could not confirm from Slack's documents, to watch for:** whether Slack Connect is available on your plan and who on each side may add an app to the channel; whether the app receives the outside person's messages when it is installed only on your side (Slack's page says events from external users arrive, with no other conditions); whether a person from the other workspace is correctly recognised as a customer (Relay compares their workspace with yours); whether an outside person's name comes back from Slack; whether files from the other side download; the exact HTTP style Slack accepts for each call (Relay uses form posts and plain GETs); how text with `<`, `&` or @mentions in a reply is shown (Relay sends it as typed, unescaped); and whether Slack sends the app-removed notice. Tell me what you see.
 
+### Discord (needs a Discord account and a server of your own; free)
+
+Discord needs one extra program running all the time: the **Gateway**. Discord only delivers messages over a connection that stays open, so this cannot run on a serverless host. Run exactly one copy next to the worker with `pnpm --filter @app/worker gateway` (it uses the same `.env` as the worker). Without it, the channel page says it is waiting.
+
+- [ ] **Start the Gateway** (above) and keep it running.
+- [ ] **Make a bot:** in Discord's Developer Portal create an application, open its **Bot** page and copy the **token**. Never paste it in chat. You do not need to switch on any "intent" or permission toggle there.
+- [ ] **Connect it:** Settings > Channels > Discord, paste the token, press Connect. Within a minute the channel page should say the bot is connected and show **Add the bot to a server**.
+- [ ] **Add it to your server** with that link.
+- [ ] **Send the bot a direct message** from a second Discord account: it should appear in the Inbox as a new chat with their name. Reply from the Inbox and check it arrives as a direct message.
+- [ ] **Mention the bot in a server channel** from the second account (@YourBot hello): a separate chat should appear, and your reply should show up as a Discord reply under their message. A message in the channel that does not mention the bot should NOT appear.
+- [ ] **Send a picture** to the bot and check it appears in the chat.
+- [ ] **Stop the Gateway** for a minute and start it again: messages sent while it was off may be missed (see below), and the channel page should recover to connected.
+- [ ] **Things I could not confirm from Discord's documents, to watch for:** whether a person who shares no server with the bot can send it a direct message at all (Relay assumes people reach it through your server); whether a mention in a server really arrives without the privileged Message Content permission (Discord's page says content is given for messages that mention the app); which closing codes Discord allows a reconnect after (Relay retries anything except the two documented ones); how long an attachment link stays valid; what Discord answers when a person has closed their direct messages (Relay shows Discord's own words); the limit on servers for a bot that is not verified; and that messages sent while the Gateway was fully stopped are not replayed (Discord replays only within one connection's session).
+
 Per-channel checklists (what to open and press to see a real message arrive) are added here as each channel is built.
 
 ## 6. Before launch

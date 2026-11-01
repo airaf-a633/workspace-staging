@@ -5,3 +5,4 @@ import "./line";
 import "./sms";
 import "./voice";
 import "./slack";
+import "./discord";

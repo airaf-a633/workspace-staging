@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "node --import tsx src/index.ts",
+    "gateway": "node --import tsx src/gateway.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
