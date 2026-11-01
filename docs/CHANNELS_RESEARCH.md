@@ -292,3 +292,34 @@ Sources: docs.discord.com (the old discord.com/developers addresses redirect the
 - How long an attachment's url stays valid.
 - Whether the message author object carries global_name in a MESSAGE_CREATE (the User object lists it).
 - Who in a server may add a bot (the page says only "proper permissions").
+
+## Microsoft Teams: verified facts (2026-11-02)
+
+Sources: Microsoft Learn: Bot Connector authentication, Bot Connector REST reference, Teams proactive messages, Teams bot rate limiting, uploading a custom Teams app, the Microsoft 365 app manifest (root and bots pages), the archived Teams bot conversations page. Search results (not Microsoft pages) are marked "reported".
+
+**Confirmed**
+- A Teams bot is an Azure Bot registration plus a Teams app. Teams sends each message to the bot's messaging endpoint as an Activity (JSON POST). Users cannot chat with a bot that is not connected to a Teams app; the app must be published or uploaded and installed.
+- Requests to the bot are authenticated with a JWT in `Authorization: Bearer`. To check one: fetch the OpenID document at https://login.botframework.com/v1/.well-known/openidconfiguration (a static address), take `jwks_uri` (https://login.botframework.com/v1/.well-known/keys), cache the keys and refresh at least every 24 hours. The token must have issuer https://api.botframework.com, audience equal to the bot's Microsoft App ID, be within its validity period (5 minutes of clock skew is usual), carry a valid RS256 signature from a listed key, and its `serviceUrl` claim must equal the Activity's `serviceUrl`. Anything else gets 403.
+- Calling back: POST to https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token with grant_type client_credentials, client_id (the App ID), client_secret and scope https://api.botframework.com/.default. A single-tenant bot uses its own tenant id in the address; a multi-tenant bot uses "botframework.com". The token lasts about an hour (expires_in 3600). Use it as `Authorization: Bearer` on Connector calls, and send it only to the Connector service.
+- Bot identity types named: user-assigned managed identity, single-tenant app, multi-tenant app.
+- Replying: POST {serviceUrl}v3/conversations/{conversationId}/activities/{activityId} with an Activity (type message, text, replyToId...). Use the `serviceUrl` from the incoming activity; it is usually stable but can change, so refresh it on each message. If a channel has no nested replies, a reply behaves like a normal send (Teams personal chat is one flat conversation).
+- The incoming message Activity (personal chat): `from.id` (unique to the bot and the user), `from.name`, `from.aadObjectId`, `conversation.id`, `conversation.conversationType` ("personal"), `channelData.tenant.id`, `text`, `serviceUrl`, `id`, `timestamp`, `channelId` "msteams". Text can contain mentions that must be stripped.
+- In personal chat the user can just type; in channels and group chats a bot is reached only by @mention. The app manifest must list the scopes the bot supports.
+- Proactive messaging needs the app installed for that user or team first. The bot may keep the conversation id from earlier activities. If the user has blocked or uninstalled the bot, Teams answers 403 with subCode MessageWritesBlocked.
+- Files and pictures from the user to the bot are supported; pictures at most 1 MB in PNG, JPEG or GIF (an archived page, v3 era).
+- Rate limits (current page): per bot per conversation 7 sends in 1 second, 8 in 2, 60 in 30, 1,800 in an hour; 50 requests per second per app per tenant (an estimate; Microsoft says exact values change). On HTTP 429, and also 412, 502, 504, retry with exponential backoff and random jitter.
+- App package: a zip with manifest.json and icons. Required manifest fields: manifestVersion, version (semver), id (GUID), developer (name up to 32 characters, websiteUrl, privacyUrl, termsOfUseUrl), name (short up to 30, full up to 100), description (short up to 80, full up to 4000), icons (color 192x192 PNG, outline 32x32 transparent PNG with a white border), accentColor (#RRGGBB). Bot entries need botId (GUID) and scopes; at most one bot entry.
+- Custom apps can be uploaded by a user when the organization allows custom app upload, or published to the organization and made available with app permission and setup policies. Microsoft recommends creating a Teams app connected to the Azure Bot with the Developer Portal and allowing users to install it through app permission policies.
+- Bot Connector tokens and the REST API are still documented (pages updated in 2026), including mention of the newer Microsoft 365 Agents SDK; the REST calls Relay needs do not depend on any SDK.
+
+**Reported, not on a Microsoft page I read**
+- New Teams bots must be single-tenant; multi-tenant bot creation is deprecated (reported by third-party docs and Microsoft Q&A). Microsoft's own authentication page lists multi-tenant, single-tenant and managed identity as bot identity types without saying which can still be created.
+- A cross-tenant workaround (single-tenant Azure Bot with a multi-tenant app registration) appears only as a proof of concept in a Q&A post, not as a supported pattern.
+
+**Not stated in the pages read (so not assumed)**
+- Which manifest version string to use (the latest-schema page says "devPreview"; the version pages exist but I did not read a stable one).
+- Whether an Azure Bot can be created for free, and what Azure subscription it needs.
+- The maximum length of a bot message in Teams.
+- How a user's file arrives in a personal chat (the attachment shape and download address).
+- How long a conversation id and serviceUrl stay valid.
+- Whether an employee can start a chat with the bot before an admin has installed the app for them.

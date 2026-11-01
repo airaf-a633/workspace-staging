@@ -602,3 +602,15 @@ Facts read from Discord's own documentation are in docs/CHANNELS_RESEARCH.md ("D
 - The channel page shows whether the connection is up, from health the Gateway process records. It also shows the link that adds the bot to a server, which appears once Discord has told the Gateway the bot's application id.
 - Safety rails: identifies are rationed to 100 a day per bot (Discord's limit is 1,000, and going over resets the token); the bot's token is only ever sent to Discord's host; attachment links are fetched only if they are public https addresses, and without credentials.
 - Not built: sharding (needed only past 2,500 servers per bot), threads and forum channels, reactions, edits and deletes, slash commands, sending files, a language other than the bot's.
+
+## Microsoft Teams (2026-11-02)
+
+Facts read from Microsoft's own documentation are in docs/CHANNELS_RESEARCH.md ("Microsoft Teams: verified facts"). Decided:
+- Teams is an internal help desk: a company's own colleagues message a bot in Teams, and the team answers from the inbox. It is not for customers outside the company.
+- Each company registers its own bot in its own Azure account (an Azure Bot, an Application (client) ID, a client secret and its Directory (tenant) ID) and pastes the three values into Relay. Relay checks them by asking Microsoft for a bot token. A shared Relay-wide bot is not possible: new bots are single-company (reported by third-party pages; the cross-company workaround is only a proof of concept).
+- Relay generates the Teams app file (manifest and icons, pre-filled with the company's bot) for download; the company's admin uploads it to Teams and allows colleagues to use it. The app's own id is the channel's id, so downloading again updates the same app. Needs someone with admin rights, about half an hour, once.
+- Only private (one to one) chats with the bot reach the inbox, one chat per person. Messages in team channels and group chats are not read (they would need an @mention and the reply would be public).
+- Optional welcome message, off by default: sent once when a colleague first opens the bot. No empty chat appears in the inbox until they write.
+- The messaging endpoint checks Microsoft's JWT on every call (issuer, audience = the bot's App ID, validity period, signature against Microsoft's published keys, serviceUrl, and the key's endorsement for the channel) and ignores anything from another tenant. Replies go to the serviceUrl of the colleague's latest message. The bot's token is requested from the company's own tenant and kept for under an hour.
+- Files sent in a chat are downloaded (they arrive as pre-authorised links). Pictures pasted into a chat are not downloaded yet and show as an unsupported message so nothing is silently lost.
+- Not built: channels and group chats, proactive messages to people who have not written first, message edits and deletes, cards, sending files, a Teams Store listing, other tenants (cross-company).

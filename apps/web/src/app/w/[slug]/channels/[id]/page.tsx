@@ -29,6 +29,9 @@ import { disconnectVoice, replaceVoiceCredentials, updateVoice } from "../voice-
 import { disconnectSlack, updateSlack } from "../slack-actions";
 import { DiscordReplaceToken } from "@/components/channels/discord-forms";
 import { disconnectDiscord, replaceDiscordToken, updateDiscord } from "../discord-actions";
+import { TeamsReplaceSecret, TeamsSettingsForm } from "@/components/channels/teams-forms";
+import { disconnectTeams, replaceTeamsSecret, updateTeams } from "../teams-actions";
+import { checkBotCredentials } from "@/lib/channels/teams-api";
 import { healthOf, inviteUrl } from "@/lib/channels/discord-api";
 import { DEFAULT_GREETING, DEFAULT_NOTICE, ring as ringSeconds, voiceUrls } from "@/lib/channels/voice-twiml";
 import { requestNow } from "@/lib/now";
@@ -56,6 +59,7 @@ export default async function ChannelPage(props: PageProps<"/w/[slug]/channels/[
   if (ch.type === "voice") return <VoiceChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
   if (ch.type === "slack") return <SlackChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
   if (ch.type === "discord") return <DiscordChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
+  if (ch.type === "teams") return <TeamsChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
   if (ch.type !== "webchat") notFound();
 
   const t = await getT("webchatSetup");
@@ -848,6 +852,105 @@ async function DiscordChannel({ slug, ch, sp, workspaceId }: {
           <h2 className="font-semibold">{t("disconnectTitle")}</h2>
           <p className="text-sm text-muted">{t("disconnectHelp")}</p>
           <form action={disconnectDiscord}>
+            <input type="hidden" name="slug" value={slug} />
+            <input type="hidden" name="id" value={ch.id} />
+            <Submit variant="secondary">{t("disconnect")}</Submit>
+          </form>
+        </section>
+      )}
+    </SettingsFrame>
+  );
+}
+
+/* A company's Teams help desk bot: the messaging endpoint to give Azure, the Teams app file, the connection check and disconnecting. */
+async function TeamsChannel({ slug, ch, sp, workspaceId }: {
+  slug: string;
+  ch: { id: string; name: string; settings: unknown; status: string };
+  sp: Record<string, string | string[] | undefined>;
+  workspaceId: string;
+}) {
+  const t = await getT("teamsSetup");
+  const canManage = await can(workspaceId, "numbers.manage");
+  const s = (ch.settings ?? {}) as { webhook_key?: string; app_id?: string; tenant_id?: string; greeting?: string };
+  const disconnected = ch.status === "disconnected";
+  const error = typeof sp.error === "string" ? sp.error : null;
+  const address = `${await appOrigin()}/api/webhooks/teams/${s.webhook_key}`;
+
+  // What Microsoft itself says about the credentials. Only managers see it; the secret is read here and never shown.
+  let health: "ok" | "rejected" | "unknown" = "unknown";
+  if (canManage && !disconnected && s.app_id && s.tenant_id) {
+    const { data: secrets } = await createAdminClient().rpc("channel_secrets", { p_channel: ch.id });
+    const secret = (secrets as { client_secret?: string } | null)?.client_secret;
+    if (secret) {
+      const check = await checkBotCredentials(fetch, s.app_id, secret, s.tenant_id);
+      health = check.ok ? "ok" : check.reason === "rejected" ? "rejected" : "unknown";
+    }
+  }
+
+  return (
+    <SettingsFrame base={`/w/${slug}`} active="channels" isOwner={await can(workspaceId, "members.manage")}>
+      <Link href={`/w/${slug}/channels`} className="flex w-fit items-center gap-1.5 text-sm text-muted hover:text-text">
+        <ArrowLeft size={16} className="rtl:rotate-180" aria-hidden="true" /> {t("backToList")}
+      </Link>
+      <SectionHeader title={ch.name} description={t("pageHelp")} />
+      {sp.created && <Notice tone="success" title={t("created")}>{t("createdBody")}</Notice>}
+      {sp.saved && <Notice tone="success" title={t("saved")} />}
+      {error && <Notice tone="error" title={t(error === "needName" ? "errors.needName" : error === "notAllowed" ? "errors.notAllowed" : "errors.failed")} />}
+      {disconnected && <Notice tone="warn" title={t("disconnected")}>{t("disconnectedBody")}</Notice>}
+
+      {!disconnected && (
+        <section className="grid gap-3 rounded-[var(--radius-panel)] bg-surface p-5 shadow-[var(--shadow-1)] ring-1 ring-border">
+          <h2 className="font-semibold">{t("finishTitle")}</h2>
+          <ol className="grid list-decimal gap-1.5 ps-5 text-sm">
+            <li>{t("finish1")}</li>
+            <li>{t("finish2")}</li>
+            <li>{t("finish3")}</li>
+            <li>{t("finish4")}</li>
+          </ol>
+          <div className="grid gap-1.5 text-sm font-medium">
+            {t("addressLabel")}
+            <CopyField value={address} label={t("addressLabel")} />
+            {!address.startsWith("https://") && <span className="text-xs font-normal text-muted">{t("needHttpsNote")}</span>}
+          </div>
+          {canManage && (
+            <div className="grid gap-1.5">
+              <p className="text-sm font-medium">{t("packageTitle")}</p>
+              <p className="text-xs text-muted">{t("packageHelp")}</p>
+              <div>
+                <a href={`/api/channels/teams/${ch.id}/package?slug=${encodeURIComponent(slug)}`} className={buttonClass("secondary", "md")}>{t("download")}</a>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {canManage && !disconnected && (
+        <section className="grid gap-2">
+          <h2 className="font-semibold">{t("healthTitle")}</h2>
+          {health === "ok" && <Notice tone="success" title={t("healthOk")}>{t("healthNote")}</Notice>}
+          {health === "rejected" && <Notice tone="error" title={t("healthRejected")} />}
+          {health === "unknown" && <Notice tone="warn" title={t("healthUnknown")} />}
+        </section>
+      )}
+
+      <Notice tone="info" title={t("limitsTitle")}>{t("limitsBody")}</Notice>
+
+      <section className="grid gap-3">
+        <TeamsSettingsForm action={updateTeams} slug={slug} id={ch.id} name={ch.name} greeting={s.greeting ?? ""} canManage={canManage} />
+      </section>
+
+      {canManage && (
+        <section className="grid gap-3">
+          <h2 className="font-semibold">{t("replaceTitle")}</h2>
+          <TeamsReplaceSecret action={replaceTeamsSecret} slug={slug} id={ch.id} reconnect={disconnected} />
+        </section>
+      )}
+
+      {canManage && !disconnected && (
+        <section className="grid gap-3">
+          <h2 className="font-semibold">{t("disconnectTitle")}</h2>
+          <p className="text-sm text-muted">{t("disconnectHelp")}</p>
+          <form action={disconnectTeams}>
             <input type="hidden" name="slug" value={slug} />
             <input type="hidden" name="id" value={ch.id} />
             <Submit variant="secondary">{t("disconnect")}</Submit>

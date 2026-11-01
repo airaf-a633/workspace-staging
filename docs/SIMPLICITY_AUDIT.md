@@ -210,3 +210,8 @@ Final pass (19 October): every audit item is now done.
 - **The custom role editor** asks six plain questions with answers in words.
 
 Still to do: **test with real people** using the script above. That's the real test.
+
+## Channel setup screens (added 2026-11-02, NOT yet audited)
+
+The setup and channel pages for Telegram, LINE, SMS, Voice, Slack, Discord and Teams were written in plain words, with short numbered steps and errors as sentences with what to do next. They have **not** been through this audit, and nobody non-technical has used them. Known heavy ones: Teams (an admin and Azure are unavoidable), SMS and Voice (a Twilio account), Slack and Discord (a developer portal each). Audit them after the channel build, the same way as the rest: can a distracted first-timer say where they are, what needs them, and what to press in five seconds?
+

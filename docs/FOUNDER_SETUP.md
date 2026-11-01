@@ -156,6 +156,19 @@ Discord needs one extra program running all the time: the **Gateway**. Discord o
 - [ ] **Stop the Gateway** for a minute and start it again: messages sent while it was off may be missed (see below), and the channel page should recover to connected.
 - [ ] **Things I could not confirm from Discord's documents, to watch for:** whether a person who shares no server with the bot can send it a direct message at all (Relay assumes people reach it through your server); whether a mention in a server really arrives without the privileged Message Content permission (Discord's page says content is given for messages that mention the app); which closing codes Discord allows a reconnect after (Relay retries anything except the two documented ones); how long an attachment link stays valid; what Discord answers when a person has closed their direct messages (Relay shows Discord's own words); the limit on servers for a bot that is not verified; and that messages sent while the Gateway was fully stopped are not replayed (Discord replays only within one connection's session).
 
+### Microsoft Teams (needs a Microsoft 365 / Teams account with admin rights, and an Azure account; Microsoft may charge for Azure)
+
+This is the heaviest setup of all the channels, because Microsoft requires each company to register its own bot. To test it you play a company: use a Microsoft 365 developer or test tenant if you have one.
+
+- [ ] **Azure:** create an **Azure Bot** (single tenant). Note its **Application (client) ID** and your **Directory (tenant) ID**. Create a **client secret** and copy its **value** at once (Azure shows it once). *(I could not confirm from Microsoft's pages whether an Azure Bot can be created for free or what subscription it needs.)*
+- [ ] **Connect it:** Settings > Channels > Microsoft Teams, paste the three values, a name (for example "Help desk") and an optional welcome message, press Connect.
+- [ ] **Give Microsoft the address:** on the channel page, copy the **messaging endpoint** into the Azure Bot's settings, and make sure the bot is enabled for Microsoft Teams. The site's public address must be https.
+- [ ] **Upload the Teams app:** on the channel page press **Download the Teams app file**. In the Teams admin center upload it as an app for the organization (or, for a quick test, upload it yourself in Teams if custom uploads are allowed), and allow colleagues to use it.
+- [ ] **Write to the bot** in Teams from a colleague's account: the message should appear in the Inbox with their name. Reply from the Inbox and check it arrives in the Teams chat.
+- [ ] **Welcome message:** if you set one, a second colleague opening the bot for the first time should receive it, and no empty chat should appear in the Inbox.
+- [ ] **Send a file** with the paperclip: it should appear in the chat. **Paste a picture**: it appears as an unsupported message.
+- [ ] **Things I could not confirm from Microsoft's documents, to watch for:** whether Teams accepts the app file as built (the manifest version "1.30" and the file name manifest.json are my best reading, and both are single constants in `teams-package.ts`; if the upload is refused, send me Teams' message); whether the key endorsement check passes for real Teams traffic (if every message is refused, the server log says "channel not endorsed"); whether an Azure Bot may be created single-tenant for free; the maximum length of a Teams message; how a pasted picture arrives; how long the conversation address stays valid; whether a colleague can open the bot before an admin has made the app available to them; and how replies render (Relay sends plain text, and Teams may treat `*` or `_` as formatting).
+
 Per-channel checklists (what to open and press to see a real message arrive) are added here as each channel is built.
 
 ## 6. Before launch
