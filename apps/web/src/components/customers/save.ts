@@ -20,6 +20,8 @@ export interface ListSave {
   bulk: (kind: "tag" | "owner" | "stage", ids: string[], value: string) => Promise<string | null>;
   /** Owners and admins: erase people (the same as erasing one, decided 2026-10-20). */
   erase: (ids: string[]) => Promise<string | null>;
+  /** Owners and admins: the selected people as a CSV file's text. */
+  exportCsv: (ids: string[]) => Promise<{ csv?: string; error?: string }>;
 }
 
 export interface CustomerSave {
@@ -28,4 +30,6 @@ export interface CustomerSave {
   consent: (id: string, channel: string, status: "in" | "out" | "unknown") => Promise<string | null>;
   doNotContact: (id: string, on: boolean) => Promise<string | null>;
   erase: (id: string) => Promise<string | null>;
+  /** Owners and admins: everything held about one person, as a file's text. */
+  exportData: (id: string) => Promise<{ json?: string; error?: string }>;
 }

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Fragment, useState } from "react";
+import { download } from "./download";
 import type { ContactPatch, CustomerSave } from "./save";
 import { CustomerEdit } from "./customer-edit";
 import { ArrowLeft, ArrowsLeftRight, Buildings, ChatCircle, CheckSquare, ClockCounterClockwise, DotsThree, DownloadSimple, EnvelopeSimple, Handshake, NotePencil, PencilSimple, PushPin, ShieldCheck, ShoppingBag, WarningCircle } from "@phosphor-icons/react";
@@ -104,7 +105,15 @@ export function CustomerPage({ c: initial, duplicate, company: initialCompany, s
     });
   }
   function exportData() {
-    // Everything held about the person, as one file (GDPR access request). Downloads in the browser only.
+    if (save) {
+      void save.exportData(c.id).then((res) => {
+        if (!res.json) return setStatus(t("saveFailed"));
+        download(res.json, `${c.name.replace(/[^\w-]+/g, "-").toLowerCase()}-data.json`, "application/json");
+        setStatus(t("privacy.exported"));
+      });
+      return;
+    }
+    // Everything held about the person, as one file (GDPR access request). The preview downloads what's on screen.
     const blob = new Blob([JSON.stringify(c, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -118,7 +127,7 @@ export function CustomerPage({ c: initial, duplicate, company: initialCompany, s
     return (
       <div className="grid gap-4 rounded-[var(--radius-panel)] bg-surface p-6 ring-1 ring-border">
         <p className="flex items-center gap-2 font-semibold"><ShieldCheck size={20} className="text-done" aria-hidden="true" />{t("privacy.erasedTitle")}</p>
-        <p className="text-muted">{t("privacy.erasedBody")}</p>
+        <p className="text-muted">{t("privacy.erasedBody")}{!save && ` ${t("privacy.previewNote")}`}</p>
         <Link href={`${base}/customers`} className={buttonClass("secondary", "md", "w-fit")}>{t("back")}</Link>
       </div>
     );

@@ -2,7 +2,7 @@
 
 import type { ComponentProps } from "react";
 import {
-  addCustomer, bulkCustomers, eraseCustomers, importCustomers, mergeCustomers, patchCustomer, pinCustomerNote, setConsent, setDoNotContact,
+  addCustomer, bulkCustomers, eraseCustomers, exportCustomerData, exportCustomersCsv, importCustomers, mergeCustomers, patchCustomer, pinCustomerNote, setConsent, setDoNotContact,
 } from "@/app/w/[slug]/customers/actions";
 import { CustomerList } from "./customer-list";
 import { CustomerPage } from "./customer-page";
@@ -21,6 +21,7 @@ export function CustomerListLive({ slug, ...props }: Omit<ComponentProps<typeof 
         add: (draft) => addCustomer(slug, draft),
         bulk: (kind, ids, value) => bulkCustomers(slug, kind, ids, value),
         erase: (ids) => eraseCustomers(slug, ids),
+        exportCsv: (ids) => exportCustomersCsv(slug, ids),
       }}
     />
   );
@@ -36,6 +37,7 @@ export function CustomerPageLive({ slug, ...props }: Omit<ComponentProps<typeof 
         consent: (id, channel, status) => setConsent(slug, id, channel, status),
         doNotContact: (id, on) => setDoNotContact(slug, id, on),
         erase: (id) => eraseCustomers(slug, [id]),
+        exportData: (id) => exportCustomerData(slug, id),
       }}
     />
   );

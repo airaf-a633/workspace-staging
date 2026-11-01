@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { download } from "./download";
 import type { ListSave } from "./save";
 import { Buildings, CaretDown, DownloadSimple, Funnel, MagnifyingGlass, Plus, Tag, Trash, UploadSimple, UserCircle, X } from "@phosphor-icons/react";
 import { ChannelMark } from "@/components/channels/channel-mark";
@@ -160,7 +161,7 @@ export function CustomerList({ customers: initial, companies, people, teams, vie
         void save.erase(ids).then((error) => error && setToast(t("saveFailed")));
       }
       setCustomers(customers.filter((c) => !picked.includes(c.id)));
-      setToast(t("bulk.deleted", { count: n }));
+      setToast(t(save ? "bulk.deletedReal" : "bulk.deleted", { count: n }));
     } else if (bulk === "tag" && bulkValue.trim()) {
       setCustomers(customers.map((c) => (picked.includes(c.id) && !c.tags.includes(bulkValue.trim()) ? { ...c, tags: [...c.tags, bulkValue.trim()] } : c)));
       setToast(t("bulk.tagged", { count: n, tag: bulkValue.trim() }));
@@ -335,7 +336,14 @@ export function CustomerList({ customers: initial, companies, people, teams, vie
                 <button type="button" onClick={() => { setBulk("owner"); setBulkValue(""); }} className={buttonClass("ghost", "sm")}><UserCircle size={16} aria-hidden="true" /> {t("bulk.owner")}</button>
                 <button type="button" onClick={() => { setBulk("stage"); setBulkValue(""); }} className={buttonClass("ghost", "sm")}>{t("bulk.stage")}</button>
                 {canBulkDelete && (
-                  <button type="button" onClick={() => setToast(t("bulk.exported", { count: picked.length }))} className={buttonClass("ghost", "sm")}><DownloadSimple size={16} aria-hidden="true" /> {t("bulk.export")}</button>
+                  <button type="button" onClick={() => {
+                    if (!save) return setToast(t("bulk.exported", { count: picked.length }));
+                    void save.exportCsv(picked).then((res) => {
+                      if (!res.csv) return setToast(t("saveFailed"));
+                      download(res.csv, "customers.csv", "text/csv");
+                      setToast(t("bulk.exportedReal", { count: picked.length }));
+                    });
+                  }} className={buttonClass("ghost", "sm")}><DownloadSimple size={16} aria-hidden="true" /> {t("bulk.export")}</button>
                 )}
                 {canBulkDelete && (
                   <button type="button" onClick={() => { setBulk("delete"); setBulkValue(""); }} className={buttonClass("ghost", "sm", "text-fail")}><Trash size={16} aria-hidden="true" /> {t("bulk.delete")}</button>

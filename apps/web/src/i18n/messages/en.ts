@@ -506,9 +506,11 @@ export const en = {
       deleteConfirm: { one: "Delete {count} contact? Their details, messages and files are erased for good. Reports keep anonymous counts only.", other: "Delete {count} contacts? Their details, messages and files are erased for good. Reports keep anonymous counts only." },
       deleteButton: { one: "Delete {count} contact", other: "Delete {count} contacts" },
       deleted: { one: "{count} contact deleted. In the preview it comes back when you reload.", other: "{count} contacts deleted. In the preview they come back when you reload." },
+      deletedReal: { one: "{count} contact erased.", other: "{count} contacts erased." },
       tagged: { one: "Tagged {count} contact with {tag}.", other: "Tagged {count} contacts with {tag}." },
       owned: { one: "{name} now owns {count} contact.", other: "{name} now owns {count} contacts." },
       staged: { one: "Moved {count} contact to {stage}.", other: "Moved {count} contacts to {stage}." },
+      exportedReal: { one: "Downloaded {count} contact as a CSV file.", other: "Downloaded {count} contacts as a CSV file." },
       exported: { one: "Export of {count} contact is ready. In the real app it arrives as a CSV file.", other: "Export of {count} contacts is ready. In the real app it arrives as a CSV file." },
     },
     companies: {
@@ -568,7 +570,8 @@ export const en = {
       exported: "Their data was downloaded as a file.",
       eraseType: "Type {name} to confirm",
       erasedTitle: "Erased.",
-      erasedBody: "Their messages, media, notes and deals are gone. The audit log records that an erasure happened. In the preview the contact comes back when you reload.",
+      erasedBody: "Their messages, media, notes and deals are gone. The audit log records that an erasure happened.",
+      previewNote: "In the preview the contact comes back when you reload.",
     },
   },
 

@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import type { ContactPatch } from "@/components/customers/save";
+import { customersCsv } from "@/lib/customers-csv";
 import { loadWorkspace } from "@/lib/workspace";
 
 /**
@@ -126,4 +127,21 @@ export async function importCustomers(slug: string, rows: Record<string, unknown
     total.skipped += r.skipped;
   }
   return total;
+}
+
+/** Owners and admins: a CSV list of the chosen people (decided 2026-10-07). Each export is written to the audit log. */
+export async function exportCustomersCsv(slug: string, ids: string[]): Promise<{ csv?: string; error?: string }> {
+  const { supabase } = await loadWorkspace(slug);
+  const list = z.array(z.uuid()).max(500).parse(ids);
+  const { data, error } = await supabase.rpc("export_contacts", { p_contacts: list });
+  if (error) return { error: key(error.message) };
+  return { csv: customersCsv(data ?? []) };
+}
+
+/** Owners and admins: everything held about one person, to answer a data access request. */
+export async function exportCustomerData(slug: string, id: string): Promise<{ json?: string; error?: string }> {
+  const { supabase } = await loadWorkspace(slug);
+  const { data, error } = await supabase.rpc("export_contacts", { p_contacts: [z.uuid().parse(id)] });
+  if (error || !data?.[0]) return { error: error ? key(error.message) : "failed" };
+  return { json: JSON.stringify(data[0], null, 2) };
 }
