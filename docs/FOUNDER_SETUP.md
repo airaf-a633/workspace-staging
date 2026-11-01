@@ -86,6 +86,14 @@ Nothing in the channel work has run against a real server yet. Once staging is r
 - [ ] **Run the live browser tests** (PowerShell): `$env:E2E_LIVE=1; $env:E2E_WORKER=1; pnpm --filter @app/web e2e:live`.
 - [ ] **API channel, by hand:** Settings > Channels > API > Create inbox, copy the key, then run the `curl` example it shows. The message should appear in the Inbox within a few seconds.
 
+### Telegram (needs your Telegram account; free, about 10 minutes)
+
+- [ ] **Make a test bot:** in Telegram, chat with @BotFather, send `/newbot`, follow the steps, and copy the token. *(5 minutes.)* Keep the token in your password manager. Never paste it in chat.
+- [ ] **Make sure the app has a public https address.** Telegram only sends messages to a secure public address, so a local `http://localhost` setup can't connect a bot. Use the staging site's address in `NEXT_PUBLIC_SITE_URL`.
+- [ ] **Connect it:** Settings > Channels > Telegram, paste the token, press Connect. The page then shows the bot's link and a "Connection" line from Telegram itself.
+- [ ] **Send it a message** from your own Telegram (open the link, press Start, write something). It should appear in the Inbox within a few seconds. Reply from the Inbox and check it arrives in Telegram.
+- [ ] **Things I could not confirm from Telegram's documents, to watch for:** what the exact error is when a person blocks the bot, and whether a bot can ever message someone who hasn't pressed Start. Tell me what you see; I'll word the screens on facts.
+
 Per-channel checklists (what to open and press to see a real message arrive) are added here as each channel is built.
 
 ## 6. Before launch

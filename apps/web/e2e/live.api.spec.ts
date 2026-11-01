@@ -45,6 +45,8 @@ test("an API message reaches the inbox, and retries and bad calls are handled", 
   await page.getByText(text).first().click();
 
   // No reply address is set, so a reply fails with a reason a person can act on
+  // A chat nobody has taken must be taken before replying
+  await page.getByRole("button", { name: "Take this chat" }).click();
   await page.getByRole("textbox").last().fill("On its way!");
   await page.keyboard.press("Enter");
   await expect(page.getByText(/no webhook address/i)).toBeVisible({ timeout: 30_000 });

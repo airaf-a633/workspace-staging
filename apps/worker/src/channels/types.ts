@@ -71,6 +71,11 @@ export interface ChannelModule {
   type: string;
   /** Provider webhook body to messages. Events that aren't messages (typing, read receipts) return []. */
   parse(body: unknown, channel: ChannelRow, creds: Creds): InboundItem[];
+  /**
+   * Optional: something to do for a webhook that is not a message (Telegram's Start button sends a greeting).
+   * It runs after the messages are filed. A failure is logged and never fails the event, so a retry can't double-file.
+   */
+  welcome?(f: typeof fetch, creds: Creds, body: unknown, channel: ChannelRow): Promise<void>;
   send(f: typeof fetch, creds: Creds, req: SendRequest): Promise<{ externalId: string }>;
   download?(f: typeof fetch, creds: Creds, ref: Record<string, unknown>): Promise<{ bytes: Uint8Array; mime?: string | undefined; filename?: string | undefined }>;
 }

@@ -113,3 +113,38 @@ Nothing to research externally: it's ours. A developer gets a key per inbox and 
 2. **SMS and Voice** share one Twilio connection. The code is easy; the carrier rules (US registration) decide how fast a real customer can go live. Test numbers work without registration.
 3. **Slack, Discord and Teams** are workspace-app installs. Slack is webhook-based. Discord forces an always-on process. Teams is narrow.
 4. **TikTok, X, Viber, WeChat and Apple** are gated by an approval, a contract or a cost. Building them before the gate opens risks wasted work.
+
+---
+
+## Telegram: verified facts (1 November 2026)
+
+*Read from Telegram's own pages: the Bot API reference, the Bots FAQ, the Bot features page and the webhook guide. "Not stated" means the official page says nothing, so we don't assume it.*
+
+**Confirmed by Telegram's own documentation**
+- Updates arrive by webhook (push) or `getUpdates` (pull), never both: a webhook disables `getUpdates` while it's set.
+- `setWebhook`: the URL must be https (TLS 1.2 or higher, a certificate matching the domain that chains to a trusted root). Ports 443, 80, 88 and 8443 only. IPv4 only; IPv6 isn't supported for webhooks. `max_connections` 1 to 100. `drop_pending_updates` exists.
+- `secret_token` (1 to 256 characters, A-Z a-z 0-9 `_` `-`) comes back in the `X-Telegram-Bot-Api-Secret-Token` header on every webhook call, so we can prove a call is Telegram's.
+- A non-2xx answer counts as a failure and Telegram retries "a reasonable number of attempts". The exact count isn't stated, so every message must be safe to receive twice (it is: the message id is our dedupe key).
+- With an empty `allowed_updates`, Telegram sends every update type except `chat_member`, `message_reaction` and `message_reaction_count`. We should ask only for what we use.
+- Telegram's calls come from 149.154.160.0/20 and 91.108.4.0/22, which "may change", so we must not rely on an address allow-list.
+- Message: `message_id` (unique inside one chat), `date` (Unix time), `chat` (with `id` and `type`), optional `from` (User: `id`, `first_name`, `last_name`, `username`, `language_code`), `text`, `caption`, `photo` (a list of sizes), `document`, `voice`, `audio`, `video`, `video_note`, `animation`, `sticker`, `location`, `contact`, `media_group_id`, `reply_to_message`, `business_connection_id`.
+- Files: `file_id`, plus optional `file_name`, `mime_type`, `file_size` on documents, audio, video and animations; voice has `mime_type` and `duration`. A file's download link is valid for at least one hour. **Bots can download files up to 20 MB and upload up to 50 MB.**
+- `sendMessage`: text is 1 to 4096 characters. Replying to a specific message uses `reply_parameters`.
+- Error answers have `ok: false` and a `description`. The numeric `error_code` is "subject to change in the future", so we won't rely on it alone. A rate-limit answer carries `retry_after` seconds.
+- Limits from the FAQ: about one message a second to one chat, 20 a minute in a group, and roughly 30 a second across all chats for broadcasts.
+- A conversation starts when the person opens the bot's `https://t.me/<bot>` link and presses Start; `?start=<value>` passes a value to the bot (up to 64 characters of A-Z a-z 0-9 `_` `-`).
+- Bots receive all private-chat messages whatever the privacy mode. In groups, privacy mode (on by default) limits a bot to commands and replies to it.
+- **Telegram Business:** an owner turns on "Secretary Mode" for the bot in BotFather, then the account owner connects the bot to their Telegram account and chooses which chats it can reach. The bot gets `business_connection` (with `rights`, such as `can_reply`) and `business_message` updates, and replies by passing `business_connection_id`. Some actions are limited to private chats with an incoming message in the last 24 hours.
+
+**Not stated by Telegram's pages, so not assumed (confirm with a real bot)**
+- Whether a bot can ever message a person who hasn't started it, and the exact error when it tries.
+- What exactly is returned when a person blocks the bot.
+- The exact retry count and timing of a failed webhook delivery.
+- The fields of the Sticker object and the `getMe` answer (the pages I could read didn't include them). We read them defensively: everything optional, nothing required.
+- Whether `getFile` answers for a file just under 20 MB reliably on the hosted API.
+
+**What this means for the design**
+- Bot token and secret token live in Vault. The webhook address is `/api/webhooks/telegram/<key>`; the secret header is checked in constant time.
+- Telegram addresses a person by their numeric `chat.id` (same as `from.id` in a private chat). There's no phone number or email, so people can't be matched to other channels automatically; a manager can merge them.
+- Display name = first and last name; `@username` if there is one, otherwise nothing is invented.
+- Plain text only when sending (no `parse_mode`), so a customer's or agent's special characters are never read as formatting.

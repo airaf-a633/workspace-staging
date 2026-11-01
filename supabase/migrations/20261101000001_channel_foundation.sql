@@ -81,7 +81,7 @@ begin
   return jsonb_build_object('id', ch, 'key', key);
 end $$;
 
--- Changing a channel: rename it, merge settings, replace credentials. Marks it connected again.
+-- Changing a channel: rename it, merge settings, replace credentials (which reconnects it).
 create function public.update_channel_credentials(p_channel uuid, p_settings jsonb, p_secrets jsonb, p_name text default null) returns void
 language plpgsql security definer set search_path = '' as $$
 declare ch public.channels%rowtype;
@@ -93,7 +93,8 @@ begin
   update public.channels
      set name = coalesce(nullif(btrim(coalesce(p_name, '')), ''), name),
          settings = (settings || (coalesce(p_settings, '{}') - 'webhook_key')),
-         status = 'connected'
+         -- Only replacing credentials reconnects; renaming or editing settings never changes the status.
+         status = case when coalesce(p_secrets, '{}'::jsonb) <> '{}'::jsonb then 'connected' else status end
    where id = p_channel;
   perform public.put_channel_secrets(p_channel, p_secrets);
   insert into public.audit_log (workspace_id, actor_member_id, action, entity, entity_id, data)

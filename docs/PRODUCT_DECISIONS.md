@@ -543,3 +543,12 @@ Research: docs/CHANNELS_RESEARCH.md. Plan: docs/CHANNELS_PLAN.md. Decided:
 - Slack: customers in Slack Connect channels (the customer-support use). Internal help desk is not in scope.
 - TikTok, X, Viber, WeChat and Apple Messages show as "Request access" until each one's approval, contract or cost is settled; built after that.
 - Teams: internal help desk only, installed by a company's admin; customer-facing Teams is not promised.
+
+## Telegram (2026-11-01)
+
+Facts read from Telegram's own documentation are in docs/CHANNELS_RESEARCH.md ("Telegram: verified facts"). Decided:
+- A normal bot first. Connecting a business's own Telegram account (Telegram Business) comes later.
+- The owner may set a greeting. It is sent once when someone presses Start, and a bare Start is not filed as a conversation.
+- Private chats only. Group messages are ignored silently (the bot does not reply in groups, to avoid noise).
+- Replies are plain text; files from customers are downloaded up to Telegram's 20 MB bot limit and a bigger file says so in the thread.
+- People are told apart by Telegram's chat id. Name is first and last name, else the @username, else blank; nothing is invented.

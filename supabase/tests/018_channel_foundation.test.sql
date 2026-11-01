@@ -1,7 +1,7 @@
 -- The other channels, step 0: credentials, connecting, webhook lookup and reply windows.
 -- Seed: khalid ...01 owner, hana ...05 agent, noor ...07 owner of another business.
 begin;
-select plan(19);
+select plan(23);
 
 create function pg_temp.act_as(p_user uuid) returns void language plpgsql as $$
 begin
@@ -55,6 +55,17 @@ select is((select settings ->> 'webhook_key' from public.channels where id = (se
 select pg_temp.act_as('10000000-0000-0000-0000-000000000005');
 select throws_ok($$ select public.disconnect_channel((select (v::jsonb ->> 'id')::uuid from ids where k = 'tg')) $$, '42501', null, 'an agent cannot disconnect a channel');
 reset role;
+
+-- A disconnected channel stays disconnected when only renamed, and reconnects when its credentials are replaced
+update public.channels set status = 'disconnected' where id = (select (v::jsonb ->> 'id')::uuid from ids where k = 'tg');
+select pg_temp.act_as('10000000-0000-0000-0000-000000000001');
+select lives_ok($$ select public.update_channel_credentials((select (v::jsonb ->> 'id')::uuid from ids where k = 'tg'), '{}', '{}', 'Renamed again') $$, 'renaming works while disconnected');
+reset role;
+select is((select status from public.channels where id = (select (v::jsonb ->> 'id')::uuid from ids where k = 'tg')), 'disconnected', 'renaming does not reconnect a channel');
+select pg_temp.act_as('10000000-0000-0000-0000-000000000001');
+select lives_ok($$ select public.update_channel_credentials((select (v::jsonb ->> 'id')::uuid from ids where k = 'tg'), '{}', '{"bot_token":"1:x"}') $$, 'replacing the token works');
+reset role;
+select is((select status from public.channels where id = (select (v::jsonb ->> 'id')::uuid from ids where k = 'tg')), 'connected', 'replacing credentials reconnects it');
 
 -- Reply windows: TikTok allows 48 hours
 select pg_temp.act_as('10000000-0000-0000-0000-000000000001');

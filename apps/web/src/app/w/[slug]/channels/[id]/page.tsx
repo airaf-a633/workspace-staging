@@ -12,6 +12,12 @@ import { can, loadWorkspace } from "@/lib/workspace";
 import { updateWebchat } from "../webchat-actions";
 import { ApiRotate } from "@/components/channels/api-inbox";
 import { rotateApiKey, updateApiInbox } from "../api-actions";
+import { TelegramReplaceToken } from "@/components/channels/telegram-forms";
+import { disconnectTelegram, replaceTelegramToken, updateTelegram } from "../telegram-actions";
+import { CopyField } from "@/components/ui/copy-button";
+import { getWebhookInfo } from "@/lib/channels/telegram-api";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { requestNow } from "@/lib/now";
 import { updateEmailChannel, verifyEmailDomain } from "../email-actions";
 import { Submit } from "@/components/ui/submit";
 
@@ -30,6 +36,7 @@ export default async function ChannelPage(props: PageProps<"/w/[slug]/channels/[
   if (ch.type === "whatsapp") redirect(`/w/${slug}/whatsapp`);
   if (ch.type === "email") return <EmailChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
   if (ch.type === "api") return <ApiChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
+  if (ch.type === "telegram") return <TelegramChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
   if (ch.type !== "webchat") notFound();
 
   const t = await getT("webchatSetup");
@@ -237,6 +244,105 @@ async function ApiChannel({ slug, ch, sp, workspaceId }: {
         <section className="grid gap-3">
           <h2 className="font-semibold">{t("keyTitle")}</h2>
           <ApiRotate action={rotateApiKey} slug={slug} id={ch.id} />
+        </section>
+      )}
+    </SettingsFrame>
+  );
+}
+
+/* A Telegram bot: its link, whether Telegram is delivering, the greeting, the token and disconnecting. */
+async function TelegramChannel({ slug, ch, sp, workspaceId }: {
+  slug: string;
+  ch: { id: string; name: string; settings: unknown; status: string };
+  sp: Record<string, string | string[] | undefined>;
+  workspaceId: string;
+}) {
+  const t = await getT("telegramSetup");
+  const canManage = await can(workspaceId, "numbers.manage");
+  const s = (ch.settings ?? {}) as { username?: string | null; greeting?: string; webhook_key?: string };
+  const disconnected = ch.status === "disconnected";
+  const error = typeof sp.error === "string" ? sp.error : null;
+  const field = "min-h-11 rounded-[var(--radius-control)] border border-input bg-surface px-3 font-normal";
+
+  // What Telegram itself says about delivery. Only managers see it; the token is read here and never shown.
+  let health: "ok" | "none" | "rejected" | "unknown" | { error: string } = "unknown";
+  let pending = 0;
+  if (canManage && !disconnected) {
+    const { data: secrets } = await createAdminClient().rpc("channel_secrets", { p_channel: ch.id });
+    const token = (secrets as { bot_token?: string } | null)?.bot_token;
+    if (token) {
+      const info = await getWebhookInfo(fetch, token);
+      if (info.ok) {
+        pending = info.value.pending;
+        health = !info.value.url ? "none" : info.value.lastError && info.value.lastErrorAt && requestNow() - info.value.lastErrorAt.getTime() < 3_600_000 ? { error: info.value.lastError } : "ok";
+      } else if (info.reason === "rejected") health = "rejected";
+    }
+  }
+
+  return (
+    <SettingsFrame base={`/w/${slug}`} active="channels" isOwner={await can(workspaceId, "members.manage")}>
+      <Link href={`/w/${slug}/channels`} className="flex w-fit items-center gap-1.5 text-sm text-muted hover:text-text">
+        <ArrowLeft size={16} className="rtl:rotate-180" aria-hidden="true" /> {t("backToList")}
+      </Link>
+      <SectionHeader title={ch.name} description={t("pageHelp")} />
+      {sp.created && <Notice tone="success" title={t("created")}>{t("createdBody")}</Notice>}
+      {sp.saved && <Notice tone="success" title={t("saved")} />}
+      {error && <Notice tone="error" title={t(error === "needName" ? "errors.needName" : error === "notAllowed" ? "errors.notAllowed" : "errors.failed")} />}
+      {disconnected && <Notice tone="warn" title={t("disconnected")}>{t("disconnectedBody")}</Notice>}
+
+      {!disconnected && s.username && (
+        <section className="grid gap-2">
+          <h2 className="font-semibold">{t("linkTitle")}</h2>
+          <CopyField value={`https://t.me/${s.username}`} label={t("linkTitle")} />
+        </section>
+      )}
+
+      {canManage && !disconnected && (
+        <section className="grid gap-2">
+          <h2 className="font-semibold">{t("healthTitle")}</h2>
+          {health === "ok" && <Notice tone="success" title={t("healthOk")}>{pending > 0 ? t("healthPending", { count: pending }) : null}</Notice>}
+          {health === "none" && <Notice tone="error" title={t("healthNone")} />}
+          {health === "rejected" && <Notice tone="error" title={t("healthRejected")} />}
+          {health === "unknown" && <Notice tone="warn" title={t("healthUnknown")} />}
+          {typeof health === "object" && <Notice tone="error" title={t("healthError", { error: health.error })} />}
+        </section>
+      )}
+
+      <section className="grid gap-3">
+        <form action={updateTelegram} className="grid gap-4 sm:max-w-lg">
+          <input type="hidden" name="slug" value={slug} />
+          <input type="hidden" name="id" value={ch.id} />
+          <fieldset disabled={!canManage} className="grid gap-4">
+            <label className="grid gap-1.5 text-sm font-medium">
+              {t("nameLabel")}
+              <input name="name" defaultValue={ch.name} required maxLength={80} className={field} />
+            </label>
+            <label className="grid gap-1.5 text-sm font-medium">
+              {t("greeting")}
+              <textarea name="greeting" rows={3} maxLength={1000} defaultValue={s.greeting ?? ""} placeholder={t("greetingPlaceholder")} className={`${field} py-2`} />
+              <span className="text-xs font-normal text-muted">{t("greetingHelp")}</span>
+            </label>
+          </fieldset>
+          {canManage && <div><Submit>{t("save")}</Submit></div>}
+        </form>
+      </section>
+
+      {canManage && (
+        <section className="grid gap-3">
+          <h2 className="font-semibold">{t("replaceTitle")}</h2>
+          <TelegramReplaceToken action={replaceTelegramToken} slug={slug} id={ch.id} reconnect={disconnected} />
+        </section>
+      )}
+
+      {canManage && !disconnected && (
+        <section className="grid gap-3">
+          <h2 className="font-semibold">{t("disconnectTitle")}</h2>
+          <p className="text-sm text-muted">{t("disconnectHelp")}</p>
+          <form action={disconnectTelegram}>
+            <input type="hidden" name="slug" value={slug} />
+            <input type="hidden" name="id" value={ch.id} />
+            <Submit variant="secondary">{t("disconnect")}</Submit>
+          </form>
         </section>
       )}
     </SettingsFrame>

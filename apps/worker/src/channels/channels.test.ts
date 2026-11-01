@@ -83,6 +83,14 @@ describe("filing an inbound channel webhook", () => {
     expect(calls.some((c) => c.fn === "enqueue_job")).toBe(false);
   });
 
+  it("runs the channel's welcome step, and a failure there never fails the event", async () => {
+    let welcomed = 0;
+    MODULES.api = { ...fake, welcome: async () => { welcomed++; throw new Error("telegram down"); } };
+    const { db } = fakeDb();
+    expect((await processChannelEvent(ctx(db), 1)).outcome).toBe("processed");
+    expect(welcomed).toBe(1);
+  });
+
   it("ignores a channel type it has no handler for", async () => {
     const saved = MODULES.api!;
     delete MODULES.api;

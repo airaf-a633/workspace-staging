@@ -29,7 +29,8 @@ export async function processChannelEvent(ctx: Ctx, eventId: number): Promise<{ 
   const module = MODULES[row.type];
   if (!module) return { outcome: "ignored", note: `No handler for ${row.type}` };
 
-  const items = module.parse(body, row, await channelCreds(ctx, channel_id));
+  const creds = await channelCreds(ctx, channel_id);
+  const items = module.parse(body, row, creds);
   let filed = 0;
   for (const item of items) {
     const id = await rpc<string | null>(ctx, "ingest_inbound", {
@@ -55,6 +56,13 @@ export async function processChannelEvent(ctx: Ctx, eventId: number): Promise<{ 
         p_queue: "channel_media",
         p_payload: { message_id: id, channel_id, ref: first.ref, mime: first.mime ?? null, filename: first.filename ?? null },
       });
+    }
+  }
+  if (module.welcome) {
+    try {
+      await module.welcome(ctx.fetch ?? fetch, creds, body, row);
+    } catch (e) {
+      ctx.log(`welcome failed for channel ${channel_id}: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
   return { outcome: "processed", note: `${items.length} messages, ${filed} new` };
