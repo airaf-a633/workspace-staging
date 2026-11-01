@@ -213,3 +213,29 @@ Nothing to research externally: it's ours. A developer gets a key per inbox and 
 - Replies are plain text up to **1,600 characters** (the database limit for SMS is lowered from 4,096), with a `StatusCallback` so the thread shows delivered and failed.
 - A STOP reply comes through as `OptOutType=STOP`.
 - **Voice is different in kind:** because the call webhook must answer with TwiML, a Relay Voice channel has to decide what happens to a caller (ring a phone, take a voicemail). That's a product decision, asked when Voice starts.
+
+## Voice on Twilio: verified facts (2026-11-02)
+
+Sources: Twilio docs for TwiML overview, Record, Dial, Call resource, Recording resource, webhook security.
+
+**Confirmed**
+- An incoming call makes Twilio request the URL set on the number (GET or POST). Our server answers with TwiML (XML in a `<Response>`), run top to bottom.
+- Always sent: CallSid, AccountSid, From, To (E.164), CallStatus, ApiVersion, Direction, ForwardedFrom, CallerName, ParentCallSid, CallToken. City/state/country fields come when available.
+- Verbs: Say, Play, Record, Dial, Gather, Hangup.
+- Signing: one process for all webhooks (X-Twilio-Signature, HMAC-SHA1 keyed with the auth token over URL + params). No voice-specific difference is stated, so the SMS signature check applies.
+- Record: maxLength (default 3600 s), timeout = silence seconds (default 5), transcribe (paid, American English only, 2 to 120 s), recordingStatusCallback (POST, sent when the file is available), action (sent when recording ends; the file may not be fetchable yet).
+- Recording callback fields: RecordingSid, RecordingUrl, RecordingDuration, RecordingStatus (completed or failed), RecordingChannels, RecordingSource, CallSid, AccountSid.
+- RecordingUrl returns WAV by default; append .mp3 for MP3. Media is fetchable only when status is completed.
+- Media URLs need HTTP Basic auth. Twilio recommends an API key SID and secret. It does not say the Account SID and Auth Token work.
+- Recording metadata is kept 40 days after deletion. A retention period for the media file is not stated.
+- Twilio warns that recording needs consent under laws such as California's Invasion of Privacy Act, and says to consult counsel. Recordings are not PCI compliant by default.
+- Dial forwards a call to a number. Attributes: action (called after the dialed leg ends, with DialCallStatus, DialCallSid, DialCallDuration), timeout (default 30, min 5, max 600), callerId, record. DialCallStatus: completed, answered, busy, no-answer, failed, canceled.
+- Outbound calls: POST /Accounts/{sid}/Calls.json with To, From (a Twilio number or verified caller ID), and Url or Twiml (max 4000 chars). StatusCallback events: initiated, ringing, answered, completed (default completed). Statuses: queued, ringing, in-progress, canceled, completed, busy, no-answer, failed. 1 call per second by default, up to 5 with an approved Business Profile. Inbound and Dial calls are not limited.
+- A "completed" call can be answered by a person, a menu or voicemail, and is charged either way.
+
+**Not stated in the pages read (so not assumed)**
+- Whether the Account SID and Auth Token can download recordings (only API keys are named).
+- The Calls resource page was read only up to character 100000 of 243258; the Recording page up to 100000 of 146503.
+- Per-minute prices and country rules for voice numbers.
+- Any way for a browser to take a live call (needs Twilio's Voice SDK; not researched yet).
+- Whether transcription is available outside American English.

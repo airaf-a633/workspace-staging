@@ -571,3 +571,13 @@ Facts read from Twilio's own documentation are in docs/CHANNELS_RESEARCH.md ("SM
 - Texts show delivered and failed ticks from Twilio's delivery reports. Twilio's error codes are shown but never relied on, because Twilio says they may change.
 - Replies are plain text up to 1,600 characters (Twilio's limit). Pictures from customers are downloaded; sending pictures is not built.
 - SMS is built before Voice. Voice needs its own decisions (what a caller hears, voicemail, the recording notice) and will be asked when it starts.
+
+## Voice (2026-11-02)
+
+Facts read from Twilio's own documentation are in docs/CHANNELS_RESEARCH.md ("Voice on Twilio: verified facts"). Decided:
+- The customer connects their own Twilio account and one phone number per inbox, the same way as SMS. The same number can also be connected as an SMS inbox; the two are separate inboxes and the customer is one person.
+- A call rings a phone the owner chooses (Twilio Dial), for a number of seconds the owner sets (5 to 60, default 20). If nobody answers, or no phone is set, the caller hears the owner's greeting, then the recording notice, then records a voicemail (up to 2 minutes).
+- Recording notice: a spoken sentence, written by the owner, with the default "This call may be recorded." It is read just before the beep. The owner can clear it; Relay says plainly that the law is theirs to check, and does not decide it for them.
+- Calls are filed as chat cards: an answered call (with its length) or a missed call. A voicemail is a second card with a player. Relay downloads the file into its own storage so the team can play it. No transcript for now (Twilio's is paid, American English only, and limited to 2 to 120 seconds).
+- Inbound only. Agents cannot call customers back from Relay; the chat offers a "Call +number" link that opens the person's own phone. A text reply to a voice inbox is refused by the database as well as hidden by the screen.
+- Gaps accepted for now: a caller who withholds their number is not filed; a voicemail-only inbox files a missed call on every call, even if the caller hangs up at once; the greeting is read in the default voice and language of the owner's Twilio account (a language picker needs Twilio's voice names, which I have not verified).

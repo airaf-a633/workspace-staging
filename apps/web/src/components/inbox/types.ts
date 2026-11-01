@@ -80,7 +80,9 @@ export interface Message {
   /** Instagram and Messenger: the customer answered or mentioned one of your stories. */
   story?: { kind: "reply" | "mention"; caption: string };
   /** Voice: a phone call rather than a message. */
-  call?: { direction: "in" | "out"; missed?: boolean; duration?: string; recording?: string; voicemail?: string };
+  call?: { direction: "in" | "out"; missed?: boolean; duration?: string; recording?: string; voicemail?: string;
+    /** A voicemail recording (real inbox): the playable file, or why there isn't one yet. */
+    audio?: { url?: string; state?: "loading" | "failed" } };
   /** Slack and Discord: replies inside this message's thread. */
   thread?: { replies: number; lastName: string; lastText: string };
   /** WhatsApp: sent as an approved template (outside the 24-hour window). */

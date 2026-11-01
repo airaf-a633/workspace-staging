@@ -3,3 +3,4 @@ import "./api";
 import "./telegram";
 import "./line";
 import "./sms";
+import "./voice";

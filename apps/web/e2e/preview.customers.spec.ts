@@ -43,5 +43,7 @@ test("importing the sample file ends with a result", async ({ page }) => {
 test("the customer page shows the privacy controls", async ({ page }) => {
   await page.goto("/preview/elena/customers");
   await page.locator("tbody tr a").first().click();
+  // The first visit to a page compiles it in the dev server, which can take longer than the default wait.
+  await page.waitForURL(/\/customers\/[^/]+$/, { timeout: 45_000 });
   await expect(page.getByText(/do not contact/i).first()).toBeVisible();
 });

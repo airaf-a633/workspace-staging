@@ -73,7 +73,8 @@ function attention(c: Conversation, inbox: ChannelInbox | undefined, sla: SlaSet
 function snippet(c: Conversation, people: Person[], me: string, tAll: Translator) {
   const m = lastReal(c);
   if (!m) return "";
-  const body = m.deleted ? tAll("inbox.snippet.deleted") : m.subject ?? m.text ?? (m.media ? mediaLabel(m.media, tAll) : "");
+  const callLabel = m.call ? tAll(m.call.audio ? "omni.message.call.voicemail" : m.call.missed ? "omni.message.call.missed" : `omni.message.call.${m.call.direction}`) : "";
+  const body = m.deleted ? tAll("inbox.snippet.deleted") : m.subject ?? m.text ?? (m.media ? mediaLabel(m.media, tAll) : callLabel);
   if (m.kind === "note") return tAll("inbox.snippet.note", { body });
   if (m.kind === "out") return tAll("inbox.snippet.by", { name: m.authorId === me ? tAll("common.you") : people.find((p) => p.id === m.authorId)?.name ?? tAll("common.team"), body });
   return body;

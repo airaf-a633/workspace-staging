@@ -34,7 +34,7 @@ export interface IntakeOptions {
   /** A message that says what is wrong with the body, or null when it is fine. Answers 422 with that message. */
   validate?: (body: unknown) => string | null;
   /** What to answer once the message is queued. Defaults to a plain 200 OK. */
-  accepted?: () => Response;
+  accepted?: (incoming: Incoming) => Response;
   /** A handshake the provider expects answered on the spot (Slack's url_verification); skips queueing. */
   handshake?: (body: unknown, incoming: Incoming) => Response | null;
 }
@@ -60,7 +60,7 @@ export async function handleChannelWebhook(request: Request, type: string, key: 
   }
 
   // A disconnected channel answers like a live one (so the provider stops retrying) but files nothing.
-  if (channel.status === "disconnected") return options.accepted?.() ?? new Response("OK", { status: 200 });
+  if (channel.status === "disconnected") return options.accepted?.(incoming) ?? new Response("OK", { status: 200 });
 
   let body: unknown;
   try {
@@ -82,5 +82,5 @@ export async function handleChannelWebhook(request: Request, type: string, key: 
     console.error("record_webhook failed", recordError.message);
     return new Response("Try again", { status: 500 });
   }
-  return options.accepted?.() ?? new Response("OK", { status: 200 });
+  return options.accepted?.(incoming) ?? new Response("OK", { status: 200 });
 }

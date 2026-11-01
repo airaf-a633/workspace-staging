@@ -39,7 +39,7 @@ Each step is one feature: built, tested, shown to you, then pushed on your say-s
 | Step | Channel | What gets built |
 |---|---|---|
 | 4 | **SMS** | Connect with the customer's own Twilio account and number. Inbound and delivery receipts; segment count shown before sending; STOP/START mapped to consent; US registration status explained in plain steps. |
-| 5 | **Voice** | Call log in the inbox: incoming, outgoing, missed, voicemail with transcript, recording link, length, who answered. A spoken recording notice setting (off by default). Softphone is out of scope here. |
+| 5 | **Voice** | Decided 2026-11-02, inbound only: calls ring the owner's phone, then a voicemail (owner-written greeting and recording notice) with a player in the chat, and missed and answered calls as cards with their length. No transcript, no callbacks from Relay, no softphone. See PRODUCT_DECISIONS.md. |
 
 ### Wave 3: workspace apps
 

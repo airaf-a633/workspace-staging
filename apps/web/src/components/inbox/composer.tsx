@@ -215,6 +215,17 @@ export function Composer({ c, inbox, inboxes, actions, people, me, now, mode, se
         <div>{switcher}</div>
       </div>
     );
+  } else if (!linked && rule.kind === "call" && live) {
+    const phone = c.contact.identities.find((i) => i.ch === "sms")?.handle;
+    body = (
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+        <p className="text-sm">{o("composer.callLive", { name: first })}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          {switcher}
+          {phone && <a href={`tel:${phone}`} dir="ltr" className={buttonClass("primary", "sm")}><PhoneCall size={16} aria-hidden="true" /> {o("composer.callNow", { number: phone })}</a>}
+        </div>
+      </div>
+    );
   } else if (!linked && rule.kind === "call") {
     body = (
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">

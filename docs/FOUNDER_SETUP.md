@@ -116,6 +116,17 @@ Nothing in the channel work has run against a real server yet. Once staging is r
 - [ ] **Try STOP:** text STOP from your phone. Twilio replies for you; Relay should show "replied STOP" in the chat and mark you opted out of text marketing. Then text START and check the chat says so.
 - [ ] **Things I could not confirm from Twilio's documents, to watch for:** whether an empty reply to Twilio is accepted without complaint, whether a picture's link needs the account's login to download, how fast delivery reports arrive, and whether Relay's account check (fetching your Twilio account) works for every account type, such as sub-accounts. Tell me what you see.
 
+### Voice (needs a Twilio account and a voice-capable number; billed by Twilio)
+
+- [ ] **A number that can take calls** in the country you'll use (it can be the same number as your SMS inbox). *(Twilio's own checks may apply to some countries.)*
+- [ ] **Connect it:** Settings > Channels > Voice, paste the Account SID, Auth Token, the number, and the phone that should ring (your mobile). Press Connect.
+- [ ] **Paste Relay's address into the number:** in the Twilio Console, open the number's settings, find where incoming calls are handled, choose a webhook, paste the address Relay shows, choose **HTTP POST**, save. The site's public address must be https.
+- [ ] **Call the number** from another phone. Your phone should ring. Answer it: the Inbox should show an "Incoming call" card with its length.
+- [ ] **Don't answer** the next call. After the ring time you should hear the greeting, the recording notice, a beep. Leave a message and hang up. The Inbox should show a "Missed call" card, then a "Voicemail" card you can play.
+- [ ] **If your own phone has voicemail:** Twilio counts a call as answered when that voicemail picks up, so callers never reach Relay's. Set Seconds to ring shorter than your phone's voicemail takes, or turn that voicemail off.
+- [ ] **Recording notice:** decide what your callers must be told where you are. Relay only plays the words you write.
+- [ ] **Things I could not confirm from Twilio's documents, to watch for:** whether the voicemail file downloads with the Account SID and Auth Token (Twilio's page names an API key and does not mention the token; if the card says "Relay couldn't save this voicemail", tell me and I will add an API key field), whether Twilio sends the recording-ready notice when a caller hangs up in the middle of a message (the missed-call card is filed either way, but the voicemail card might not be), what Twilio sends as the caller number when it is withheld (Relay files nothing for such a call), and how the default spoken voice sounds in your language.
+
 Per-channel checklists (what to open and press to see a real message arrive) are added here as each channel is built.
 
 ## 6. Before launch

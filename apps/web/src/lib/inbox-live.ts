@@ -10,6 +10,25 @@ import type { ChannelInbox, ChatEvent, Conversation, Handoff, Identity, InboxDat
  * (decided 2026-10-02).
  */
 
+/** Seconds as m:ss, the way the call card shows a length. */
+export function clock(seconds: number): string {
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+/** A call or a voicemail (the worker files both with data.call) as the thread's call card. */
+function callOf(m: { data: Record<string, unknown>; media: { storage_path: string | null; error: string | null } | null }, url: string | undefined): Message["call"] | undefined {
+  const c = m.data.call;
+  if (!c || typeof c !== "object") return undefined;
+  const { direction, missed, voicemail, duration } = c as { direction?: unknown; missed?: unknown; voicemail?: unknown; duration?: unknown };
+  const length = typeof duration === "number" && duration > 0 ? clock(duration) : undefined;
+  return {
+    direction: direction === "out" ? "out" : "in",
+    ...(missed === true ? { missed: true } : {}),
+    ...(length ? { duration: length } : {}),
+    ...(voicemail === true ? { audio: { ...(url ? { url } : {}), ...(m.media?.error ? { state: "failed" as const } : !url ? { state: "loading" as const } : {}) } } : {}),
+  };
+}
+
 const MEDIA_TYPE: Record<string, MediaType> = {
   image: "photo",
   video: "video",
@@ -207,7 +226,8 @@ export async function loadLiveInbox(
     const messages: Message[] = rows
       .filter((m) => m.conversation_id === c.id)
       .map((m): Message => {
-        const mediaType = MEDIA_TYPE[m.type];
+        const call = callOf(m, m.media?.storage_path ? urls.get(m.media.storage_path) : undefined);
+        const mediaType = call ? undefined : MEDIA_TYPE[m.type];
         const media: Media | undefined = mediaType
           ? {
               type: mediaType,
@@ -225,6 +245,7 @@ export async function loadLiveInbox(
           at: new Date(m.sent_at).getTime(),
           text: m.type === "text" || m.type === "button" || m.type === "interactive" ? (m.body ?? undefined) : undefined,
           media,
+          ...(call ? { call } : {}),
           authorId: m.sent_by_member ?? undefined,
           source: m.source === "phone_app" ? "phone" : m.direction === "out" ? "inbox" : undefined,
           // Queued means "on its way": no tick until WhatsApp accepts it.

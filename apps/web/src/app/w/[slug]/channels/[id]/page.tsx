@@ -23,6 +23,9 @@ import { getBotInfo } from "@/lib/channels/line-api";
 import { SmsReplaceCredentials } from "@/components/channels/sms-forms";
 import { disconnectSms, replaceSmsCredentials, updateSms } from "../sms-actions";
 import { getAccount } from "@/lib/channels/twilio";
+import { VoiceReplaceCredentials, VoiceSettingsForm } from "@/components/channels/voice-forms";
+import { disconnectVoice, replaceVoiceCredentials, updateVoice } from "../voice-actions";
+import { DEFAULT_GREETING, DEFAULT_NOTICE, ring as ringSeconds, voiceUrls } from "@/lib/channels/voice-twiml";
 import { requestNow } from "@/lib/now";
 import { updateEmailChannel, verifyEmailDomain } from "../email-actions";
 import { Submit } from "@/components/ui/submit";
@@ -45,6 +48,7 @@ export default async function ChannelPage(props: PageProps<"/w/[slug]/channels/[
   if (ch.type === "telegram") return <TelegramChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
   if (ch.type === "line") return <LineChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
   if (ch.type === "sms") return <SmsChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
+  if (ch.type === "voice") return <VoiceChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
   if (ch.type !== "webchat") notFound();
 
   const t = await getT("webchatSetup");
@@ -556,6 +560,108 @@ async function SmsChannel({ slug, ch, sp, workspaceId }: {
           <h2 className="font-semibold">{t("disconnectTitle")}</h2>
           <p className="text-sm text-muted">{t("disconnectHelp")}</p>
           <form action={disconnectSms}>
+            <input type="hidden" name="slug" value={slug} />
+            <input type="hidden" name="id" value={ch.id} />
+            <Submit variant="secondary">{t("disconnect")}</Submit>
+          </form>
+        </section>
+      )}
+    </SettingsFrame>
+  );
+}
+
+/* A phone line: the address to paste into Twilio, whether Twilio accepts the credentials, what callers hear, and disconnecting. */
+async function VoiceChannel({ slug, ch, sp, workspaceId }: {
+  slug: string;
+  ch: { id: string; name: string; settings: unknown; status: string };
+  sp: Record<string, string | string[] | undefined>;
+  workspaceId: string;
+}) {
+  const t = await getT("voiceSetup");
+  const canManage = await can(workspaceId, "numbers.manage");
+  const s = (ch.settings ?? {}) as { webhook_key?: string; forward_to?: string; ring_seconds?: number; greeting?: string; notice?: string };
+  const disconnected = ch.status === "disconnected";
+  const error = typeof sp.error === "string" ? sp.error : null;
+  const address = voiceUrls(await appOrigin(), s.webhook_key ?? "").incoming;
+
+  // What Twilio itself says about the credentials. Only managers see it; the token is read here and never shown.
+  let health: "ok" | "rejected" | "unknown" = "unknown";
+  if (canManage && !disconnected) {
+    const { data: secrets } = await createAdminClient().rpc("channel_secrets", { p_channel: ch.id });
+    const c = secrets as { account_sid?: string; auth_token?: string } | null;
+    if (c?.account_sid && c.auth_token) {
+      const account = await getAccount(fetch, c.account_sid, c.auth_token);
+      health = account.ok ? "ok" : account.reason === "rejected" ? "rejected" : "unknown";
+    }
+  }
+
+  return (
+    <SettingsFrame base={`/w/${slug}`} active="channels" isOwner={await can(workspaceId, "members.manage")}>
+      <Link href={`/w/${slug}/channels`} className="flex w-fit items-center gap-1.5 text-sm text-muted hover:text-text">
+        <ArrowLeft size={16} className="rtl:rotate-180" aria-hidden="true" /> {t("backToList")}
+      </Link>
+      <SectionHeader title={ch.name} description={t("pageHelp")} />
+      {sp.created && <Notice tone="success" title={t("created")}>{t("createdBody")}</Notice>}
+      {sp.saved && <Notice tone="success" title={t("saved")} />}
+      {error && <Notice tone="error" title={t(error === "notAllowed" ? "errors.notAllowed" : "errors.failed")} />}
+      {disconnected && <Notice tone="warn" title={t("disconnected")}>{t("disconnectedBody")}</Notice>}
+
+      {!disconnected && (
+        <section className="grid gap-3 rounded-[var(--radius-panel)] bg-surface p-5 shadow-[var(--shadow-1)] ring-1 ring-border">
+          <h2 className="font-semibold">{t("finishTitle")}</h2>
+          <ol className="grid list-decimal gap-1.5 ps-5 text-sm">
+            <li>{t("finish1")}</li>
+            <li>{t("finish2")}</li>
+            <li>{t("finish3")}</li>
+            <li>{t("finish4")}</li>
+          </ol>
+          <div className="grid gap-1.5 text-sm font-medium">
+            {t("addressLabel")}
+            <CopyField value={address} label={t("addressLabel")} />
+            {!address.startsWith("https://") && <span className="text-xs font-normal text-muted">{t("needHttpsNote")}</span>}
+          </div>
+        </section>
+      )}
+
+      {canManage && !disconnected && (
+        <section className="grid gap-2">
+          <h2 className="font-semibold">{t("healthTitle")}</h2>
+          {health === "ok" && <Notice tone="success" title={t("healthOk")}>{t("healthNote")}</Notice>}
+          {health === "rejected" && <Notice tone="error" title={t("healthRejected")} />}
+          {health === "unknown" && <Notice tone="warn" title={t("healthUnknown")} />}
+        </section>
+      )}
+
+      {s.forward_to && <Notice tone="info" title={t("voicemailRingTitle")}>{t("voicemailRingBody")}</Notice>}
+      <Notice tone="info" title={t("recordingTitle")}>{t("recordingBody")}</Notice>
+      <Notice tone="info" title={t("costTitle")}>{t("costBody")}</Notice>
+
+      <section className="grid gap-3">
+        <VoiceSettingsForm
+          action={updateVoice}
+          slug={slug}
+          id={ch.id}
+          name={ch.name}
+          forward={s.forward_to ?? ""}
+          ring={ringSeconds(s.ring_seconds)}
+          greeting={s.greeting ?? DEFAULT_GREETING}
+          notice={s.notice ?? DEFAULT_NOTICE}
+          canManage={canManage}
+        />
+      </section>
+
+      {canManage && (
+        <section className="grid gap-3">
+          <h2 className="font-semibold">{t("replaceTitle")}</h2>
+          <VoiceReplaceCredentials action={replaceVoiceCredentials} slug={slug} id={ch.id} reconnect={disconnected} />
+        </section>
+      )}
+
+      {canManage && !disconnected && (
+        <section className="grid gap-3">
+          <h2 className="font-semibold">{t("disconnectTitle")}</h2>
+          <p className="text-sm text-muted">{t("disconnectHelp")}</p>
+          <form action={disconnectVoice}>
             <input type="hidden" name="slug" value={slug} />
             <input type="hidden" name="id" value={ch.id} />
             <Submit variant="secondary">{t("disconnect")}</Submit>

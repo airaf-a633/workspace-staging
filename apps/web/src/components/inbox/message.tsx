@@ -104,6 +104,14 @@ function CallCard({ m }: { m: Message }) {
           <Play size={14} weight="fill" aria-hidden="true" /> {o("message.call.recording", { time: call.recording })}
         </button>
       )}
+      {call.audio && (
+        <div className="grid gap-1 rounded-[var(--radius-control)] bg-surface-2 px-3 py-2 text-sm">
+          <span className="text-xs font-medium text-muted">{o("message.call.voicemail")}</span>
+          {call.audio.url && <audio controls src={call.audio.url} className="w-full max-w-xs" />}
+          {!call.audio.url && call.audio.state === "failed" && <span className="text-fail">{o("message.call.voicemailFailed")}</span>}
+          {!call.audio.url && call.audio.state === "loading" && <span className="text-muted">{o("message.call.voicemailLoading")}</span>}
+        </div>
+      )}
       {call.voicemail && (
         <div className="grid gap-1 rounded-[var(--radius-control)] bg-surface-2 px-3 py-2 text-sm">
           <span className="text-xs font-medium text-muted">{o("message.call.voicemail")}</span>
