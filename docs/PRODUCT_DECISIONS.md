@@ -581,3 +581,13 @@ Facts read from Twilio's own documentation are in docs/CHANNELS_RESEARCH.md ("Vo
 - Calls are filed as chat cards: an answered call (with its length) or a missed call. A voicemail is a second card with a player. Relay downloads the file into its own storage so the team can play it. No transcript for now (Twilio's is paid, American English only, and limited to 2 to 120 seconds).
 - Inbound only. Agents cannot call customers back from Relay; the chat offers a "Call +number" link that opens the person's own phone. A text reply to a voice inbox is refused by the database as well as hidden by the screen.
 - Gaps accepted for now: a caller who withholds their number is not filed; a voicemail-only inbox files a missed call on every call, even if the caller hangs up at once; the greeting is read in the default voice and language of the owner's Twilio account (a language picker needs Twilio's voice names, which I have not verified).
+
+## Slack (2026-11-02)
+
+Facts read from Slack's own documentation are in docs/CHANNELS_RESEARCH.md ("Slack and Slack Connect: verified facts"). Decided:
+- One Relay Slack app, which each customer adds to their workspace with "Add to Slack" (OAuth). Relay keeps one bot token per workspace in Vault. This needs the Relay Slack app's keys on the server (SLACK_CLIENT_ID, SLACK_CLIENT_SECRET, SLACK_SIGNING_SECRET). I could not confirm from Slack's pages that a distributed app can be installed by other workspaces without a Marketplace listing; that is the first thing to check when the app is created.
+- One Slack workspace is one Relay channel. Every Slack channel the app has been added to is listened to (Slack Connect or not); there is no per-channel switch. Only public and private channels are read, never direct messages.
+- A person from another workspace is a customer. One chat per person per Slack channel (the Slack channel id is the chat's thread key). Replies are posted by the Relay app into the thread of the customer's latest message.
+- The customer's own staff typing in Slack show in the chat as the team's, marked "sent outside Relay". They go to the chat of the message they replied to in a thread, or the only chat in that Slack channel. When several customers share a channel and the message is not in a thread, nothing is filed rather than guessing.
+- Customers are told from staff by their workspace (users.info team_id against the installed workspace, and is_stranger). Slack says no single property confirms this; a person Slack will not describe is treated as a customer so no outside message is hidden.
+- Not built: Slack's own app home, slash commands, reactions, edits and deletes, text formatting (Relay sends plain text), per-channel switches, Enterprise Grid org-wide installs.

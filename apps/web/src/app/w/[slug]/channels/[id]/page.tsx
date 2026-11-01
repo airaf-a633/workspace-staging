@@ -6,6 +6,7 @@ import { WebchatForm } from "@/components/channels/webchat-form";
 import { EmailForm } from "@/components/channels/email-form";
 import { serverEnv } from "@/env";
 import { Notice } from "@/components/ui/surface";
+import { buttonClass } from "@/components/ui/button";
 import { getT } from "@/i18n/server";
 import { appOrigin } from "@/lib/app-origin";
 import { can, loadWorkspace } from "@/lib/workspace";
@@ -25,6 +26,7 @@ import { disconnectSms, replaceSmsCredentials, updateSms } from "../sms-actions"
 import { getAccount } from "@/lib/channels/twilio";
 import { VoiceReplaceCredentials, VoiceSettingsForm } from "@/components/channels/voice-forms";
 import { disconnectVoice, replaceVoiceCredentials, updateVoice } from "../voice-actions";
+import { disconnectSlack, updateSlack } from "../slack-actions";
 import { DEFAULT_GREETING, DEFAULT_NOTICE, ring as ringSeconds, voiceUrls } from "@/lib/channels/voice-twiml";
 import { requestNow } from "@/lib/now";
 import { updateEmailChannel, verifyEmailDomain } from "../email-actions";
@@ -49,6 +51,7 @@ export default async function ChannelPage(props: PageProps<"/w/[slug]/channels/[
   if (ch.type === "line") return <LineChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
   if (ch.type === "sms") return <SmsChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
   if (ch.type === "voice") return <VoiceChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
+  if (ch.type === "slack") return <SlackChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
   if (ch.type !== "webchat") notFound();
 
   const t = await getT("webchatSetup");
@@ -662,6 +665,89 @@ async function VoiceChannel({ slug, ch, sp, workspaceId }: {
           <h2 className="font-semibold">{t("disconnectTitle")}</h2>
           <p className="text-sm text-muted">{t("disconnectHelp")}</p>
           <form action={disconnectVoice}>
+            <input type="hidden" name="slug" value={slug} />
+            <input type="hidden" name="id" value={ch.id} />
+            <Submit variant="secondary">{t("disconnect")}</Submit>
+          </form>
+        </section>
+      )}
+    </SettingsFrame>
+  );
+}
+
+/* A Slack workspace: what appears in the inbox, how to reconnect, and disconnecting. Connecting is "Add to Slack". */
+async function SlackChannel({ slug, ch, sp, workspaceId }: {
+  slug: string;
+  ch: { id: string; name: string; settings: unknown; status: string };
+  sp: Record<string, string | string[] | undefined>;
+  workspaceId: string;
+}) {
+  const t = await getT("slackSetup");
+  const canManage = await can(workspaceId, "numbers.manage");
+  const s = (ch.settings ?? {}) as { team_name?: string };
+  const disconnected = ch.status === "disconnected";
+  const error = typeof sp.error === "string" ? sp.error : null;
+  const field = "min-h-11 rounded-[var(--radius-control)] border border-input bg-surface px-3 font-normal";
+
+  return (
+    <SettingsFrame base={`/w/${slug}`} active="channels" isOwner={await can(workspaceId, "members.manage")}>
+      <Link href={`/w/${slug}/channels`} className="flex w-fit items-center gap-1.5 text-sm text-muted hover:text-text">
+        <ArrowLeft size={16} className="rtl:rotate-180" aria-hidden="true" /> {t("backToList")}
+      </Link>
+      <SectionHeader title={ch.name} description={t("pageHelp")} />
+      {sp.created && <Notice tone="success" title={t("created")}>{t("createdBody")}</Notice>}
+      {sp.saved && <Notice tone="success" title={t("saved")} />}
+      {error && <Notice tone="error" title={t(error === "needName" ? "errors.needName" : error === "notAllowed" ? "errors.notAllowed" : "errors.failed")} />}
+      {disconnected && <Notice tone="warn" title={t("disconnected")}>{t("disconnectedBody")}</Notice>}
+
+      {s.team_name && (
+        <p className="text-sm">
+          <span className="text-muted">{t("workspaceLabel")}: </span>
+          <span className="font-medium" dir="auto">{s.team_name}</span>
+        </p>
+      )}
+
+      {!disconnected && (
+        <section className="grid gap-3 rounded-[var(--radius-panel)] bg-surface p-5 shadow-[var(--shadow-1)] ring-1 ring-border">
+          <h2 className="font-semibold">{t("useTitle")}</h2>
+          <ol className="grid list-decimal gap-1.5 ps-5 text-sm">
+            <li>{t("use1")}</li>
+            <li>{t("use2")}</li>
+            <li>{t("use3")}</li>
+          </ol>
+        </section>
+      )}
+      <Notice tone="info" title={t("limitsTitle")}>{t("limitsBody")}</Notice>
+
+      <section className="grid gap-3">
+        <form action={updateSlack} className="grid gap-4 sm:max-w-lg">
+          <input type="hidden" name="slug" value={slug} />
+          <input type="hidden" name="id" value={ch.id} />
+          <fieldset disabled={!canManage} className="grid gap-4">
+            <label className="grid gap-1.5 text-sm font-medium">
+              {t("nameLabel")}
+              <input name="name" defaultValue={ch.name} required maxLength={80} className={field} />
+            </label>
+          </fieldset>
+          {canManage && <div><Submit>{t("save")}</Submit></div>}
+        </form>
+      </section>
+
+      {canManage && (
+        <section className="grid gap-3">
+          <h2 className="font-semibold">{t("reconnectTitle")}</h2>
+          <p className="text-sm text-muted">{t("reconnectHelp")}</p>
+          <div>
+            <a href={`/api/oauth/slack/start?slug=${encodeURIComponent(slug)}`} className={buttonClass(disconnected ? "primary" : "secondary", "md")}>{t("reconnect")}</a>
+          </div>
+        </section>
+      )}
+
+      {canManage && !disconnected && (
+        <section className="grid gap-3">
+          <h2 className="font-semibold">{t("disconnectTitle")}</h2>
+          <p className="text-sm text-muted">{t("disconnectHelp")}</p>
+          <form action={disconnectSlack}>
             <input type="hidden" name="slug" value={slug} />
             <input type="hidden" name="id" value={ch.id} />
             <Submit variant="secondary">{t("disconnect")}</Submit>

@@ -84,6 +84,12 @@ export class ChannelSendError extends Error {
   }
 }
 
+/**
+ * Who wrote a message, for channels where the account is shared with the customer's own people (Slack). A customer's
+ * message is filed as usual; a message typed by the customer's own staff is shown as the team's; a bot is dropped.
+ */
+export type Sender = { side: "customer"; display?: string | undefined } | { side: "team" } | { side: "skip" };
+
 export interface ChannelModule {
   type: string;
   /** Provider webhook body to messages. Events that aren't messages (typing, read receipts) return []. */
@@ -92,6 +98,8 @@ export interface ChannelModule {
   events?(body: unknown, channel: ChannelRow, creds: Creds): ChannelEvent[];
   /** Optional: delivery updates found in a webhook. */
   statuses?(body: unknown, channel: ChannelRow): StatusUpdate[];
+  /** Optional: decides who wrote each message before it is filed. A failure is retried by the queue. */
+  sender?(f: typeof fetch, creds: Creds, item: InboundItem, channel: ChannelRow): Promise<Sender>;
   /** Optional: a customer's name, when the provider only sends an id. Called once for a new customer. */
   profile?(f: typeof fetch, creds: Creds, address: string): Promise<string | undefined>;
   /**

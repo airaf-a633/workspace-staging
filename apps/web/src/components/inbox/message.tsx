@@ -155,11 +155,13 @@ export function MessageItem({ m, people, teams, customer, first = true, last = t
 
   const out = m.kind === "out";
   const phone = out && m.source === "phone";
+  const app = out && m.source === "app";
   const failed = m.status === "failed";
   const box = out ? "justify-self-end bg-primary-soft" : "justify-self-start bg-surface shadow-[var(--shadow-1)]";
   const ring = failed ? "ring-1 ring-fail" : phone ? "ring-1 ring-primary" : "";
   const flags = [
     phone ? t("flags.phone") : null,
+    app ? t("flags.app") : null,
     m.template ? o("message.template", { name: m.template }) : null,
     m.imported ? t("flags.imported") : null,
     m.edited ? t("flags.edited") : null,

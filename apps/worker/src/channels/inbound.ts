@@ -33,6 +33,21 @@ export async function processChannelEvent(ctx: Ctx, eventId: number): Promise<{ 
   const items = module.parse(body, row, creds);
   let filed = 0;
   for (const item of items) {
+    // A shared account (Slack): the customer's own staff are the team, bots are ignored.
+    if (module.sender) {
+      const who = await module.sender(ctx.fetch ?? fetch, creds, item, row);
+      if (who.side === "skip") continue;
+      if (who.side === "team") {
+        if (!item.body) continue;
+        const echoed = await rpc<string | null>(ctx, "ingest_team_message", {
+          p_channel: channel_id, p_external_id: item.externalId, p_thread_key: item.threadKey ?? "", p_parent_external_id: item.replyTo ?? null,
+          p_type: item.type, p_body: item.body, p_data: item.data ?? {}, p_sent_at: item.sentAt.toISOString(),
+        });
+        if (echoed) filed++;
+        continue;
+      }
+      if (who.display) item.display = who.display;
+    }
     // A provider that sends only an id (LINE): ask for the name once, when we don't know this person yet.
     if (!item.display && module.profile) {
       const { data: known } = await ctx.db.from("contact_identities").select("display").eq("workspace_id", row.workspace_id).eq("kind", item.kind).eq("address", item.address).maybeSingle();

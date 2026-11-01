@@ -65,7 +65,7 @@ export interface Message {
   media?: Media;
   authorId?: string;
   /** Where an outgoing message came from: the inbox, or the WhatsApp phone app (coexistence). */
-  source?: "inbox" | "phone";
+  source?: "inbox" | "phone" | "app";
   status?: "sent" | "delivered" | "read" | "failed";
   /** Why a message failed, as a key under message.errors (from WhatsApp's error code). */
   error?: "unknown";

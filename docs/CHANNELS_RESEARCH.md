@@ -239,3 +239,30 @@ Sources: Twilio docs for TwiML overview, Record, Dial, Call resource, Recording 
 - Per-minute prices and country rules for voice numbers.
 - Any way for a browser to take a live call (needs Twilio's Voice SDK; not researched yet).
 - Whether transcription is available outside American English.
+
+## Slack and Slack Connect: verified facts (2026-11-02)
+
+Sources: docs.slack.dev pages for the Events API, request verification, URL verification, chat.postMessage, the message event, working with files, users.info, conversations.info and .list, installing with OAuth, rate limits, and "How apps work with Slack Connect".
+
+**Confirmed**
+- Events: Slack POSTs JSON to the request URL. The outer event_callback has type, token (deprecated), team_id, api_app_id, event, event_context, event_id (globally unique), event_time, authorizations, is_ext_shared_channel, context_team_id, context_enterprise_id.
+- Answer with a 2xx within three seconds. Otherwise Slack retries up to three times (about immediately, 1 minute, 5 minutes) with x-slack-retry-num and x-slack-retry-reason headers. If over 95% of deliveries fail in 60 minutes, the subscription is temporarily disabled.
+- Handshake: a url_verification POST with token, challenge, type. Answer 200 with the challenge (plain text, form, or JSON key "challenge"). Needs no scope.
+- Signing: raw body; header X-Slack-Request-Timestamp (reject if more than five minutes off); basestring "v0:" + timestamp + ":" + raw body; HMAC SHA-256 with the app's signing secret as key; hex digest prefixed "v0="; compare with X-Slack-Signature using a constant-time compare.
+- Messages: subscriptions message.channels (public only), message.groups (private), message.im, message.mpim; scopes channels:history, groups:history, im:history, mpim:history. Fields shown: channel, user, text, ts, channel_type, attachments, edited, subtype, hidden. Subtypes named include bot_message, message_changed, message_deleted, file_share, thread_broadcast; not every subtype is delivered.
+- chat.postMessage: needs chat:write; channel is an ID; thread_ts is the parent's ts (not a reply's); response has ok, channel, ts, message; always check ok. Errors listed: not_in_channel, channel_not_found, is_archived, rate_limited / ratelimited (Retry-After), restricted_action (+ variants for read-only, locked and thread-only channels), msg_blocks_too_long, too_many_attachments. About 4,000 characters is recommended; over 40,000 is truncated. About one message per second per channel. Slack Connect sharing-blocked errors exist for canvases, file links and lists.
+- Files: GET url_private or url_private_download with "Authorization: Bearer", scope files:read. Check https and an exact host match (such as files.slack.com) before sending the token, and do not follow redirects with credentials. Remote files point at any host: never send Slack credentials there.
+- users.info: needs users:read; fields real_name, team_id, is_bot, profile.display_name; only the image fields are guaranteed in profile; email also needs users:read.email. is_stranger exists for users from foreign workspaces.
+- conversations.info: needs channels:read and groups:read (also im:read, mpim:read); the channel object includes is_shared, is_org_shared, is_ext_shared, is_pending_ext_shared, is_private, is_archived, is_frozen, name.
+- conversations.list: types public_channel (default) and private_channel; no filter for externally shared or for the bot's membership; limit up to 200 recommended, cursor paging; Tier 2 (20+ per minute).
+- Rate limits are per method and per workspace; HTTP 429 with Retry-After.
+- OAuth v2: authorize at slack.com/oauth/v2/authorize with client_id, scope, state, redirect_uri (https); a code valid ten minutes; exchange with oauth.v2.access (client_id, client_secret); the response has access_token, bot_user_id, app_id, team, enterprise, authed_user. Tokens do not expire unless token rotation is turned on.
+- Slack Connect: a shared channel belongs to no single workspace; apps must use the Conversations API; use channel and user IDs, never names. Events from external users reach the app. External members are recognised by is_stranger and by a team_id different from the installing team; no single property confirms it. Everyone connected can read, write, share files and read history. Files may arrive with file_access "check_file_info", and the app must call files.info for full metadata. A bot can DM users on connected workspaces only if both are in a shared channel together. Channel IDs can change (a G-prefixed private channel becomes C-prefixed when a share starts: the channel_id_changed event). Slash commands and message actions work only for the installing workspace.
+
+**Not stated in the pages read (so not assumed)**
+- Whether the message event for an external user carries a team or user_team field (a Salesforce Trailhead module says "team"; the Slack pages I read do not). Relay would use users.info team_id instead.
+- Whether an app installed in only one workspace receives every message of an external member in a shared channel, beyond "events from external users arrive in the app".
+- Who on each side may add an app to a Slack Connect channel, and which plans allow Slack Connect.
+- Whether a distributed app can be installed by other workspaces without a Marketplace listing.
+- The exact error text for a message that is too long, and rate limits for conversations.history and conversations.replies.
+- Which fields users.info withholds for external users beyond email and locale.

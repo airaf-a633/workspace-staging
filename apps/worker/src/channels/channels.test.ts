@@ -49,6 +49,7 @@ function fakeDb(opts: { filed?: boolean; known?: boolean } = {}) {
       calls.push({ fn, args });
       if (fn === "channel_secrets") return { data: { bot_token: "tok" }, error: null };
       if (fn === "ingest_inbound") return { data: opts.filed === false ? null : `msg-${String(args.p_external_id)}`, error: null };
+      if (fn === "ingest_team_message") return { data: `team-${String(args.p_external_id)}`, error: null };
       if (fn === "outbound_message")
         return { data: [{ message_id: "m1", status: "queued", body: "Hello", channel_id: "ch1", channel_type: "api", channel_status: "connected", phone_number_id: null, to_address: "u1", settings: { a: 1 }, thread_key: "", last_inbound: { token: "t" }, last_inbound_at: "2026-11-01T10:00:00Z" }], error: null };
       return { data: null, error: null };
@@ -129,6 +130,28 @@ describe("filing an inbound channel webhook", () => {
     const { db, calls } = fakeDb();
     await processChannelEvent(ctx(db), 1);
     expect(calls.filter((c) => c.fn === "record_channel_event").map((c) => c.args.p_kind)).toEqual(["customer_blocked", "customer_unblocked"]);
+  });
+
+  it("files a customer as usual, drops a bot, and shows the customer's own staff as the team", async () => {
+    // m-1 is a customer (named by the sender step), m-2 is the team, a third is a bot.
+    const body = { messages: [{ id: "m-1", from: "cust", text: "Hi" }, { id: "m-2", from: "staff", text: "On it" }, { id: "m-3", from: "bot", text: "beep" }] };
+    const kinds: Record<string, "customer" | "team" | "skip"> = { cust: "customer", staff: "team", bot: "skip" };
+    MODULES.api = {
+      ...fake,
+      parse: (b, ...rest) => fake.parse(b, ...rest).map((i) => ({ ...i, threadKey: "C1", replyTo: i.address === "staff" ? "C1:parent" : null })),
+      sender: async (_f, _c, item) => {
+        const side = kinds[item.address]!;
+        return side === "customer" ? { side, display: "Ana Ruiz" } : { side };
+      },
+    };
+    const { db, calls } = fakeDb();
+    (db as unknown as { from: (n: string) => unknown }).from = () => ({ select: () => ({ eq: () => ({ single: async () => ({ data: { id: 1, payload: { channel_id: "ch1", body } }, error: null }), maybeSingle: async () => ({ data: { id: "ch1", workspace_id: "w1", type: "api", settings: {}, status: "connected" }, error: null }) }) }) });
+    const r = await processChannelEvent(ctx(db), 1);
+    expect(r).toEqual({ outcome: "processed", note: "3 messages, 2 new" });
+    expect(calls.filter((c) => c.fn === "ingest_inbound").map((c) => [c.args.p_external_id, c.args.p_display])).toEqual([["m-1", "Ana Ruiz"]]);
+    expect(calls.filter((c) => c.fn === "ingest_team_message").map((c) => c.args)).toEqual([
+      { p_channel: "ch1", p_external_id: "m-2", p_thread_key: "C1", p_parent_external_id: "C1:parent", p_type: "text", p_body: "On it", p_data: { token: "t-m-2" }, p_sent_at: "2026-11-01T10:00:00.000Z" },
+    ]);
   });
 
   it("ignores a channel type it has no handler for", async () => {

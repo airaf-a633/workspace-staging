@@ -4,3 +4,4 @@ import "./telegram";
 import "./line";
 import "./sms";
 import "./voice";
+import "./slack";

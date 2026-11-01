@@ -127,6 +127,21 @@ Nothing in the channel work has run against a real server yet. Once staging is r
 - [ ] **Recording notice:** decide what your callers must be told where you are. Relay only plays the words you write.
 - [ ] **Things I could not confirm from Twilio's documents, to watch for:** whether the voicemail file downloads with the Account SID and Auth Token (Twilio's page names an API key and does not mention the token; if the card says "Relay couldn't save this voicemail", tell me and I will add an API key field), whether Twilio sends the recording-ready notice when a caller hangs up in the middle of a message (the missed-call card is filed either way, but the voicemail card might not be), what Twilio sends as the caller number when it is withheld (Relay files nothing for such a call), and how the default spoken voice sounds in your language.
 
+### Slack (needs a Slack workspace you can add apps to, plus a second workspace or a Slack Connect partner to play the customer)
+
+Slack is different from the other channels: you create the one Relay Slack app once, and every customer clicks "Add to Slack".
+
+- [ ] **Create the Relay Slack app** at api.slack.com/apps (a free Slack workspace is enough). Under OAuth & Permissions add the **bot scopes**: `channels:history`, `groups:history`, `chat:write`, `users:read`, `files:read`. Add the **redirect URL**: your site's public address followed by `/api/oauth/slack/callback`. *(Slack's menu names may differ slightly from what I describe; I could not check their screens.)*
+- [ ] **Turn on Event Subscriptions** and set the **request URL** to your site's public address followed by `/api/webhooks/slack`. Slack checks it immediately, so the site must be running at that address. Subscribe to the bot events `message.channels`, `message.groups` and `app_uninstalled`.
+- [ ] **Allow other workspaces to install it** (Manage Distribution), so customers can add it. **Check whether Slack requires a Marketplace listing for this.** I could not confirm it from Slack's pages.
+- [ ] **Put three values in the server's environment** (never in chat): the **Client ID** and **Client Secret** (Basic Information), and the **Signing Secret** (Basic Information). Names: `SLACK_CLIENT_ID`, `SLACK_CLIENT_SECRET`, `SLACK_SIGNING_SECRET`. Restart the server.
+- [ ] **Connect:** Settings > Channels > Slack > Add to Slack, approve it in your workspace.
+- [ ] **Share a channel with someone outside:** use a Slack Connect channel with a friend's workspace (or a second workspace of your own). Add the Relay app to the channel in Slack.
+- [ ] **Write from the other side:** the message should appear in the Inbox as a new chat within seconds, with their name. Reply from the Inbox and check it appears in the Slack thread under their message.
+- [ ] **Type a reply in Slack yourself** inside their thread: it should appear in the chat as the team's, marked "sent outside Relay".
+- [ ] **Send a file** from the other side and check it appears in the chat.
+- [ ] **Things I could not confirm from Slack's documents, to watch for:** whether Slack Connect is available on your plan and who on each side may add an app to the channel; whether the app receives the outside person's messages when it is installed only on your side (Slack's page says events from external users arrive, with no other conditions); whether a person from the other workspace is correctly recognised as a customer (Relay compares their workspace with yours); whether an outside person's name comes back from Slack; whether files from the other side download; the exact HTTP style Slack accepts for each call (Relay uses form posts and plain GETs); how text with `<`, `&` or @mentions in a reply is shown (Relay sends it as typed, unescaped); and whether Slack sends the app-removed notice. Tell me what you see.
+
 Per-channel checklists (what to open and press to see a real message arrive) are added here as each channel is built.
 
 ## 6. Before launch

@@ -247,7 +247,7 @@ export async function loadLiveInbox(
           media,
           ...(call ? { call } : {}),
           authorId: m.sent_by_member ?? undefined,
-          source: m.source === "phone_app" ? "phone" : m.direction === "out" ? "inbox" : undefined,
+          source: m.source === "phone_app" ? "phone" : m.source === "channel_app" ? "app" : m.direction === "out" ? "inbox" : undefined,
           // Queued means "on its way": no tick until WhatsApp accepts it.
           status: m.status === "queued" ? undefined : (m.status ?? undefined),
           error: undefined,
