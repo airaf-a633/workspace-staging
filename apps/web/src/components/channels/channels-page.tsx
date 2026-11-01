@@ -11,7 +11,9 @@ const GROUPS: ChannelGroup[] = ["messaging", "social", "web", "work", "developer
 /** What most businesses connect first; the rest of the catalogue is one click deeper (simplicity pass 2026-10-19). */
 const POPULAR: ChannelKey[] = ["whatsapp", "email", "webchat", "instagram", "messenger"];
 /** Channels a real workspace can connect today. */
-const LIVE_CHANNELS: ChannelKey[] = ["whatsapp", "webchat", "email", "api", "telegram", "line", "sms", "voice", "slack", "discord", "teams"];
+const LIVE_CHANNELS: ChannelKey[] = ["whatsapp", "webchat", "email", "api", "telegram", "line", "sms", "voice", "slack", "discord", "teams", "tiktok", "wechat", "apple", "viber", "x"];
+/** Channels that cannot be connected yet: their page explains why and offers "Request access". */
+const GATED: ChannelKey[] = ["tiktok", "wechat", "apple"];
 
 /**
  * Settings › Channels (decided 2026-10-07): the channels you've connected first, with their health and where
@@ -64,7 +66,7 @@ export async function ChannelsPage({
           <span className="shrink-0 rounded-full bg-surface-2 px-2.5 py-0.5 text-xs text-muted">{common("soon")}</span>
         ) : (
           <Link href={live && c.key === "whatsapp" ? `${base}/whatsapp` : `${base}/channels/new/${c.key}`} className={buttonClass(n > 0 ? "ghost" : "secondary", "sm", "shrink-0")} aria-label={t("connectAria", { channel: tAll(`channels.${c.key}`) })}>
-            {n > 0 ? t("connectAnother") : t("connect")}
+            {live && GATED.includes(c.key) ? t("requestAccess") : n > 0 ? t("connectAnother") : t("connect")}
           </Link>
         )}
       </li>

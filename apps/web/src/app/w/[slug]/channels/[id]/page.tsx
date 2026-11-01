@@ -32,6 +32,11 @@ import { disconnectDiscord, replaceDiscordToken, updateDiscord } from "../discor
 import { TeamsReplaceSecret, TeamsSettingsForm } from "@/components/channels/teams-forms";
 import { disconnectTeams, replaceTeamsSecret, updateTeams } from "../teams-actions";
 import { checkBotCredentials } from "@/lib/channels/teams-api";
+import { ViberReplaceToken, ViberSettingsForm } from "@/components/channels/viber-forms";
+import { disconnectViber, replaceViberToken, updateViber } from "../viber-actions";
+import { getAccountInfo } from "@/lib/channels/viber-api";
+import { XReplaceSecrets } from "@/components/channels/x-forms";
+import { disconnectX, replaceXSecrets, updateX } from "../x-actions";
 import { healthOf, inviteUrl } from "@/lib/channels/discord-api";
 import { DEFAULT_GREETING, DEFAULT_NOTICE, ring as ringSeconds, voiceUrls } from "@/lib/channels/voice-twiml";
 import { requestNow } from "@/lib/now";
@@ -60,6 +65,8 @@ export default async function ChannelPage(props: PageProps<"/w/[slug]/channels/[
   if (ch.type === "slack") return <SlackChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
   if (ch.type === "discord") return <DiscordChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
   if (ch.type === "teams") return <TeamsChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
+  if (ch.type === "viber") return <ViberChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
+  if (ch.type === "x") return <XChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
   if (ch.type !== "webchat") notFound();
 
   const t = await getT("webchatSetup");
@@ -951,6 +958,174 @@ async function TeamsChannel({ slug, ch, sp, workspaceId }: {
           <h2 className="font-semibold">{t("disconnectTitle")}</h2>
           <p className="text-sm text-muted">{t("disconnectHelp")}</p>
           <form action={disconnectTeams}>
+            <input type="hidden" name="slug" value={slug} />
+            <input type="hidden" name="id" value={ch.id} />
+            <Submit variant="secondary">{t("disconnect")}</Submit>
+          </form>
+        </section>
+      )}
+    </SettingsFrame>
+  );
+}
+
+/* A Viber bot: whether Viber accepts the token and points at Relay, what to expect, and disconnecting. */
+async function ViberChannel({ slug, ch, sp, workspaceId }: {
+  slug: string;
+  ch: { id: string; name: string; settings: unknown; status: string };
+  sp: Record<string, string | string[] | undefined>;
+  workspaceId: string;
+}) {
+  const t = await getT("viberSetup");
+  const canManage = await can(workspaceId, "numbers.manage");
+  const s = (ch.settings ?? {}) as { webhook_key?: string; sender_name?: string; welcome?: string };
+  const disconnected = ch.status === "disconnected";
+  const error = typeof sp.error === "string" ? sp.error : null;
+  const address = `${await appOrigin()}/api/webhooks/viber/${s.webhook_key}`;
+
+  // What Viber itself says about the token and the webhook. Only managers see it; the token is read here and never shown.
+  let health: "ok" | "elsewhere" | "rejected" | "unknown" = "unknown";
+  if (canManage && !disconnected) {
+    const { data: secrets } = await createAdminClient().rpc("channel_secrets", { p_channel: ch.id });
+    const token = (secrets as { auth_token?: string } | null)?.auth_token;
+    if (token) {
+      const account = await getAccountInfo(fetch, token);
+      health = account.ok ? (account.value.webhook === address ? "ok" : "elsewhere") : account.reason === "rejected" ? "rejected" : "unknown";
+    }
+  }
+
+  return (
+    <SettingsFrame base={`/w/${slug}`} active="channels" isOwner={await can(workspaceId, "members.manage")}>
+      <Link href={`/w/${slug}/channels`} className="flex w-fit items-center gap-1.5 text-sm text-muted hover:text-text">
+        <ArrowLeft size={16} className="rtl:rotate-180" aria-hidden="true" /> {t("backToList")}
+      </Link>
+      <SectionHeader title={ch.name} description={t("pageHelp")} />
+      {sp.created && <Notice tone="success" title={t("created")}>{t("createdBody")}</Notice>}
+      {sp.saved && <Notice tone="success" title={t("saved")} />}
+      {error && <Notice tone="error" title={t(error === "needName" ? "errors.needName" : error === "notAllowed" ? "errors.notAllowed" : "errors.failed")} />}
+      {disconnected && <Notice tone="warn" title={t("disconnected")}>{t("disconnectedBody")}</Notice>}
+
+      {canManage && !disconnected && (
+        <section className="grid gap-2">
+          <h2 className="font-semibold">{t("healthTitle")}</h2>
+          {health === "ok" && <Notice tone="success" title={t("healthOk")}>{t("healthNote")}</Notice>}
+          {health === "elsewhere" && <Notice tone="warn" title={t("healthElsewhere")} />}
+          {health === "rejected" && <Notice tone="error" title={t("healthRejected")} />}
+          {health === "unknown" && <Notice tone="warn" title={t("healthUnknown")} />}
+        </section>
+      )}
+
+      {!disconnected && (
+        <section className="grid gap-3 rounded-[var(--radius-panel)] bg-surface p-5 shadow-[var(--shadow-1)] ring-1 ring-border">
+          <h2 className="font-semibold">{t("useTitle")}</h2>
+          <ol className="grid list-decimal gap-1.5 ps-5 text-sm">
+            <li>{t("use1")}</li>
+            <li>{t("use2")}</li>
+            <li>{t("use3")}</li>
+          </ol>
+        </section>
+      )}
+      <Notice tone="info" title={t("limitsTitle")}>{t("limitsBody")}</Notice>
+
+      <section className="grid gap-3">
+        <ViberSettingsForm action={updateViber} slug={slug} id={ch.id} name={ch.name} senderName={s.sender_name ?? ""} welcome={s.welcome ?? ""} canManage={canManage} />
+      </section>
+
+      {canManage && (
+        <section className="grid gap-3">
+          <h2 className="font-semibold">{t("replaceTitle")}</h2>
+          <ViberReplaceToken action={replaceViberToken} slug={slug} id={ch.id} reconnect={disconnected} />
+        </section>
+      )}
+
+      {canManage && !disconnected && (
+        <section className="grid gap-3">
+          <h2 className="font-semibold">{t("disconnectTitle")}</h2>
+          <p className="text-sm text-muted">{t("disconnectHelp")}</p>
+          <form action={disconnectViber}>
+            <input type="hidden" name="slug" value={slug} />
+            <input type="hidden" name="id" value={ch.id} />
+            <Submit variant="secondary">{t("disconnect")}</Submit>
+          </form>
+        </section>
+      )}
+    </SettingsFrame>
+  );
+}
+
+/* An X account: whether it is logged in and its messages are being delivered, the cost reminder, and disconnecting. */
+async function XChannel({ slug, ch, sp, workspaceId }: {
+  slug: string;
+  ch: { id: string; name: string; settings: unknown; status: string };
+  sp: Record<string, string | string[] | undefined>;
+  workspaceId: string;
+}) {
+  const t = await getT("xSetup");
+  const canManage = await can(workspaceId, "numbers.manage");
+  const s = (ch.settings ?? {}) as { user_id?: string; username?: string; webhook_id?: string };
+  const disconnected = ch.status === "disconnected";
+  const error = typeof sp.error === "string" ? sp.error : null;
+  const known = ["needName", "notAllowed", "needHttps", "xDeclined", "xFailed", "xUnreachable", "xWebhook", "xSubscribe"] as const;
+  const problem = error ? (known as readonly string[]).includes(error) ? (error as (typeof known)[number]) : "failed" : null;
+  const field = "min-h-11 rounded-[var(--radius-control)] border border-input bg-surface px-3 font-normal";
+  const login = `/api/oauth/x/start?slug=${encodeURIComponent(slug)}&id=${ch.id}`;
+
+  return (
+    <SettingsFrame base={`/w/${slug}`} active="channels" isOwner={await can(workspaceId, "members.manage")}>
+      <Link href={`/w/${slug}/channels`} className="flex w-fit items-center gap-1.5 text-sm text-muted hover:text-text">
+        <ArrowLeft size={16} className="rtl:rotate-180" aria-hidden="true" /> {t("backToList")}
+      </Link>
+      <SectionHeader title={ch.name} description={t("pageHelp")} />
+      {sp.created && <Notice tone="success" title={t("created")}>{t("createdBody")}</Notice>}
+      {sp.saved && <Notice tone="success" title={t("saved")} />}
+      {problem && <Notice tone="error" title={t(`errors.${problem}`)} />}
+      {disconnected && <Notice tone="warn" title={t("disconnected")}>{t("disconnectedBody")}</Notice>}
+
+      {!disconnected && (
+        <section className="grid gap-3">
+          <h2 className="font-semibold">{t("accountTitle")}</h2>
+          {s.user_id ? (
+            <Notice tone="success" title={s.username ? t("connectedAs", { username: s.username }) : t("connectedAsNoName")} />
+          ) : (
+            <Notice tone="warn" title={t("notLoggedIn")}>{t("notLoggedInBody")}</Notice>
+          )}
+          {s.user_id && !s.webhook_id && <Notice tone="warn" title={t("webhookMissing")} />}
+          {canManage && (
+            <div className="grid gap-1.5">
+              {s.user_id && <p className="text-xs text-muted">{t("reloginHelp")}</p>}
+              <div><a href={login} className={buttonClass(s.user_id ? "secondary" : "primary", "md")}>{s.user_id ? t("relogin") : t("login")}</a></div>
+            </div>
+          )}
+        </section>
+      )}
+      <Notice tone="warn" title={t("costTitle")}>{t("costBody")}</Notice>
+      <Notice tone="info" title={t("limitsTitle")}>{t("limitsBody")}</Notice>
+
+      <section className="grid gap-3">
+        <form action={updateX} className="grid gap-4 sm:max-w-lg">
+          <input type="hidden" name="slug" value={slug} />
+          <input type="hidden" name="id" value={ch.id} />
+          <fieldset disabled={!canManage} className="grid gap-4">
+            <label className="grid gap-1.5 text-sm font-medium">
+              {t("nameLabel")}
+              <input name="name" defaultValue={ch.name} required maxLength={80} className={field} />
+            </label>
+          </fieldset>
+          {canManage && <div><Submit>{t("save")}</Submit></div>}
+        </form>
+      </section>
+
+      {canManage && (
+        <section className="grid gap-3">
+          <h2 className="font-semibold">{t("replaceTitle")}</h2>
+          <XReplaceSecrets action={replaceXSecrets} slug={slug} id={ch.id} reconnect={disconnected} />
+        </section>
+      )}
+
+      {canManage && !disconnected && (
+        <section className="grid gap-3">
+          <h2 className="font-semibold">{t("disconnectTitle")}</h2>
+          <p className="text-sm text-muted">{t("disconnectHelp")}</p>
+          <form action={disconnectX}>
             <input type="hidden" name="slug" value={slug} />
             <input type="hidden" name="id" value={ch.id} />
             <Submit variant="secondary">{t("disconnect")}</Submit>

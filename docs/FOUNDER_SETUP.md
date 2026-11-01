@@ -169,6 +169,33 @@ This is the heaviest setup of all the channels, because Microsoft requires each 
 - [ ] **Send a file** with the paperclip: it should appear in the chat. **Paste a picture**: it appears as an unsupported message.
 - [ ] **Things I could not confirm from Microsoft's documents, to watch for:** whether Teams accepts the app file as built (the manifest version "1.30" and the file name manifest.json are my best reading, and both are single constants in `teams-package.ts`; if the upload is refused, send me Teams' message); whether the key endorsement check passes for real Teams traffic (if every message is refused, the server log says "channel not endorsed"); whether an Azure Bot may be created single-tenant for free; the maximum length of a Teams message; how a pasted picture arrives; how long the conversation address stays valid; whether a colleague can open the bot before an admin has made the app available to them; and how replies render (Relay sends plain text, and Teams may treat `*` or `_` as formatting).
 
+### Viber (needs a Viber bot, which Viber only gives under a paid contract)
+
+- [ ] **Get a bot:** Viber creates bots only for businesses that sign a contract with Viber or an official partner (about EUR 100 to 115 a month; Viber's own pages disagree). If you don't have one, you can't test this channel; the customer-facing screen says so.
+- [ ] **Copy the bot's authentication token** from your Viber bot account settings. Never paste it in chat.
+- [ ] **Connect it:** Settings > Channels > Viber, paste the token, press Connect. The site's public address must be https; Viber calls it once to check, and the connection is undone if it can't.
+- [ ] **Write to the bot** from your own Viber: the message should appear in the Inbox with your name. Reply and check delivered and seen ticks appear.
+- [ ] **Welcome message:** if you set one, open the bot from a second Viber account for the first time: it should arrive once, and no empty chat should appear.
+- [ ] **Send a picture and a sticker:** the picture appears; the sticker shows as an unsupported message.
+- [ ] **Things I could not confirm from Viber's documents, to watch for:** whether Viber's check call (when Relay sets the webhook) carries a signature (Relay accepts that one call without it); whether the signature header is hex or base64 (Relay accepts both); whether the 24-hour session rule limits sending (Relay does not block, Viber may charge); how pictures and files arrive (links last one hour); what Viber says to a reply to a person who has unsubscribed; and the current fee.
+
+### X / Twitter (needs an X developer account with credits; X bills about $0.010 per message received and $0.015 per reply)
+
+This is the least certain channel: several X pages describe pieces of it and I had to join them. Test with an account you can lose time on.
+
+- [ ] **X developer app:** in the X Developer Console create an app of a type that has a **Client Secret** (a Web App), and buy some credits. Copy its **Client ID**, **Client Secret** and **Bearer Token**.
+- [ ] **Callback address:** in the app's settings, add the callback address shown on Relay's X connect page exactly as shown.
+- [ ] **Connect it:** Settings > Channels > X, paste the three values, press Connect. X asks you to log in as the account that should answer; approve. You land back on the channel page, which should say "Connected as @name".
+- [ ] **Send the account a direct message** from another X account: it should appear in the Inbox within seconds. Reply from the Inbox and check it arrives on X.
+- [ ] **Leave it two hours** and reply again: the login should renew by itself.
+- [ ] **Things I could not confirm from X's documents, to watch for:** the exact shape of the event X posts to the webhook (Relay searches the body for the direct-message events rather than relying on a fixed layout); whether the app-only Bearer Token is accepted to register the webhook, and the account's own token to create the subscription; whether X's Account Activity or X Activity API is what your developer plan includes for DMs; the response fields of the login token call (Relay reads access_token, refresh_token, expires_in); whether the refresh token can only be used once (Relay saves the new one each time, but two replies sent at the exact same moment could race); what X answers when the person doesn't accept messages from your account; the text length limit; how a message from a person with encrypted chats behaves; what X answers when credits run out (Relay shows X's own words). If registering the webhook fails, the channel page says so; tell me X's wording.
+
+### TikTok, WeChat and Apple Messages (no setup possible yet)
+
+- [ ] **Look at each Request access page** (Settings > Channels > the channel). Check the words are clear to someone who has never heard of the platform, press **Request access** with a note, and check it says when you asked.
+- [ ] **Read the requests** in the database when you want to know what customers want next: the table is `channel_access_requests` (workspace, channel, note, who, when).
+- [ ] **TikTok, if you want to pursue it:** apply for Business Messaging API access for Relay's app in TikTok's developer portal, including the data security and privacy reviews. It is a company task and the timeline is unknown.
+
 Per-channel checklists (what to open and press to see a real message arrive) are added here as each channel is built.
 
 ## 6. Before launch

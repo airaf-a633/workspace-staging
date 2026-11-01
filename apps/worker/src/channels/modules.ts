@@ -7,3 +7,5 @@ import "./voice";
 import "./slack";
 import "./discord";
 import "./teams";
+import "./viber";
+import "./x";

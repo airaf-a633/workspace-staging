@@ -323,3 +323,39 @@ Sources: Microsoft Learn: Bot Connector authentication, Bot Connector REST refer
 - How a user's file arrives in a personal chat (the attachment shape and download address).
 - How long a conversation id and serviceUrl stay valid.
 - Whether an employee can start a chat with the bot before an admin has installed the app for them.
+
+## The gated five, re-checked against official pages (2026-11-02)
+
+The earlier notes above for TikTok, X, Viber, WeChat and Apple were mostly vendor-sourced. This section replaces them where a platform's own page could be read. **What I could and could not read:** X's docs.x.com pages, Viber's developer API page, Apple's Messages for Business onboarding pages, and TikTok/Viber/WeChat page titles and search excerpts were readable. TikTok's developer portal pages are built with scripts and came back as titles only. Viber's help-centre pages refused the fetch (403), so their content below comes from excerpts of those official pages shown in search results. WeChat's English pages mostly say "English version not available yet; refer to the Chinese version".
+
+### X
+**Confirmed (docs.x.com)**
+- Pay per use. Credits are bought up front in the Developer Console and deducted per request; a spending limit per billing cycle can be set (requests are blocked when it is reached); auto-recharge needs a saved payment method.
+- Prices on the pricing page: DM event read $0.010 per resource returned; DM send (create) $0.015 per request; user lookup $0.010 per resource; the dm.received webhook event $0.010; dm.sent, dm.read and dm.indicate_typing are not billed. The page does not say whether the DM endpoints are open to every plan.
+- Read DMs: GET /2/dm_events, OAuth 2.0 user context with scopes users.read, tweet.read, dm.read; up to 100 per page; fields include dm_conversation_id, sender_id, text, attachments. How far back it reaches is not stated. Send: POST /2/dm_conversations/with/:participant_id/messages.
+- Webhooks (docs.x.com webhooks quickstart): a public HTTPS address, no port, handling GET for the CRC check and POST for events; registered with POST /2/webhooks using an app-only bearer token. CRC: X sends crc_token; answer JSON {response_token: "sha256=" + base64 HMAC-SHA256 of crc_token keyed with the OAuth 2.0 client secret}; it runs at registration, hourly, and on PUT; a failed check marks the webhook invalid and events stop. Each POST carries X-Twitter-Webhooks-Signature-OAuth2 (recommended): base64 HMAC-SHA256 of the raw body, prefixed "sha256=", compared in constant time. Events can repeat: deduplicate by event id.
+- X Activity API event dm.received fires when the filtered user receives an **unencrypted (legacy) DM**; it needs user-context authentication. Payload: direct_message_events[] with id, created_timestamp, message_create {target.recipient_id, sender_id, message_data {text, entities}} and a users map. Encrypted chats have a separate X Chat API (not researched).
+- All DMs, including ones the app sends, reach the webhook.
+
+**Not stated**: how a user is subscribed to events (the pages point to Account Activity docs I did not read); a conversation id and attachments in the dm.received payload; DM history depth; plan eligibility for DM endpoints; any approval step for DM access.
+
+### Viber
+**Confirmed (developers.viber.com REST bot API)**
+- Every call carries the account's token in X-Viber-Auth-Token. Set the webhook with set_webhook (HTTPS, trusted CA certificate, no self-signed; Viber checks it with a callback and wants HTTP 200); events message, subscribed, unsubscribed are mandatory, others (delivered, seen, failed, conversation_started) can be filtered. Callbacks carry X-Viber-Content-Signature: HMAC SHA-256 of the JSON body keyed with the token. Retries up to 10 times if the webhook is down.
+- conversation_started allows one welcome message, to be sent within 5 minutes. A bot can message only subscribed users; a user's first message subscribes them.
+- send_message: sender.name required (28 characters at most), request up to 30 KB, text up to 7,000 characters; types text, picture, video, file, location, contact, sticker, rich media, url. billing_status separates in-session from out-of-session messages, but the page does not define the session window (an earlier note said 24 hours; the official page I read does not).
+- From excerpts of Viber's official help pages: since 5 February 2024 bots can be created only on commercial terms; a business applies to Viber or a verified partner, signs a contract, and pays a maintenance fee per bot (the help pages show EUR 100 in one place and EUR 115 in another: not settled) plus a cost per delivered chatbot-initiated message that depends on the subscriber's country; messages inside a session are unlimited with the fee; bots created before that date keep the old model; Viber may reject or unpublish a bot at its discretion.
+
+**Not stated / not read**: the application process itself; whether partners can connect a customer's bot to third-party software; the session window; current fee.
+
+### TikTok
+- Official page titles and excerpts show: Business Messaging API for authorized TikTok Business Accounts to exchange direct messages; the "Get started" part says the data security and privacy reviews must be completed and access obtained before use; business authorization (OAuth) and token renewal are documented; endpoint /business/message/send/; webhook configuration lookup GET /open_api/v1.3/business/webhook/list/ with event type DIRECT_MESSAGE; messaging limits are on their own page.
+- **Not readable**: the page bodies. Regions, reply window, token lifetimes, media rules, and the access-request steps remain vendor claims (not-EEA/Switzerland/UK; 48 hours; text, image and post share only; approval "within about 10 working days" per one integrator). Treat all of those as unconfirmed.
+
+### WeChat
+- Confirmed from an official excerpt: the customer service message API (POST cgi-bin/message/custom/send) must be called from a server; a message can be sent for a limited period after a trigger (currently 48 hours; triggers include the user sending a message, some menu clicks, following, and scanning a QR code, each with its own quota); access tokens last about two hours and a new request invalidates the previous one; the server's IP must be on the account's whitelist or calls fail (error 40164); a service account's platform page holds AppSecret, IP whitelist and message push settings.
+- **Not confirmed**: which account types may call the API, whether verification is required, the sending quotas, message-push security. The English documentation is largely not translated, so a Chinese-reading reviewer would be needed.
+
+### Apple Messages for Business
+- Confirmed (register.apple.com): a business must select an Apple-approved Messaging Service Provider (MSP) to qualify for an account. Steps: select an MSP; plan use cases and review Apple's policies; create an internal test account in Apple Business Register and connect the MSP; build the conversation experience; record the customer journey; the MSP submits it for Experience Review (1-2 weeks); on approval the test account becomes a commercial account. Account approval can take a few days. Entry points: website, app, Apple Maps, Message Suggest, QR codes.
+- The pages do not say how to become an MSP or whether a business can integrate directly without one. Relay is not an approved MSP, so the only route is through an existing provider's API, which I have not researched.

@@ -279,6 +279,7 @@ function moduleAdapter(type: string): Adapter | undefined {
       threadKey: m.thread_key ?? "",
       settings: m.settings ?? {},
       appUrl: ctx.appUrl,
+      saveSecrets: (secrets) => rpc(ctx, "store_channel_secrets", { p_channel: m.channel_id, p_secrets: secrets }),
       lastInbound: m.last_inbound ?? null,
       lastInboundAt: m.last_inbound_at ? new Date(m.last_inbound_at) : null,
     });

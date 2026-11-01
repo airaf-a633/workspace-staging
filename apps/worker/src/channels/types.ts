@@ -65,6 +65,8 @@ export interface SendRequest {
   settings: Record<string, unknown>;
   /** Relay's own public address, for providers that call back with delivery status. */
   appUrl?: string | undefined;
+  /** Saves renewed credentials (X's access and refresh tokens) for the next send. */
+  saveSecrets?: ((secrets: Creds) => Promise<void>) | undefined;
   /** The customer's latest inbound message's `data` and time (a reply token lives there). */
   lastInbound: Record<string, unknown> | null;
   lastInboundAt: Date | null;

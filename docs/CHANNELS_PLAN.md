@@ -53,11 +53,11 @@ Each step is one feature: built, tested, shown to you, then pushed on your say-s
 
 | Step | Channel | Gate |
 |---|---|---|
-| 9 | **TikTok** | Relay's app must be approved by TikTok; no EEA/CH/UK accounts. |
-| 10 | **X** | Cost per request and unreliable DM delivery; needs a pricing decision. |
-| 11 | **Viber** | Needs a Viber commercial contract per customer. |
-| 12 | **WeChat** | Service Account (and likely verification) per customer. |
-| 13 | **Apple Messages** | Only through an Apple-approved provider; we'd integrate one provider's API. |
+| 9 | **TikTok** | Request access only: Relay's app must be approved by TikTok. |
+| 10 | **X** | Built 2026-11-02 through the business's own X developer app (they pay X). See PRODUCT_DECISIONS. |
+| 11 | **Viber** | Built 2026-11-02 for a business that already has a Viber bot (its contract is theirs). |
+| 12 | **WeChat** | Request access only: account rules unconfirmed (English docs untranslated). |
+| 13 | **Apple Messages** | Request access only: needs an Apple-approved provider; none researched yet. |
 
 For Wave 4 the code is small once access exists; the work is the application and the waiting. I'd put each one on your setup list so the application runs while I build other things.
 
