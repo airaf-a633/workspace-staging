@@ -10,6 +10,8 @@ import { getT } from "@/i18n/server";
 import { appOrigin } from "@/lib/app-origin";
 import { can, loadWorkspace } from "@/lib/workspace";
 import { updateWebchat } from "../webchat-actions";
+import { ApiRotate } from "@/components/channels/api-inbox";
+import { rotateApiKey, updateApiInbox } from "../api-actions";
 import { updateEmailChannel, verifyEmailDomain } from "../email-actions";
 import { Submit } from "@/components/ui/submit";
 
@@ -27,6 +29,7 @@ export default async function ChannelPage(props: PageProps<"/w/[slug]/channels/[
   if (!ch) notFound();
   if (ch.type === "whatsapp") redirect(`/w/${slug}/whatsapp`);
   if (ch.type === "email") return <EmailChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
+  if (ch.type === "api") return <ApiChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
   if (ch.type !== "webchat") notFound();
 
   const t = await getT("webchatSetup");
@@ -178,6 +181,64 @@ async function EmailChannel({ slug, ch, sp, workspaceId }: {
         />
         {!canManage && <p className="text-sm text-muted">{t("readOnly")}</p>}
       </section>
+    </SettingsFrame>
+  );
+}
+
+/* An API inbox: where messages go in, where replies go out, and the key. */
+async function ApiChannel({ slug, ch, sp, workspaceId }: {
+  slug: string;
+  ch: { id: string; name: string; settings: unknown };
+  sp: Record<string, string | string[] | undefined>;
+  workspaceId: string;
+}) {
+  const t = await getT("apiSetup");
+  const canManage = await can(workspaceId, "numbers.manage");
+  const s = (ch.settings ?? {}) as { webhook_key?: string; webhook_url?: string };
+  const endpoint = `${await appOrigin()}/api/v1/inboxes/${s.webhook_key}/messages`;
+  const error = typeof sp.error === "string" ? sp.error : null;
+  const field = "min-h-11 rounded-[var(--radius-control)] border border-input bg-surface px-3 font-normal";
+  return (
+    <SettingsFrame base={`/w/${slug}`} active="channels" isOwner={await can(workspaceId, "members.manage")}>
+      <Link href={`/w/${slug}/channels`} className="flex w-fit items-center gap-1.5 text-sm text-muted hover:text-text">
+        <ArrowLeft size={16} className="rtl:rotate-180" aria-hidden="true" /> {t("backToList")}
+      </Link>
+      <SectionHeader title={ch.name} description={t("pageHelp")} />
+      {sp.saved && <Notice tone="success" title={t("saved")} />}
+      {error && <Notice tone="error" title={t(error === "needName" ? "errors.needName" : error === "needHttps" ? "errors.needHttps" : error === "notAllowed" ? "errors.notAllowed" : "errors.failed")} />}
+
+      <section className="grid gap-3 rounded-[var(--radius-panel)] bg-surface p-5 shadow-[var(--shadow-1)] ring-1 ring-border">
+        <h2 className="font-semibold">{t("sendTitle")}</h2>
+        <p className="text-sm text-muted">{t("sendHelp")}</p>
+        <pre className="overflow-x-auto rounded-[var(--radius-control)] bg-surface-2 p-4 text-sm" dir="ltr"><code>POST {endpoint}</code></pre>
+      </section>
+
+      <section className="grid gap-3">
+        <h2 className="font-semibold">{t("repliesTitle")}</h2>
+        <form action={updateApiInbox} className="grid gap-4 sm:max-w-lg">
+          <input type="hidden" name="slug" value={slug} />
+          <input type="hidden" name="id" value={ch.id} />
+          <fieldset disabled={!canManage} className="grid gap-4">
+            <label className="grid gap-1.5 text-sm font-medium">
+              {t("name")}
+              <input name="name" defaultValue={ch.name} required maxLength={80} className={field} />
+            </label>
+            <label className="grid gap-1.5 text-sm font-medium">
+              {t("webhook")}
+              <input name="webhook" type="url" defaultValue={s.webhook_url ?? ""} placeholder="https://example.com/relay-replies" dir="ltr" maxLength={2000} className={field} />
+              <span className="text-xs font-normal text-muted">{t("webhookHelp")}</span>
+            </label>
+          </fieldset>
+          {canManage && <div><Submit>{t("save")}</Submit></div>}
+        </form>
+      </section>
+
+      {canManage && (
+        <section className="grid gap-3">
+          <h2 className="font-semibold">{t("keyTitle")}</h2>
+          <ApiRotate action={rotateApiKey} slug={slug} id={ch.id} />
+        </section>
+      )}
     </SettingsFrame>
   );
 }

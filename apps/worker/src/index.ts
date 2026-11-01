@@ -5,6 +5,8 @@ import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import { loadEnv } from "./env";
+import "./channels/modules";
+import { processChannelEvent, processChannelMedia } from "./channels/inbound";
 import { processEraseMedia, processMailSubscribe, processMailSync, processMediaDownload, processPostmarkEvent, processSendMessage, processWhatsappEvent, scheduleMail, type Ctx } from "./handlers";
 
 config({ path: fileURLToPath(new URL("../../../.env", import.meta.url)) });
@@ -50,6 +52,12 @@ const HANDLERS: Record<string, (job: Job) => Promise<void>> = {
   mail_sync: async (job) => {
     ctx.log(`mail_sync ${String(job.payload.channel_id)}: ${await processMailSync(ctx, String(job.payload.channel_id))}`);
   },
+  channel_event: async (job) => {
+    const id = Number(job.payload.event_id);
+    const result = await processChannelEvent(ctx, id);
+    await markEvent(id, result.outcome, result.note);
+  },
+  channel_media: (job) => processChannelMedia(ctx, job.payload as Parameters<typeof processChannelMedia>[1], job.attempts >= job.max_attempts),
   erase_media: async (job) => {
     ctx.log(`erase_media: ${await processEraseMedia(ctx, job.payload as { paths: string[] })}`);
   },
@@ -71,7 +79,7 @@ async function tick(queue: string): Promise<number> {
       const message = e instanceof Error ? e.message : String(e);
       const { data: outcome } = await db.rpc("fail_job", { p_id: job.id, p_error: message });
       console.error(`${queue} job ${job.id} failed (${outcome}): ${message}`);
-      if (outcome === "dead" && (queue === "whatsapp_event" || queue === "postmark_event")) await markEvent(Number(job.payload.event_id), "failed", message).catch(() => {});
+      if (outcome === "dead" && (queue === "whatsapp_event" || queue === "postmark_event" || queue === "channel_event")) await markEvent(Number(job.payload.event_id), "failed", message).catch(() => {});
     }
   }
   return jobs?.length ?? 0;

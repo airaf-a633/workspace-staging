@@ -534,3 +534,12 @@ Order:
 - Marketing consent per channel and do-not-contact are real and audited. "Unknown" removes the record.
 - Merge: the person picks which values to keep; same-channel threads are joined, identities, consent, tags and fields move over.
 - Import fills blanks only and never overwrites. Consent is recorded only when the column clearly says yes (source "Imported file"). Up to 2,000 rows per batch; larger files go in batches.
+
+## The other 13 channels (2026-11-01)
+
+Research: docs/CHANNELS_RESEARCH.md. Plan: docs/CHANNELS_PLAN.md. Decided:
+- Order: shared groundwork (step 0), then API, Telegram, LINE; then SMS and Voice, Slack, Discord, Teams; the gated five last.
+- SMS and Voice: the customer connects their own Twilio account and pays Twilio directly. Managed numbers come later, if ever.
+- Slack: customers in Slack Connect channels (the customer-support use). Internal help desk is not in scope.
+- TikTok, X, Viber, WeChat and Apple Messages show as "Request access" until each one's approval, contract or cost is settled; built after that.
+- Teams: internal help desk only, installed by a company's admin; customer-facing Teams is not promised.

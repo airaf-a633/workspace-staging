@@ -77,6 +77,17 @@ The longest lead time. Start the verification early even if we build other thing
   - Needs a screen recording of Relay in use. I'll script it with you.
 - [ ] **Become a Tech Provider and set up Embedded Signup**, so customers connect their own numbers in a few clicks. *(Weeks; after App Review.)*
 
+## 7. Testing the new channels (after staging is back)
+
+Nothing in the channel work has run against a real server yet. Once staging is restored, in this order:
+
+- [ ] **Apply the waiting database changes** (I do this; it needs `SUPABASE_DB_URL` in `.env`). Ten are waiting, plus `20261020000009_export` and `20261101000001_channel_foundation`.
+- [ ] **Start the worker** in a terminal: `pnpm --filter @app/worker dev`. Replies, files and incoming channel messages are all handled by it.
+- [ ] **Run the live browser tests** (PowerShell): `$env:E2E_LIVE=1; $env:E2E_WORKER=1; pnpm --filter @app/web e2e:live`.
+- [ ] **API channel, by hand:** Settings > Channels > API > Create inbox, copy the key, then run the `curl` example it shows. The message should appear in the Inbox within a few seconds.
+
+Per-channel checklists (what to open and press to see a real message arrive) are added here as each channel is built.
+
 ## 6. Before launch
 
 - [ ] **Run the real-person test** from [docs/SIMPLICITY_AUDIT.md](SIMPLICITY_AUDIT.md): 3–5 people who've never seen Relay. *(2 hours.)*

@@ -3,6 +3,9 @@ import { parseInbound, type InboundEmail } from "./email";
 import { classifyGmailError, currentHistoryId, GmailError, gmailRevoked, historyExpired, newInboxMessages, readGmail, refreshGoogle, sendGmail, toMime } from "./gmail";
 import { classifyGraphError, createSubscription, GraphMailError, inboxDelta, isNoMailbox, isRevoked, readMessage, refreshAccess, renewSubscription, replyInOutlook } from "./outlook";
 import { buildEmail, classifyEmailError, sendEmail } from "./postmark";
+import { MODULES } from "./channels/registry";
+import { ChannelSendError } from "./channels/types";
+import { channelCreds } from "./channels/inbound";
 import { classifySendError, downloadMedia, extensionFor, parseMessagesValue, routeChanges, sendText, webhookEnvelope, type RoutedChange } from "@app/whatsapp";
 
 /**
@@ -176,6 +179,10 @@ interface Outbound {
   channel_status: string;
   phone_number_id: string | null;
   to_address: string | null;
+  settings?: Record<string, unknown>;
+  thread_key?: string;
+  last_inbound?: Record<string, unknown> | null;
+  last_inbound_at?: string | null;
 }
 
 /** One adapter per channel type. WhatsApp first; email and website chat plug in here later. */
@@ -260,6 +267,22 @@ const ADAPTERS: Record<string, Adapter> = {
   },
 };
 
+/** Channels built as modules (Telegram, LINE...) send through their own module, with their stored credentials. */
+function moduleAdapter(type: string): Adapter | undefined {
+  const module = MODULES[type];
+  if (!module) return undefined;
+  return async (ctx, m) =>
+    module.send(ctx.fetch ?? fetch, await channelCreds(ctx, m.channel_id), {
+      messageId: m.message_id,
+      body: m.body ?? "",
+      to: m.to_address!,
+      threadKey: m.thread_key ?? "",
+      settings: m.settings ?? {},
+      lastInbound: m.last_inbound ?? null,
+      lastInboundAt: m.last_inbound_at ? new Date(m.last_inbound_at) : null,
+    });
+}
+
 /**
  * M2.4: sends one queued reply. Safe to run twice: only a queued message is sent, and only a queued message is
  * marked. Temporary failures throw so the queue retries; permanent ones (and the last try) fail the message
@@ -273,7 +296,7 @@ export async function processSendMessage(ctx: Ctx, job: { message_id: string }, 
   if (m.status !== "queued") return `already ${m.status}`;
 
   const fail = (code: string, reason: string) => rpc(ctx, "mark_message_failed", { p_message: m.message_id, p_code: code, p_text: reason });
-  const adapter = ADAPTERS[m.channel_type];
+  const adapter = ADAPTERS[m.channel_type] ?? moduleAdapter(m.channel_type);
   if (!adapter) {
     await fail("unsupported", "Sending on this channel isn't available yet.");
     return `unsupported channel ${m.channel_type}`;
@@ -294,6 +317,7 @@ export async function processSendMessage(ctx: Ctx, job: { message_id: string }, 
   } catch (e) {
     const c =
       e instanceof NotConfigured ? { temporary: false, code: "not_configured", reason: e.message }
+      : e instanceof ChannelSendError ? { temporary: e.temporary, code: e.code, reason: e.message }
       : e instanceof GraphMailError ? classifyGraphError(e)
       : e instanceof GmailError ? classifyGmailError(e)
       : m.channel_type === "email" ? classifyEmailError(e)
