@@ -94,6 +94,28 @@ Nothing in the channel work has run against a real server yet. Once staging is r
 - [ ] **Send it a message** from your own Telegram (open the link, press Start, write something). It should appear in the Inbox within a few seconds. Reply from the Inbox and check it arrives in Telegram.
 - [ ] **Things I could not confirm from Telegram's documents, to watch for:** what the exact error is when a person blocks the bot, and whether a bot can ever message someone who hasn't pressed Start. Tell me what you see; I'll word the screens on facts.
 
+### LINE (needs a LINE account; free to set up, about 20 minutes)
+
+- [ ] **Create a LINE Official Account** (LINE Official Account Manager) and turn on the **Messaging API** for it. You'll pick a *provider*; LINE says it can't be changed afterwards. *(10 minutes.)*
+- [ ] **Copy two values** from the LINE Developers Console: the **Channel secret** (Basic settings tab) and a **Channel access token (long-lived)** (Messaging API tab, press Issue). Keep them in your password manager. Never paste them in chat.
+- [ ] **Connect it:** Settings > Channels > LINE, paste both, press Connect.
+- [ ] **Paste Relay's address into LINE:** Messaging API tab > Webhook URL > Edit > paste > Update > **Verify** (should say Success) > turn on **Use webhook**. The site's public address must be https.
+- [ ] **Turn off LINE's own replies:** in LINE Official Account Manager, turn off **Greeting message** and **Auto-reply messages** (both are on by default), or customers get two replies.
+- [ ] **Send a message** to your account from your own LINE app. It should appear in the Inbox within a few seconds with your LINE name. Reply from the Inbox and check it arrives in LINE.
+- [ ] **Reply timing, to watch for:** a reply within about a minute is free; a later one is a push message that counts against the plan's monthly allowance. Check LINE Official Account Manager's message count before and after to confirm which kind each reply was.
+- [ ] **Things I could not confirm from LINE's documents, to watch for:** the exact error text when the monthly allowance is used up, the shape of the profile answer (does your name show up?), and whether blocking the account shows the "blocked your account" line in the chat. Tell me what you see.
+
+### SMS (needs a Twilio account and a phone number; billed by Twilio)
+
+- [ ] **Twilio account and a number:** create a Twilio account and buy or use a number that can send and receive texts in the country you'll use. A trial account can only text numbers you've verified in Twilio. *(15 minutes, plus Twilio's own checks.)*
+- [ ] **Copy two values** from the Twilio Console dashboard: the **Account SID** (starts with AC) and the **Auth Token**. Keep them in your password manager. Never paste them in chat.
+- [ ] **Connect it:** Settings > Channels > SMS, paste both and the number, press Connect.
+- [ ] **Paste Relay's address into the number:** in the Twilio Console, open the number's settings, find where incoming messages are handled, choose a webhook, paste the address Relay shows, choose **HTTP POST**, save. The site's public address must be https.
+- [ ] **Text the number** from your own phone. It should appear in the Inbox within a few seconds. Reply from the Inbox and check it arrives, and that the message shows delivered (ticks) a moment later.
+- [ ] **US numbers:** Twilio may need business registration (A2P 10DLC) or a verified toll-free number before US texts are delivered. The Twilio Console shows what your number needs. I did not quote Twilio's fees because its own pages disagree.
+- [ ] **Try STOP:** text STOP from your phone. Twilio replies for you; Relay should show "replied STOP" in the chat and mark you opted out of text marketing. Then text START and check the chat says so.
+- [ ] **Things I could not confirm from Twilio's documents, to watch for:** whether an empty reply to Twilio is accepted without complaint, whether a picture's link needs the account's login to download, how fast delivery reports arrive, and whether Relay's account check (fetching your Twilio account) works for every account type, such as sub-accounts. Tell me what you see.
+
 Per-channel checklists (what to open and press to see a real message arrive) are added here as each channel is built.
 
 ## 6. Before launch

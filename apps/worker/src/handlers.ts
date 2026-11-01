@@ -278,6 +278,7 @@ function moduleAdapter(type: string): Adapter | undefined {
       to: m.to_address!,
       threadKey: m.thread_key ?? "",
       settings: m.settings ?? {},
+      appUrl: ctx.appUrl,
       lastInbound: m.last_inbound ?? null,
       lastInboundAt: m.last_inbound_at ? new Date(m.last_inbound_at) : null,
     });

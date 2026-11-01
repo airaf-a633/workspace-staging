@@ -33,6 +33,17 @@ export async function processChannelEvent(ctx: Ctx, eventId: number): Promise<{ 
   const items = module.parse(body, row, creds);
   let filed = 0;
   for (const item of items) {
+    // A provider that sends only an id (LINE): ask for the name once, when we don't know this person yet.
+    if (!item.display && module.profile) {
+      const { data: known } = await ctx.db.from("contact_identities").select("display").eq("workspace_id", row.workspace_id).eq("kind", item.kind).eq("address", item.address).maybeSingle();
+      if (!(known as { display: string | null } | null)?.display) {
+        try {
+          item.display = await module.profile(ctx.fetch ?? fetch, creds, item.address);
+        } catch (e) {
+          ctx.log(`profile lookup failed for channel ${channel_id}: ${e instanceof Error ? e.message : String(e)}`);
+        }
+      }
+    }
     const id = await rpc<string | null>(ctx, "ingest_inbound", {
       p_channel: channel_id,
       p_kind: item.kind,
@@ -57,6 +68,13 @@ export async function processChannelEvent(ctx: Ctx, eventId: number): Promise<{ 
         p_payload: { message_id: id, channel_id, ref: first.ref, mime: first.mime ?? null, filename: first.filename ?? null },
       });
     }
+  }
+  const EVENT_KIND = { blocked: "customer_blocked", unblocked: "customer_unblocked", opted_out: "customer_opted_out", opted_in: "customer_opted_in" } as const;
+  for (const e of module.events?.(body, row, creds) ?? []) {
+    await rpc(ctx, "record_channel_event", { p_channel: channel_id, p_kind: EVENT_KIND[e.kind], p_identity_kind: e.identityKind, p_address: e.address });
+  }
+  for (const u of module.statuses?.(body, row) ?? []) {
+    await rpc(ctx, "apply_message_status", { p_channel: channel_id, p_external_id: u.externalId, p_status: u.status, p_error_code: u.errorCode ?? null, p_error_text: u.errorText ?? null });
   }
   if (module.welcome) {
     try {

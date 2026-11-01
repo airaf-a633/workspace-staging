@@ -41,6 +41,21 @@ export interface InboundItem {
   media?: MediaRef[] | undefined;
 }
 
+/** A delivery update for a message we sent (delivered, failed...). Moves forward only; "failed" always lands. */
+export interface StatusUpdate {
+  externalId: string;
+  status: "sent" | "delivered" | "read" | "failed";
+  errorCode?: string | undefined;
+  errorText?: string | undefined;
+}
+
+/** A customer blocking or re-adding the account, or replying STOP or START. Written into their chat as a small line. */
+export interface ChannelEvent {
+  kind: "blocked" | "unblocked" | "opted_out" | "opted_in";
+  identityKind: string;
+  address: string;
+}
+
 export interface SendRequest {
   messageId: string;
   body: string;
@@ -48,6 +63,8 @@ export interface SendRequest {
   to: string;
   threadKey: string;
   settings: Record<string, unknown>;
+  /** Relay's own public address, for providers that call back with delivery status. */
+  appUrl?: string | undefined;
   /** The customer's latest inbound message's `data` and time (a reply token lives there). */
   lastInbound: Record<string, unknown> | null;
   lastInboundAt: Date | null;
@@ -71,6 +88,12 @@ export interface ChannelModule {
   type: string;
   /** Provider webhook body to messages. Events that aren't messages (typing, read receipts) return []. */
   parse(body: unknown, channel: ChannelRow, creds: Creds): InboundItem[];
+  /** Optional: block and unblock notices found in a webhook. */
+  events?(body: unknown, channel: ChannelRow, creds: Creds): ChannelEvent[];
+  /** Optional: delivery updates found in a webhook. */
+  statuses?(body: unknown, channel: ChannelRow): StatusUpdate[];
+  /** Optional: a customer's name, when the provider only sends an id. Called once for a new customer. */
+  profile?(f: typeof fetch, creds: Creds, address: string): Promise<string | undefined>;
   /**
    * Optional: something to do for a webhook that is not a message (Telegram's Start button sends a greeting).
    * It runs after the messages are filed. A failure is logged and never fails the event, so a retry can't double-file.

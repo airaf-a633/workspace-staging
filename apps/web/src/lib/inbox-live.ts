@@ -77,7 +77,7 @@ const BROKEN = { disconnected: "tokenExpired" } as const;
 interface EventRow {
   id: string;
   conversation_id: string;
-  kind: "claimed" | "handed_to_person" | "handed_to_team" | "resolved" | "reopened" | "spam" | "not_spam" | "asked_collab" | "collab_added" | "collab_removed" | "collab_declined";
+  kind: "claimed" | "handed_to_person" | "handed_to_team" | "resolved" | "reopened" | "spam" | "not_spam" | "asked_collab" | "collab_added" | "collab_removed" | "collab_declined" | "customer_blocked" | "customer_unblocked" | "customer_opted_out" | "customer_opted_in";
   actor_member_id: string | null;
   to_member_id: string | null;
   to_team_id: string | null;
@@ -98,6 +98,10 @@ const EVENT_KEY: Record<EventRow["kind"], ChatEvent["key"]> = {
   collab_added: "collabAdded",
   collab_removed: "collabRemoved",
   collab_declined: "collabDeclined",
+  customer_blocked: "customerBlocked",
+  customer_unblocked: "customerUnblocked",
+  customer_opted_out: "customerOptedOut",
+  customer_opted_in: "customerOptedIn",
 };
 
 function chatEvent(e: EventRow): ChatEvent {

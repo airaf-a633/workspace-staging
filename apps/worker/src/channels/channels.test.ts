@@ -26,13 +26,14 @@ const fake: ChannelModule = {
   download: async (_f, _creds, ref) => ({ bytes: new Uint8Array([1, 2, 3]), mime: "image/png", filename: `${String(ref.id)}.png` }),
 };
 
-function fakeDb(opts: { filed?: boolean } = {}) {
+function fakeDb(opts: { filed?: boolean; known?: boolean } = {}) {
   const calls: { fn: string; args: Record<string, unknown> }[] = [];
   const uploads: string[] = [];
   const rows: Record<string, unknown> = {
     webhook_events: { id: 1, payload: { channel_id: "ch1", body: { messages: [{ id: "m-1", from: "u1", text: "Hi" }, { id: "m-2", from: "u1", file: "f9" }] } } },
     channels: { id: "ch1", workspace_id: "w1", type: "api", settings: {}, status: "connected" },
     messages: { id: "msg1", workspace_id: "w1", conversation_id: "c1", media_id: null },
+    contact_identities: opts.known ? { display: "Existing" } : null,
   };
   const table = (name: string) => {
     const q: Record<string, unknown> = {};
@@ -89,6 +90,45 @@ describe("filing an inbound channel webhook", () => {
     const { db } = fakeDb();
     expect((await processChannelEvent(ctx(db), 1)).outcome).toBe("processed");
     expect(welcomed).toBe(1);
+  });
+
+  it("asks for a new customer's name once, and not for one it already knows", async () => {
+    let asked = 0;
+    const noName = (...a: Parameters<typeof fake.parse>) => fake.parse(...a).map(({ display: _d, ...rest }) => rest);
+    MODULES.api = { ...fake, parse: noName, profile: async () => { asked++; return "Mika"; } };
+    const fresh = fakeDb();
+    await processChannelEvent(ctx(fresh.db), 1);
+    expect(asked).toBe(2);
+    expect(fresh.calls.filter((c) => c.fn === "ingest_inbound")[0]!.args.p_display).toBe("Mika");
+    asked = 0;
+    const known = fakeDb({ known: true });
+    await processChannelEvent(ctx(known.db), 1);
+    expect(asked).toBe(0);
+  });
+
+  it("applies a provider's delivery updates to the messages we sent", async () => {
+    MODULES.api = { ...fake, statuses: () => [{ externalId: "SM1", status: "delivered" }, { externalId: "SM2", status: "failed", errorCode: "30005", errorText: "Not delivered" }] };
+    const { db, calls } = fakeDb();
+    await processChannelEvent(ctx(db), 1);
+    const applied = calls.filter((c) => c.fn === "apply_message_status").map((c) => c.args);
+    expect(applied).toEqual([
+      { p_channel: "ch1", p_external_id: "SM1", p_status: "delivered", p_error_code: null, p_error_text: null },
+      { p_channel: "ch1", p_external_id: "SM2", p_status: "failed", p_error_code: "30005", p_error_text: "Not delivered" },
+    ]);
+  });
+
+  it("files opt-out and opt-in notices", async () => {
+    MODULES.api = { ...fake, events: () => [{ kind: "opted_out", identityKind: "phone", address: "1555" }, { kind: "opted_in", identityKind: "phone", address: "1555" }] };
+    const { db, calls } = fakeDb();
+    await processChannelEvent(ctx(db), 1);
+    expect(calls.filter((c) => c.fn === "record_channel_event").map((c) => c.args.p_kind)).toEqual(["customer_opted_out", "customer_opted_in"]);
+  });
+
+  it("files block and unblock notices", async () => {
+    MODULES.api = { ...fake, events: () => [{ kind: "blocked", identityKind: "line", address: "u1" }, { kind: "unblocked", identityKind: "line", address: "u1" }] };
+    const { db, calls } = fakeDb();
+    await processChannelEvent(ctx(db), 1);
+    expect(calls.filter((c) => c.fn === "record_channel_event").map((c) => c.args.p_kind)).toEqual(["customer_blocked", "customer_unblocked"]);
   });
 
   it("ignores a channel type it has no handler for", async () => {

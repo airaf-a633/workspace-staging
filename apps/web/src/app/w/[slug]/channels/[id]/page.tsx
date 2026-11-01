@@ -17,6 +17,12 @@ import { disconnectTelegram, replaceTelegramToken, updateTelegram } from "../tel
 import { CopyField } from "@/components/ui/copy-button";
 import { getWebhookInfo } from "@/lib/channels/telegram-api";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { LineReplaceCredentials } from "@/components/channels/line-forms";
+import { disconnectLine, replaceLineCredentials, updateLine } from "../line-actions";
+import { getBotInfo } from "@/lib/channels/line-api";
+import { SmsReplaceCredentials } from "@/components/channels/sms-forms";
+import { disconnectSms, replaceSmsCredentials, updateSms } from "../sms-actions";
+import { getAccount } from "@/lib/channels/twilio";
 import { requestNow } from "@/lib/now";
 import { updateEmailChannel, verifyEmailDomain } from "../email-actions";
 import { Submit } from "@/components/ui/submit";
@@ -37,6 +43,8 @@ export default async function ChannelPage(props: PageProps<"/w/[slug]/channels/[
   if (ch.type === "email") return <EmailChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
   if (ch.type === "api") return <ApiChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
   if (ch.type === "telegram") return <TelegramChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
+  if (ch.type === "line") return <LineChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
+  if (ch.type === "sms") return <SmsChannel slug={slug} ch={ch} sp={sp} workspaceId={workspace.id} />;
   if (ch.type !== "webchat") notFound();
 
   const t = await getT("webchatSetup");
@@ -339,6 +347,215 @@ async function TelegramChannel({ slug, ch, sp, workspaceId }: {
           <h2 className="font-semibold">{t("disconnectTitle")}</h2>
           <p className="text-sm text-muted">{t("disconnectHelp")}</p>
           <form action={disconnectTelegram}>
+            <input type="hidden" name="slug" value={slug} />
+            <input type="hidden" name="id" value={ch.id} />
+            <Submit variant="secondary">{t("disconnect")}</Submit>
+          </form>
+        </section>
+      )}
+    </SettingsFrame>
+  );
+}
+
+/* A LINE account: the address to paste into LINE, whether LINE accepts the token, the greeting, the token and disconnecting. */
+async function LineChannel({ slug, ch, sp, workspaceId }: {
+  slug: string;
+  ch: { id: string; name: string; settings: unknown; status: string };
+  sp: Record<string, string | string[] | undefined>;
+  workspaceId: string;
+}) {
+  const t = await getT("lineSetup");
+  const canManage = await can(workspaceId, "numbers.manage");
+  const s = (ch.settings ?? {}) as { greeting?: string; webhook_key?: string };
+  const disconnected = ch.status === "disconnected";
+  const error = typeof sp.error === "string" ? sp.error : null;
+  const address = `${await appOrigin()}/api/webhooks/line/${s.webhook_key}`;
+  const field = "min-h-11 rounded-[var(--radius-control)] border border-input bg-surface px-3 font-normal";
+
+  // What LINE itself says about the token. Only managers see it; the token is read here and never shown.
+  let health: "ok" | "rejected" | "unknown" = "unknown";
+  if (canManage && !disconnected) {
+    const { data: secrets } = await createAdminClient().rpc("channel_secrets", { p_channel: ch.id });
+    const token = (secrets as { access_token?: string } | null)?.access_token;
+    if (token) {
+      const bot = await getBotInfo(fetch, token);
+      health = bot.ok ? "ok" : bot.reason === "rejected" ? "rejected" : "unknown";
+    }
+  }
+
+  return (
+    <SettingsFrame base={`/w/${slug}`} active="channels" isOwner={await can(workspaceId, "members.manage")}>
+      <Link href={`/w/${slug}/channels`} className="flex w-fit items-center gap-1.5 text-sm text-muted hover:text-text">
+        <ArrowLeft size={16} className="rtl:rotate-180" aria-hidden="true" /> {t("backToList")}
+      </Link>
+      <SectionHeader title={ch.name} description={t("pageHelp")} />
+      {sp.created && <Notice tone="success" title={t("created")}>{t("createdBody")}</Notice>}
+      {sp.saved && <Notice tone="success" title={t("saved")} />}
+      {error && <Notice tone="error" title={t(error === "needName" ? "errors.needName" : error === "notAllowed" ? "errors.notAllowed" : "errors.failed")} />}
+      {disconnected && <Notice tone="warn" title={t("disconnected")}>{t("disconnectedBody")}</Notice>}
+
+      {!disconnected && (
+        <section className="grid gap-3 rounded-[var(--radius-panel)] bg-surface p-5 shadow-[var(--shadow-1)] ring-1 ring-border">
+          <h2 className="font-semibold">{t("finishTitle")}</h2>
+          <ol className="grid list-decimal gap-1.5 ps-5 text-sm">
+            <li>{t("finish1")}</li>
+            <li>{t("finish2")}</li>
+            <li>{t("finish3")}</li>
+            <li>{t("finish4")}</li>
+            <li>{t("finish5")}</li>
+          </ol>
+          <div className="grid gap-1.5 text-sm font-medium">
+            {t("addressLabel")}
+            <CopyField value={address} label={t("addressLabel")} />
+            {!address.startsWith("https://") && <span className="text-xs font-normal text-muted">{t("needHttpsNote")}</span>}
+          </div>
+        </section>
+      )}
+
+      {canManage && !disconnected && (
+        <section className="grid gap-2">
+          <h2 className="font-semibold">{t("healthTitle")}</h2>
+          {health === "ok" && <Notice tone="success" title={t("healthOk")}>{t("healthNote")}</Notice>}
+          {health === "rejected" && <Notice tone="error" title={t("healthRejected")} />}
+          {health === "unknown" && <Notice tone="warn" title={t("healthUnknown")} />}
+        </section>
+      )}
+
+      <Notice tone="info" title={t("costPageTitle")}>{t("costBody")}</Notice>
+
+      <section className="grid gap-3">
+        <form action={updateLine} className="grid gap-4 sm:max-w-lg">
+          <input type="hidden" name="slug" value={slug} />
+          <input type="hidden" name="id" value={ch.id} />
+          <fieldset disabled={!canManage} className="grid gap-4">
+            <label className="grid gap-1.5 text-sm font-medium">
+              {t("nameLabel")}
+              <input name="name" defaultValue={ch.name} required maxLength={80} className={field} />
+            </label>
+            <label className="grid gap-1.5 text-sm font-medium">
+              {t("greeting")}
+              <textarea name="greeting" rows={3} maxLength={1000} defaultValue={s.greeting ?? ""} placeholder={t("greetingPlaceholder")} className={`${field} py-2`} />
+              <span className="text-xs font-normal text-muted">{t("greetingHelp")}</span>
+            </label>
+          </fieldset>
+          {canManage && <div><Submit>{t("save")}</Submit></div>}
+        </form>
+      </section>
+
+      {canManage && (
+        <section className="grid gap-3">
+          <h2 className="font-semibold">{t("replaceTitle")}</h2>
+          <LineReplaceCredentials action={replaceLineCredentials} slug={slug} id={ch.id} reconnect={disconnected} />
+        </section>
+      )}
+
+      {canManage && !disconnected && (
+        <section className="grid gap-3">
+          <h2 className="font-semibold">{t("disconnectTitle")}</h2>
+          <p className="text-sm text-muted">{t("disconnectHelp")}</p>
+          <form action={disconnectLine}>
+            <input type="hidden" name="slug" value={slug} />
+            <input type="hidden" name="id" value={ch.id} />
+            <Submit variant="secondary">{t("disconnect")}</Submit>
+          </form>
+        </section>
+      )}
+    </SettingsFrame>
+  );
+}
+
+/* An SMS number: the address to paste into Twilio, whether Twilio accepts the credentials, STOP handling and disconnecting. */
+async function SmsChannel({ slug, ch, sp, workspaceId }: {
+  slug: string;
+  ch: { id: string; name: string; settings: unknown; status: string };
+  sp: Record<string, string | string[] | undefined>;
+  workspaceId: string;
+}) {
+  const t = await getT("smsSetup");
+  const canManage = await can(workspaceId, "numbers.manage");
+  const s = (ch.settings ?? {}) as { webhook_key?: string };
+  const disconnected = ch.status === "disconnected";
+  const error = typeof sp.error === "string" ? sp.error : null;
+  const address = `${await appOrigin()}/api/webhooks/twilio/${s.webhook_key}`;
+  const field = "min-h-11 rounded-[var(--radius-control)] border border-input bg-surface px-3 font-normal";
+
+  // What Twilio itself says about the credentials. Only managers see it; the token is read here and never shown.
+  let health: "ok" | "rejected" | "unknown" = "unknown";
+  if (canManage && !disconnected) {
+    const { data: secrets } = await createAdminClient().rpc("channel_secrets", { p_channel: ch.id });
+    const c = secrets as { account_sid?: string; auth_token?: string } | null;
+    if (c?.account_sid && c.auth_token) {
+      const account = await getAccount(fetch, c.account_sid, c.auth_token);
+      health = account.ok ? "ok" : account.reason === "rejected" ? "rejected" : "unknown";
+    }
+  }
+
+  return (
+    <SettingsFrame base={`/w/${slug}`} active="channels" isOwner={await can(workspaceId, "members.manage")}>
+      <Link href={`/w/${slug}/channels`} className="flex w-fit items-center gap-1.5 text-sm text-muted hover:text-text">
+        <ArrowLeft size={16} className="rtl:rotate-180" aria-hidden="true" /> {t("backToList")}
+      </Link>
+      <SectionHeader title={ch.name} description={t("pageHelp")} />
+      {sp.created && <Notice tone="success" title={t("created")}>{t("createdBody")}</Notice>}
+      {sp.saved && <Notice tone="success" title={t("saved")} />}
+      {error && <Notice tone="error" title={t(error === "needName" ? "errors.needName" : error === "notAllowed" ? "errors.notAllowed" : "errors.failed")} />}
+      {disconnected && <Notice tone="warn" title={t("disconnected")}>{t("disconnectedBody")}</Notice>}
+
+      {!disconnected && (
+        <section className="grid gap-3 rounded-[var(--radius-panel)] bg-surface p-5 shadow-[var(--shadow-1)] ring-1 ring-border">
+          <h2 className="font-semibold">{t("finishTitle")}</h2>
+          <ol className="grid list-decimal gap-1.5 ps-5 text-sm">
+            <li>{t("finish1")}</li>
+            <li>{t("finish2")}</li>
+            <li>{t("finish3")}</li>
+            <li>{t("finish4")}</li>
+          </ol>
+          <div className="grid gap-1.5 text-sm font-medium">
+            {t("addressLabel")}
+            <CopyField value={address} label={t("addressLabel")} />
+            {!address.startsWith("https://") && <span className="text-xs font-normal text-muted">{t("needHttpsNote")}</span>}
+          </div>
+        </section>
+      )}
+
+      {canManage && !disconnected && (
+        <section className="grid gap-2">
+          <h2 className="font-semibold">{t("healthTitle")}</h2>
+          {health === "ok" && <Notice tone="success" title={t("healthOk")}>{t("healthNote")}</Notice>}
+          {health === "rejected" && <Notice tone="error" title={t("healthRejected")} />}
+          {health === "unknown" && <Notice tone="warn" title={t("healthUnknown")} />}
+        </section>
+      )}
+
+      <Notice tone="info" title={t("stopTitle")}>{t("stopBody")}</Notice>
+      <Notice tone="info" title={t("costTitle")}>{t("costBody")}</Notice>
+
+      <section className="grid gap-3">
+        <form action={updateSms} className="grid gap-4 sm:max-w-lg">
+          <input type="hidden" name="slug" value={slug} />
+          <input type="hidden" name="id" value={ch.id} />
+          <fieldset disabled={!canManage} className="grid gap-4">
+            <label className="grid gap-1.5 text-sm font-medium">
+              {t("nameLabel")}
+              <input name="name" defaultValue={ch.name} required maxLength={80} className={field} />
+            </label>
+          </fieldset>
+          {canManage && <div><Submit>{t("save")}</Submit></div>}
+        </form>
+      </section>
+
+      {canManage && (
+        <section className="grid gap-3">
+          <h2 className="font-semibold">{t("replaceTitle")}</h2>
+          <SmsReplaceCredentials action={replaceSmsCredentials} slug={slug} id={ch.id} reconnect={disconnected} />
+        </section>
+      )}
+
+      {canManage && !disconnected && (
+        <section className="grid gap-3">
+          <h2 className="font-semibold">{t("disconnectTitle")}</h2>
+          <p className="text-sm text-muted">{t("disconnectHelp")}</p>
+          <form action={disconnectSms}>
             <input type="hidden" name="slug" value={slug} />
             <input type="hidden" name="id" value={ch.id} />
             <Submit variant="secondary">{t("disconnect")}</Submit>

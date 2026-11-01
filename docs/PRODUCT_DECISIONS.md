@@ -552,3 +552,22 @@ Facts read from Telegram's own documentation are in docs/CHANNELS_RESEARCH.md ("
 - Private chats only. Group messages are ignored silently (the bot does not reply in groups, to avoid noise).
 - Replies are plain text; files from customers are downloaded up to Telegram's 20 MB bot limit and a bigger file says so in the thread.
 - People are told apart by Telegram's chat id. Name is first and last name, else the @username, else blank; nothing is invented.
+
+## LINE (2026-11-01)
+
+Facts read from LINE's own documentation are in docs/CHANNELS_RESEARCH.md ("LINE: verified facts"). Decided:
+- Replies are sent automatically: a free reply while the customer's message is fresh (under about 50 seconds), otherwise a push message that counts against the business's own LINE plan. The connect screen and the channel page explain this. If the plan's allowance is used up, the reply fails with a plain message.
+- Adding the account as a friend is not a conversation; it sends the optional greeting (free, uses the reply token). A block, and a re-add, are written into the chat as a small line, because sending to a blocked person looks like success but never arrives.
+- Private chats only. Group and room messages are ignored.
+- The customer pastes the long-lived channel access token and the channel secret. The expiring-token option LINE recommends is not built; its issuing steps were not readable and need research first.
+- The owner pastes Relay's webhook address into the LINE console and presses Verify (the documented path); Relay does not set it through an API.
+- Customer names come from LINE's profile endpoint, asked once per new customer; if LINE won't say, the name stays blank.
+
+## SMS (2026-11-01)
+
+Facts read from Twilio's own documentation are in docs/CHANNELS_RESEARCH.md ("SMS and Voice on Twilio: verified facts"). Decided:
+- The customer connects their own Twilio account (Account SID and Auth Token) and one phone number per inbox. Twilio bills them directly. Messaging Services and managed numbers are not built.
+- A customer's STOP (as Twilio reports it, never read from the words) marks them opted out of SMS marketing (source "Customer replied STOP") and writes a line in the chat. START lifts only an opt-out that came from their own STOP, and does not mark them as opted in: marketing consent still needs a separate, explicit yes.
+- Texts show delivered and failed ticks from Twilio's delivery reports. Twilio's error codes are shown but never relied on, because Twilio says they may change.
+- Replies are plain text up to 1,600 characters (Twilio's limit). Pictures from customers are downloaded; sending pictures is not built.
+- SMS is built before Voice. Voice needs its own decisions (what a caller hears, voicemail, the recording notice) and will be asked when it starts.

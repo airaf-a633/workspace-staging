@@ -148,3 +148,68 @@ Nothing to research externally: it's ours. A developer gets a key per inbox and 
 - Telegram addresses a person by their numeric `chat.id` (same as `from.id` in a private chat). There's no phone number or email, so people can't be matched to other channels automatically; a manager can merge them.
 - Display name = first and last name; `@username` if there is one, otherwise nothing is invented.
 - Plain text only when sending (no `parse_mode`), so a customer's or agent's special characters are never read as formatting.
+
+---
+
+## LINE: verified facts (1 November 2026)
+
+*Read from developers.line.biz (Messaging API overview, receiving messages, sending messages, signature verification, channel access tokens, pricing, Build a bot, and the API reference). "Not stated" means the official page says nothing, so it is not assumed.*
+
+**Confirmed by LINE's own documentation**
+- **Setup:** create a LINE Official Account, enable the Messaging API in LINE Official Account Manager (this makes a Messaging API channel and needs a *provider*, which can't be changed later), then open the channel in the LINE Developers Console.
+- **Webhook:** the owner enters our HTTPS address under Messaging API > Webhook URL, presses **Verify**, then turns on **Use webhook**. Self-signed certificates aren't allowed. Verify sends a request with an empty `events` array, which we must answer with 200. Redelivery of failed webhooks is a separate switch that is **off by default**; delivery is never guaranteed, and LINE may stop sending after long failures.
+- **Defaults to turn off:** "Greeting message" and "Auto-reply messages" are **on** by default in LINE Official Account Manager; LINE recommends turning them off when a bot answers, or customers get two replies.
+- **Signature:** every call has an `x-line-signature` header: HMAC-SHA256 of the **raw** body (UTF-8, unmodified) with the channel secret, base64. Reject on mismatch or a missing header. The header's capitalisation may change, so read it case-insensitively. LINE's addresses aren't published, so there is no IP allow-list.
+- **Body:** `destination` (the bot's user id) and `events[]` (may be empty). A message event has `type`, `mode`, `timestamp` (Unix ms, the original time even when redelivered), `source` (`user`, `group` or `room`), `webhookEventId` (ULID), `deliveryContext.isRedelivery`, `replyToken` and `message`. `mode: standby` means no reply token and no sending.
+- **Messages:** `text` (with `text`), `image`, `video`, `audio`, `file` (`fileName`, `fileSize`), `location` (`title`, `address`, `latitude`, `longitude`), `sticker` (`packageId`, `stickerId`; the sticker image itself **can't be retrieved**). Images, video, audio and files have `contentProvider.type`: `line` (download it) or `external` (links given).
+- **Who the customer is:** the event carries only a `userId`. A name needs `GET https://api.line.me/v2/bot/profile/{userId}` (the endpoint is confirmed; its response fields weren't in the parts I could read).
+- **Files:** `GET https://api-data.line.me/v2/bot/message/{id}/content` with the channel access token. 200 returns the file (the `Content-Type` header says what it is); **202** means a large video or audio isn't ready yet; 404 and 410 are errors. **Content is deleted after an unstated period**, so we must download promptly.
+- **Friend and block events:** `follow` (added as a friend or unblocked; carries a reply token; `isUnblocked` isn't fully reliable) and `unfollow` (the account was blocked, one-to-one chats only). There is no endpoint to ask "is this person a friend".
+- **Sending:** reply `POST https://api.line.me/v2/bot/message/reply`, push `POST https://api.line.me/v2/bot/message/push`. Up to 5 message objects per request; a text message is at most **5000 characters**. A reply token works **once** and should be used **within about a minute**; LINE says the limit may change and must not be relied on. A used or expired token gives a 400 "Invalid reply token". Push takes `to` (a `userId`) and an optional `X-Line-Retry-Key` (a UUID we make); a repeat returns 409. **Pushing to a person who blocked the account returns 200 but isn't delivered**, so a block can't be learned from a send.
+- **Cost:** reply messages are **free**; push, multicast, broadcast and narrowcast count toward the plan's monthly messages, counted per recipient. Messages that can't be delivered (blocked, unknown id) aren't counted. Beyond the plan's allowance a send returns an error (429) and isn't sent. The plans and free amounts **differ by country**; the only table LINE shows on its pricing page is Japan: Communication plan free with up to 200 free messages a month, Light JPY 5,000 with 5,000, Standard JPY 15,000 with 30,000 and extra messages at up to JPY 3 each.
+- **Tokens:** *long-lived* (no expiry, one per channel, issued in the console, revoked when reissued, reissuing can extend the old one by up to 24 hours), *short-lived* (30 days), *v2.1* (you choose up to 30 days; made with a signed JWT), *stateless* (15 minutes, can't be revoked). The Build a bot page recommends v2.1 with automatic renewal.
+
+**Not stated or not read, so not assumed (confirm with a real account)**
+- The exact response fields of Get profile, and Get bot info (`GET /v2/bot/info`, confirmed to exist and to return the bot's user id and display name, but I did not read the response itself).
+- Whether the channel secret or access token can be validated some other way; we use Get bot info as the check and treat the answer defensively.
+- Whether LINE can set the webhook address for us (a "Set webhook endpoint URL" API exists but I could not read its details), so the owner pastes the address in the console and presses Verify (the documented path).
+- The content retention period; the exact redelivery window; the reply and push rate limits.
+- How the "Allow bot to join group chats" setting behaves.
+
+**What this means for the design**
+- The customer pastes three things from the LINE Developers Console: **Channel secret** and **Channel access token (long-lived)**, then pastes **our webhook address** back into the console. Relay checks the token with Get bot info before saving anything.
+- A support agent usually replies after more than a minute, so most replies are **push messages that use the customer's LINE plan allowance**. The screens must say so plainly, and a send refused because the allowance is used up must say that in words.
+- Because pushing to someone who blocked the account looks like success, a block is only known from the `unfollow` event; we mark the customer as blocked from that event, and stop offering the composer until they follow again.
+
+---
+
+## SMS and Voice on Twilio: verified facts (1 November 2026)
+
+*Read from twilio.com/docs: the messaging webhook guide, webhook security, the Message resource, Advanced Opt-Out, the Voice TwiML and call pages, `<Record>`, and the Recording resource. "Not stated" means the official page says nothing, so it is not assumed.*
+
+**Confirmed by Twilio's own documentation**
+- **Receiving a text:** Twilio makes a request in `application/x-www-form-urlencoded` form to the address set on the number. Parameters include `MessageSid`, `AccountSid`, `From`, `To`, `Body`, `NumMedia`, `NumSegments`, and for pictures `MediaUrl0`, `MediaContentType0` (and so on). Twilio expects TwiML back (an empty `<Response/>` is the normal "no reply"; the page doesn't spell that out, so we confirm with a real number).
+- **Is it really Twilio:** the `X-Twilio-Signature` header is the **base64** of an **HMAC-SHA1**, keyed with the account **Auth Token**, of: the full URL exactly as Twilio sent it (through the end of the query string), followed by every POST parameter sorted alphabetically (case-sensitive) as name then value with no separators. "If you decode or re-encode the URL, signature validation fails." For SMS over https the port is kept in the URL. A trailing-slash rewrite by a server breaks it.
+- **Sending a text:** `POST https://api.twilio.com/2010-04-01/Accounts/{AccountSid}/Messages.json` with `To`, a sender (`From` or `MessagingServiceSid`) and `Body` (up to **1,600 characters**; over 160 GSM-7 or 70 Unicode characters a text is split into billed segments). Authentication is HTTP Basic: Account SID with Auth Token (or an API key).
+- **Delivery tracking:** a `StatusCallback` address can be given per message. Twilio posts `MessageStatus` (`queued`, `sending`, `sent`, `delivered`, `undelivered`, `failed`, and others) and, for `failed` or `undelivered`, an `ErrorCode`. Twilio warns that `error_code` values may change and shouldn't be relied on programmatically, and that callback parameters may change without notice, so our check accepts extra parameters.
+- **Pictures:** up to 10 `MediaUrl`s per sent message; 5 MB for jpeg, jpg, png and gif, 500 KB for other types.
+- **STOP:** on long codes Twilio handles `STOP, UNSUBSCRIBE, END, QUIT, STOPALL, REVOKE, OPTOUT, CANCEL` itself and sends the confirmation. It then blocks the number: later sends fail asynchronously with error **21610**. The webhook reports it as **`OptOutType`** (`START`, `STOP` or `HELP`), and Twilio advises against sending another message yourself. `START` and `UNSTOP` re-subscribe ("YES" does not). US toll-free numbers always unsubscribe on STOP.
+- **Calls:** a call webhook always carries `CallSid`, `AccountSid`, `From`, `To` (E.164), `CallStatus` (`queued`, `initiated`, `ringing`, `in-progress`, `completed`, `busy`, `failed`, `no-answer`, `canceled`) and `Direction` (`inbound`, `outbound-api`, `outbound-dial`). **The answer must be TwiML** (`<Say>`, `<Record>`, `<Dial>`, `<Hangup>` inside `<Response>`), so whoever receives the call webhook decides what the caller hears.
+- **Call status callbacks** carry `CallSid`, `CallStatus`, `CallDuration` (seconds), `Duration` (minutes, as billed), `Direction`, `From`, `To`, `Timestamp` and `SequenceNumber`. `completed` means answered and ended normally.
+- **Voicemail with `<Record>`:** defaults `maxLength` 3600 s (120 s when transcribed), beep on, silence trimmed. The recording address is sent to `action` and to `recordingStatusCallback` (status `completed` or `failed`, with `RecordingSid`, `RecordingUrl`, `RecordingDuration`). The file may not be ready when `action` fires. Adding `.mp3` gives an MP3; otherwise WAV.
+- **Recording files** need HTTP Basic authentication; the file can only be fetched once the recording is `completed`. Recording metadata is kept 40 days after deletion.
+- **Transcription:** a paid option on `<Record>`, American English only, for recordings between 2 and 120 seconds.
+
+**Not stated or not read, so not assumed (confirm with a real number)**
+- What Twilio does if the webhook answers with an empty body, and the webhook timeout and retry behaviour.
+- Whether pictures sent to us (`MediaUrl0`) need authentication to download, and what redirects they use. We download with the account credentials and accept redirects.
+- How a Twilio *number's* "status callback URL" behaves for inbound calls (that page section wasn't readable), so Voice relies on answering the call webhook itself.
+- Whether a Twilio number's message webhook can be set through the API without the console (not read), so the owner pastes the address into the number's settings.
+- US carrier registration (A2P 10DLC) amounts: Twilio's own pages disagreed with each other (a campaign vetting fee of $15 versus $40), so this is not quoted. The screens will say "Twilio may need you to register before US texts are delivered" and point to Twilio's console.
+
+**What this means for the design**
+- The customer connects their **own Twilio account**: Account SID and Auth Token (the Auth Token is the signature key, so it is required either way), plus the phone number they text from.
+- The webhook route rebuilds the exact URL from Relay's configured public address (never from the proxied request), parses the form, and checks the signature.
+- Replies are plain text up to **1,600 characters** (the database limit for SMS is lowered from 4,096), with a `StatusCallback` so the thread shows delivered and failed.
+- A STOP reply comes through as `OptOutType=STOP`.
+- **Voice is different in kind:** because the call webhook must answer with TwiML, a Relay Voice channel has to decide what happens to a caller (ring a phone, take a voicemail). That's a product decision, asked when Voice starts.

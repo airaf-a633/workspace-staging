@@ -60,7 +60,7 @@ export async function handleChannelWebhook(request: Request, type: string, key: 
   }
 
   // A disconnected channel answers like a live one (so the provider stops retrying) but files nothing.
-  if (channel.status === "disconnected") return new Response("OK", { status: 200 });
+  if (channel.status === "disconnected") return options.accepted?.() ?? new Response("OK", { status: 200 });
 
   let body: unknown;
   try {
