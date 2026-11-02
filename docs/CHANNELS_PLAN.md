@@ -46,7 +46,7 @@ Each step is one feature: built, tested, shown to you, then pushed on your say-s
 | Step | Channel | What gets built |
 |---|---|---|
 | 6 | **Slack** | Install to a workspace (OAuth). Replies in threads; Slack Connect customers appear as customers. No history backfill (Slack's rate limits). Marketplace review is a later task for you. |
-| 7 | **Discord** | A small always-on gateway service. DMs and a "help" channel where each question becomes a conversation. Needs the worker hosting decision. |
+| 7 | **Discord** | A small always-on gateway service. DMs and a "help" channel where each question becomes a conversation. Hosting decided 2026-11-02: Fly.io (docs/DEPLOY_WORKER.md). |
 | 8 | **Microsoft Teams** | Internal help desk only: a single-tenant bot the customer's admin installs. Customer-facing Teams is not promised. |
 
 ### Wave 4: gated channels (built after the gate opens, or behind "request access")

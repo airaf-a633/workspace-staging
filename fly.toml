@@ -1,0 +1,29 @@
+# The background worker and the Discord Gateway on Fly.io, Frankfurt (decided 2026-11-02; docs/DEPLOY_WORKER.md).
+#
+# Two process groups, each exactly ONE always-on machine:
+#   worker   claims queued jobs: files messages, sends replies, downloads files, renews tokens.
+#   gateway  keeps one Discord connection per connected bot online. Two copies would fight over Discord's limit of
+#            1,000 connections a day, so it must never be scaled past one.
+# Neither listens for web traffic, so there is no [http_service]: Fly gives such an app no public address.
+#
+# `app` is the name `fly launch --no-deploy --name <your-unique-name>` will ask you to change: Fly app names are
+# unique across all of Fly.io.
+app = "relay-worker"
+primary_region = "fra"
+
+[processes]
+  worker = "pnpm --filter @app/worker start"
+  gateway = "pnpm --filter @app/worker gateway"
+
+# 512 MB, about $3.69 a month each (Fly's pricing page). Node plus tsx is the reason for not choosing 256 MB; if
+# `fly status` shows plenty of headroom after a week, 256 MB ($2.19) is enough.
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512MB"
+
+# Restart whatever the exit code: a worker that exits cleanly (for example after a deploy signal) should come back.
+[[restart]]
+  policy = "always"
+
+[env]
+  WHATSAPP_API_VERSION = "v25.0"

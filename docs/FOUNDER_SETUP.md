@@ -10,8 +10,8 @@
   The CLI currently says "no privileges", so I apply migrations through the direct database connection instead. That works, but the CLI is the cleaner route.
 - [ ] **Set `NEXT_PUBLIC_SITE_URL`** in `.env` and in Vercel to the app's public address (e.g. `https://app.yourdomain.com`). *(2 minutes.)*
   The website chat install code and email links use it.
-- [ ] **Decide where the worker runs.** It's the background process that sends replies and processes webhooks. *(30 minutes.)*
-  Earlier we planned Fly.io. It needs the same Supabase URL and service key as `.env`. Until it runs somewhere, replies stay "queued".
+- [ ] **Run the worker and the Discord Gateway on Fly.io (decided 2 November 2026).** The worker sends replies and processes incoming messages; the Gateway keeps Discord connected. About $7.40 a month for both. *(30 minutes, once.)*
+  The files are ready (`Dockerfile`, `fly.toml`) and the exact steps are in `docs/DEPLOY_WORKER.md`. Until it runs, replies stay "queued" and Discord messages are not received.
 
 ## 2. Email: Postmark plus a forwarding domain
 

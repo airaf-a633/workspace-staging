@@ -626,3 +626,14 @@ Facts re-read from each platform's own pages are in docs/CHANNELS_RESEARCH.md ("
   - Apple: only through an Apple-approved Messaging Service Provider. Relay is not one, and Apple's pages do not say how to become one or whether a business can connect without one. The note asks which provider the business uses.
 - X: only regular (unencrypted) direct messages arrive; attachments appear as an unsupported message; there is no remote webhook removal when disconnecting (the business removes it in their console).
 - Not built for X: encrypted chats (X Chat API), media, groups, proactive messages. Not built for Viber: stickers, contacts, links and rich media from customers (shown as unsupported), broadcast and proactive messages.
+
+## Where the worker and the Discord Gateway run (2026-11-02)
+
+Details, costs and what could not be verified are in docs/DEPLOY_WORKER.md. Decided:
+- **Fly.io, Frankfurt**, one app with two process groups from one image: `worker` (the job queue) and `gateway` (Discord). Chosen because the engineering plan already named it; Fly's own pages were checked for regions, process groups, restart policy, scaling, secrets and pricing. Other hosts (Render, Railway) were not researched.
+- **Exactly one machine per group, no standby.** The Gateway must never run twice (Discord's limit of 1,000 connections a day, going over resets the token).
+- **Accepted for now:** Discord messages sent while the Gateway restarts (about a minute on a deploy or crash) are lost. Saving the session to resume across restarts is deferred until it can be tested on a real bot.
+- **Cost:** about $7.40 a month (two 512 MB machines), no free tier.
+- **Starts with staging**, once it is restored. Until then the worker can still run on the laptop (`pnpm worker`).
+- Not built or run: the image (no Docker on this machine) and the deploy itself (no Fly account yet).
+
