@@ -1,15 +1,28 @@
 import { AppShell } from "@/components/app-shell";
 import { CurrencyProvider } from "@/i18n/client";
+import { loadNotices } from "@/lib/notices-live";
+import { requestNow } from "@/lib/now";
 import { loadWorkspace } from "@/lib/workspace";
 import { signOut } from "../../(auth)/actions";
+import { markNoticesRead } from "./notifications-actions";
 
 export default async function WorkspaceLayout(props: LayoutProps<"/w/[slug]">) {
   const { slug } = await props.params;
-  const { workspace, me } = await loadWorkspace(slug);
+  const { supabase, workspace, me } = await loadWorkspace(slug);
   const role = Array.isArray(me.roles) ? me.roles[0] : me.roles;
+  const notices = await loadNotices(supabase, workspace.id, `/w/${slug}`);
 
   return (
-    <AppShell base={`/w/${slug}`} workspaceName={workspace.name} memberName={me.display_name} roleName={role?.name ?? ""} signOut={signOut}>
+    <AppShell
+      base={`/w/${slug}`}
+      workspaceName={workspace.name}
+      memberName={me.display_name}
+      roleName={role?.name ?? ""}
+      signOut={signOut}
+      notifications={notices}
+      now={requestNow()}
+      noticesLive={{ workspaceId: workspace.id, memberId: me.id, read: markNoticesRead.bind(null, slug) }}
+    >
       <CurrencyProvider currency={workspace.currency ?? "USD"}>{props.children}</CurrencyProvider>
     </AppShell>
   );

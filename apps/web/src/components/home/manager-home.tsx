@@ -8,7 +8,7 @@ import { getFormat, getT } from "@/i18n/server";
 import { valueLabel } from "@/i18n/labels";
 import { wallClock } from "@/i18n/zone";
 import { slaClock } from "@/components/sla/sla";
-import type { en } from "@/i18n/messages/en";
+import type { StatKey, Value } from "./home-numbers";
 import type { Format, TFor, Translator } from "@/i18n/types";
 
 /*
@@ -34,9 +34,8 @@ export interface NeedRow {
 }
 
 /* Sample numbers until reports exist. Values are typed so each language formats them its own way. */
-type Value = { usd: number } | { min: number } | { n: number };
 type Hint = { up: number } | { target: number };
-type Stat = [keyof typeof en.home.stats, Value, Hint?];
+type Stat = [StatKey, Value, Hint?];
 const NUMBERS: Record<RoleTemplateKey, Stat[]> = {
   owner: [["revenue", { usd: 48_620 }, { up: 12 }], ["pipeline", { usd: 25_700 }], ["medianReply", { min: 6 }, { target: 30 }], ["unassigned", { n: 3 }]],
   admin: [["revenue", { usd: 48_620 }, { up: 12 }], ["pipeline", { usd: 25_700 }], ["medianReply", { min: 6 }, { target: 30 }], ["unassigned", { n: 3 }]],
@@ -47,10 +46,8 @@ const NUMBERS: Record<RoleTemplateKey, Stat[]> = {
   viewer: [["openChats", { n: 22 }], ["medianReply", { min: 6 }], ["resolvedWeek", { n: 48 }], ["overTarget", { n: 2 }]],
 };
 
-type StatKey = keyof typeof en.home.stats;
-
 /** Chat counts from the same conversations the list and the AI briefing use, so no two numbers disagree. */
-function liveCounts(data: InboxData): Partial<Record<StatKey, number>> {
+export function liveCounts(data: InboxData): Partial<Record<StatKey, number>> {
   const v = data.viewer;
   const open = data.conversations.filter((c) => c.status === "open" && replyAccess(v, c) !== "hidden");
   const lastReal = (c: InboxData["conversations"][number]) => c.messages.filter((m) => m.kind === "in" || m.kind === "out").at(-1);
@@ -75,6 +72,8 @@ function hint(h: Hint, v: Value, t: TFor<"home">, time: TFor<"time">) {
 }
 
 const SHOWN = 5;
+/** Tailwind needs whole class names, so the column count can't be built from a number. */
+const LG_COLS: Record<number, string> = { 1: "lg:grid-cols-1", 2: "lg:grid-cols-2", 3: "lg:grid-cols-3", 4: "lg:grid-cols-4" };
 
 function greeting(now: number, tz: string, t: TFor<"home">, name: string) {
   const { h } = wallClock(now, tz);
@@ -207,6 +206,8 @@ export async function ManagerHome({
   setup,
   extraNeeds,
   briefings,
+  numbers,
+  currency,
 }: {
   firstName: string;
   template: RoleTemplateKey;
@@ -218,11 +219,18 @@ export async function ManagerHome({
   extraNeeds?: NeedRow[];
   /** "From your agents": AI work waiting for this person's approval. */
   briefings?: ReactNode;
+  /**
+   * A real workspace passes its own computed numbers (home-numbers.ts) and the made-up sample ones never show. Without it
+   * (the preview) the role's sample numbers show with their "Sample numbers" label.
+   */
+  numbers?: { key: StatKey; value: Value }[];
+  /** The workspace's currency; amounts show in US dollars without it. */
+  currency?: string;
 }) {
   const tAll = await getT();
   const t = await getT("home");
   const time = await getT("time");
-  const fmt = await getFormat();
+  const fmt = await getFormat(currency);
   const needs = [...(extraNeeds ?? []), ...needsFor(data, inboxHref, tAll, fmt)].sort((a, b) => a.rank - b.rank || (a.waitingSince ?? Infinity) - (b.waitingSince ?? Infinity));
   const date = fmt.longDate(data.now);
   const live = liveCounts(data);
@@ -262,14 +270,15 @@ export async function ManagerHome({
       {/* AI assistants come after people waiting (decided 2026-10-01). */}
       {briefings}
 
+      {(!numbers || numbers.length > 0) && (
       <section aria-labelledby="numbers" className="grid gap-3">
         <div className="flex items-baseline justify-between gap-3">
           <h2 id="numbers" className="text-lg font-semibold">{t("thisMonth")}</h2>
-          <span className="text-sm text-muted">{t("sampleNumbers")}</span>
+          {!numbers && <span className="text-sm text-muted">{t("sampleNumbers")}</span>}
         </div>
-        <dl className="grid grid-cols-2 overflow-hidden rounded-[var(--radius-panel)] bg-surface shadow-[var(--shadow-1)] ring-1 ring-border lg:grid-cols-4">
-          {NUMBERS[template].map(([label, sample, h], i) => {
-            const v: Value = live[label] !== undefined ? { n: live[label]! } : sample;
+        <dl className={`grid grid-cols-2 overflow-hidden rounded-[var(--radius-panel)] bg-surface shadow-[var(--shadow-1)] ring-1 ring-border ${LG_COLS[Math.min(numbers?.length ?? 4, 4)]}`}>
+          {(numbers ? numbers.map(({ key, value }): Stat => [key, value]) : NUMBERS[template]).map(([label, sample, h], i) => {
+            const v: Value = !numbers && live[label] !== undefined ? { n: live[label]! } : sample;
             return (
             <div key={label} className={`grid content-start gap-1 p-5 ${i % 2 ? "border-s border-border" : ""} ${i >= 2 ? "border-t border-border lg:border-t-0" : ""} ${i === 2 ? "lg:border-s" : ""}`}>
               <dt className="text-sm text-muted">{t(`stats.${label}`)}</dt>
@@ -280,6 +289,7 @@ export async function ManagerHome({
           })}
         </dl>
       </section>
+      )}
     </>
   );
 }

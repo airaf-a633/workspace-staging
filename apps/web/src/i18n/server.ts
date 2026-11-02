@@ -34,7 +34,8 @@ export async function getT(ns?: string): Promise<unknown> {
   return ns ? scoped(t, ns) : t;
 }
 
-export async function getFormat() {
+/** `currency` is the workspace's (Settings › Currency); without it amounts show in US dollars. */
+export async function getFormat(currency?: string) {
   const locale = await getLocale();
-  return makeFormat(locale, await translator(), await getTimeZone());
+  return makeFormat(locale, await translator(), await getTimeZone(), currency);
 }

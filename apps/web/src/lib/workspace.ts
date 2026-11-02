@@ -15,7 +15,7 @@ export async function loadWorkspace(slug: string) {
   if (!workspace) notFound();
   const { data: me } = await supabase
     .from("members")
-    .select("id, display_name, role_id, roles(key, name, is_owner)")
+    .select("id, display_name, role_id, roles(key, name, is_owner, template_key)")
     .eq("workspace_id", workspace.id)
     .eq("user_id", user.id)
     .eq("status", "active")

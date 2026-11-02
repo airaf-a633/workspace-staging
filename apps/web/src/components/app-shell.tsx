@@ -9,6 +9,7 @@ import type { AiWorld } from "@/lib/ai-sample";
 import { useT } from "@/i18n/client";
 import { ThemeSwitch } from "@/components/theme";
 import { NotificationBell } from "@/components/notifications/bell";
+import { LiveNotices } from "@/components/notifications/live-notices";
 import type { AppNotice } from "@/components/notifications/notifications";
 import type { TFor } from "@/i18n/types";
 
@@ -33,6 +34,8 @@ interface Props {
   notifications?: AppNotice[] | null;
   /** "Now" for the bell's times (the preview's fixed clock). */
   now?: number;
+  /** Real workspaces: saves what the bell marks read, and refreshes when a new notice arrives. */
+  noticesLive?: { workspaceId: string; memberId: string; read: (ids: string[] | null) => Promise<void> };
   /** Show Campaigns (campaigns.manage, or owners and admins who approve). Preview only so far. */
   campaigns?: boolean;
   children: ReactNode;
@@ -59,7 +62,7 @@ function navItems(base: string, t: TFor<"nav">, reports: boolean, help: boolean,
   ];
 }
 
-export function AppShell({ base, workspaceName, memberName, roleName, signOut, footer, banner, ai = null, reports = false, help = false, campaigns = false, notifications = null, now = 0, children }: Props) {
+export function AppShell({ base, workspaceName, memberName, roleName, signOut, footer, banner, ai = null, reports = false, help = false, campaigns = false, notifications = null, now = 0, noticesLive, children }: Props) {
   const path = usePathname();
   const t = useT("nav");
   const common = useT("common");
@@ -98,6 +101,7 @@ export function AppShell({ base, workspaceName, memberName, roleName, signOut, f
 
   return (
     <div className={`min-h-dvh lg:grid ${rail ? "lg:grid-cols-[64px_1fr]" : "lg:grid-cols-[256px_1fr]"}`}>
+      {noticesLive && <LiveNotices workspaceId={noticesLive.workspaceId} memberId={noticesLive.memberId} />}
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-50 focus:rounded focus:bg-surface focus:p-3">
         {common("skipToContent")}
       </a>
@@ -109,11 +113,11 @@ export function AppShell({ base, workspaceName, memberName, roleName, signOut, f
             {initial}
           </span>
           {rail ? <span className="sr-only">{workspaceName}</span> : <p className="title min-w-0 flex-1 truncate text-lg" title={workspaceName}>{workspaceName}</p>}
-          {notifications && !rail && <NotificationBell initial={notifications} now={now} place="sidebar" />}
+          {notifications && !rail && <NotificationBell initial={notifications} now={now} place="sidebar" read={noticesLive?.read} />}
         </div>
         {notifications && rail && (
           <div className="grid justify-items-center pb-1">
-            <NotificationBell initial={notifications} now={now} place="rail" />
+            <NotificationBell initial={notifications} now={now} place="rail" read={noticesLive?.read} />
           </div>
         )}
         <nav className={`grid gap-1 ${rail ? "justify-items-center px-2 pt-2" : "px-3"}`}>
@@ -174,7 +178,7 @@ export function AppShell({ base, workspaceName, memberName, roleName, signOut, f
         {/* Phone top bar */}
         <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-surface px-4 py-2 lg:hidden">
           <p className="title min-w-0 flex-1 truncate text-lg">{workspaceName}</p>
-          {notifications && <NotificationBell initial={notifications} now={now} place="phone" />}
+          {notifications && <NotificationBell initial={notifications} now={now} place="phone" read={noticesLive?.read} />}
           <button type="button" onClick={() => setAsking(true)} className="flex min-h-10 items-center gap-1.5 rounded-full bg-ai-soft px-3 text-sm font-medium text-ai">
             <Sparkle size={16} weight="fill" aria-hidden="true" /> {aiT("short")}
           </button>

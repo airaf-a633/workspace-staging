@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { processEraseMedia, processSendMessage, type Ctx } from "./handlers";
+import { processEraseMedia, processSendMessage, sweepNotices, type Ctx } from "./handlers";
 
 /** A stand-in database: one queued WhatsApp reply, and a record of every function the worker calls. */
 function fakeDb(overrides: Partial<Record<string, unknown>> = {}) {
@@ -135,5 +135,16 @@ describe("erasing a customer's files", () => {
     const r = await processEraseMedia({ db, apiVersion: "v", log: () => {} }, { paths: [`${ws}/c/m.jpg`, "../etc/passwd", `${ws}/c/n.pdf`] });
     expect(r).toBe("removed 2 files");
     expect(removed).toEqual([[`${ws}/c/m.jpg`, `${ws}/c/n.pdf`]]);
+  });
+});
+
+describe("the notification sweep", () => {
+  it("asks the database for late-task notices and says how many it made", async () => {
+    const db = { rpc: async (fn: string) => ({ data: fn === "sweep_notifications" ? 3 : null, error: null }) } as unknown as SupabaseClient;
+    expect(await sweepNotices({ db, apiVersion: "v", log: () => {} })).toBe(3);
+  });
+  it("throws when the database refuses, so the loop logs it", async () => {
+    const db = { rpc: async () => ({ data: null, error: { message: "boom" } }) } as unknown as SupabaseClient;
+    await expect(sweepNotices({ db, apiVersion: "v", log: () => {} })).rejects.toThrow("sweep_notifications: boom");
   });
 });

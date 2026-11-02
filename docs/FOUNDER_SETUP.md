@@ -208,6 +208,15 @@ Per-channel checklists (what to open and press to see a real message arrive) are
 - [ ] Snooze a task, add a note to a task.
 - [ ] Erase a test customer who has a deal and a task: both should disappear.
 
+### Notifications and Home (needs staging awake with migration 20261104000001 applied; costs nothing)
+- [ ] As an agent: ask for a discount on a deal. As the owner (other browser or window): the bell should show "asks for 10% off ..." without reloading the page, and Home should list it under Needs you now.
+- [ ] As the owner: approve it. As the agent: the bell tells you the answer. The owner's own "asks" notice should stop showing as new.
+- [ ] Press "Mark all as read", reload the page: they should stay read.
+- [ ] As a manager: give an agent a task. The agent's bell should say so. Add a task due a few minutes from now, wait for the time to pass plus five minutes: "Late: ..." should appear in the bell and on Home.
+- [ ] Hand a chat to someone, and write an @mention in a note to someone who can and someone who cannot see the chat: only the first should hear.
+- [ ] Open Home as each role (owner, sales manager, support manager, agent, viewer): the numbers should make sense for the role, there should be no made-up figures, and roles that cannot see deal values should see no money.
+- [ ] A brand-new test workspace should still show the setup checklist until its first chat, deal or task.
+
 ## 6. Before launch
 
 - [ ] **Run the real-person test** from [docs/SIMPLICITY_AUDIT.md](SIMPLICITY_AUDIT.md): 3–5 people who've never seen Relay. *(2 hours.)*

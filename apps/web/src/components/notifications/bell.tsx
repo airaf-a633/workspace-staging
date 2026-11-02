@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowsLeftRight, At, Bell, Clock, PlugsConnected, UserPlus } from "@phosphor-icons/react";
+import { useRouter } from "next/navigation";
+import { ArrowsLeftRight, At, Bell, CheckCircle, Clock, CurrencyCircleDollar, ListChecks, PlugsConnected, UserPlus, XCircle } from "@phosphor-icons/react";
 import { useFormat, useT } from "@/i18n/client";
 import type { AppNotice, NoticeKind } from "./notifications";
 
@@ -12,6 +13,11 @@ const ICON: Record<NoticeKind, typeof Bell> = {
   collabRequest: UserPlus,
   slaBreach: Clock,
   channelBroken: PlugsConnected,
+  discountAsked: CurrencyCircleDollar,
+  discountApproved: CheckCircle,
+  discountDeclined: XCircle,
+  taskAssigned: ListChecks,
+  taskLate: Clock,
 };
 const TONE: Record<NoticeKind, string> = {
   handover: "bg-primary-soft text-primary",
@@ -19,16 +25,44 @@ const TONE: Record<NoticeKind, string> = {
   collabRequest: "bg-primary-soft text-primary",
   slaBreach: "bg-fail-soft text-fail",
   channelBroken: "bg-fail-soft text-fail",
+  discountAsked: "bg-primary-soft text-primary",
+  discountApproved: "bg-primary-soft text-primary",
+  discountDeclined: "bg-fail-soft text-fail",
+  taskAssigned: "bg-primary-soft text-primary",
+  taskLate: "bg-fail-soft text-fail",
 };
 
 /**
  * The bell (decided 2026-10-19). Shows how many things need you; opens a list that links straight to the chat.
  * `place` positions the list: beside the sidebar on desktop, under the top bar on phones.
+ * In a real workspace `read` saves what was read (ids, or null for everything) and the list follows the server;
+ * in the preview there is nothing to save, so reading only changes what this page shows.
  */
-export function NotificationBell({ initial, now, place }: { initial: AppNotice[]; now: number; place: "sidebar" | "rail" | "phone" }) {
+export function NotificationBell({
+  initial,
+  now,
+  place,
+  read,
+}: {
+  initial: AppNotice[];
+  now: number;
+  place: "sidebar" | "rail" | "phone";
+  read?: (ids: string[] | null) => Promise<void>;
+}) {
   const t = useT("notifications");
   const fmt = useFormat();
+  const router = useRouter();
   const [items, setItems] = useState(initial);
+  // A real workspace follows the server's list (new notices arrive, other tabs mark things read).
+  const [seen, setSeen] = useState(initial);
+  if (read && seen !== initial) {
+    setSeen(initial);
+    setItems(initial);
+  }
+  const markRead = (ids: string[] | null) => {
+    setItems((all) => all.map((n) => (ids === null || ids.includes(n.id) ? { ...n, read: true } : n)));
+    if (read) void read(ids).then(() => router.refresh(), () => router.refresh());
+  };
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
   const unread = items.filter((n) => !n.read).length;
@@ -75,7 +109,7 @@ export function NotificationBell({ initial, now, place }: { initial: AppNotice[]
           <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
             <h2 className="font-semibold">{t("title")}</h2>
             {unread > 0 && (
-              <button type="button" onClick={() => setItems(items.map((n) => ({ ...n, read: true })))} className="min-h-8 rounded px-2 text-sm text-primary hover:bg-surface-2">
+              <button type="button" onClick={() => markRead(null)} className="min-h-8 rounded px-2 text-sm text-primary hover:bg-surface-2">
                 {t("markAll")}
               </button>
             )}
@@ -91,7 +125,7 @@ export function NotificationBell({ initial, now, place }: { initial: AppNotice[]
                     <Link
                       href={n.href}
                       onClick={() => {
-                        setItems(items.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
+                        if (!n.read) markRead([n.id]);
                         setOpen(false);
                       }}
                       className={`flex gap-3 px-4 py-3 hover:bg-surface-2 ${n.read ? "" : "bg-primary-soft/40"}`}
@@ -104,6 +138,7 @@ export function NotificationBell({ initial, now, place }: { initial: AppNotice[]
                           {t.rich(`kinds.${n.kind}`, {
                             actor: <bdi className="font-semibold">{n.actor ?? t("someone")}</bdi>,
                             subject: <bdi className="font-semibold">{n.subject}</bdi>,
+                            percent: String(n.percent ?? ""),
                           })}
                         </span>
                         {n.quote && <span className="line-clamp-2 text-muted" dir="auto">“{n.quote}”</span>}

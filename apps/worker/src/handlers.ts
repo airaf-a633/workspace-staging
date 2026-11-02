@@ -531,6 +531,16 @@ export async function scheduleMail(ctx: Ctx): Promise<number> {
 }
 
 /**
+ * Every few minutes (notifications, 2026-11-04): a notice for each task that has passed its time, and notices older than
+ * 30 days dropped. The database keeps it to one notice per task per due time, so running it twice is harmless.
+ */
+export async function sweepNotices(ctx: Ctx): Promise<number> {
+  const { data, error } = await ctx.db.rpc("sweep_notifications");
+  if (error) throw new Error(`sweep_notifications: ${error.message}`);
+  return Number(data ?? 0);
+}
+
+/**
  * Erasing a customer (step 2c): removes their stored files from the private bucket. The database has already
  * removed every reference to them; this only frees the storage. Safe to run twice.
  */

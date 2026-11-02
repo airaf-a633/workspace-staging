@@ -652,6 +652,9 @@ export const en = {
       task: "{text}, {when}",
       quote: "Quote to follow up",
       quoteValue: "Quote to follow up · {value}",
+      taskLate: "Late: {text}",
+      taskToday: "Due today: {text}",
+      taskName: "Task",
       waiting: "Waiting {time}",
     },
     broken: {
@@ -2484,7 +2487,7 @@ export const en = {
     labelUnread: { one: "Notifications, {count} new", other: "Notifications, {count} new" },
     title: "Notifications",
     markAll: "Mark all as read",
-    empty: "You're all caught up. Handovers, mentions and missed reply targets show up here.",
+    empty: "You're all caught up. Things that need you show up here.",
     unread: "New",
     someone: "Someone",
     kinds: {
@@ -2493,6 +2496,11 @@ export const en = {
       collabRequest: "{actor} asked to help on your chat with {subject}",
       slaBreach: "Your chat with {subject} missed its reply target",
       channelBroken: "{subject} can't send messages. Reconnect it.",
+      discountAsked: "{actor} asks for {percent}% off {subject}",
+      discountApproved: "{actor} approved {percent}% off {subject}",
+      discountDeclined: "{actor} declined {percent}% off {subject}",
+      taskAssigned: "{actor} gave you a task: {subject}",
+      taskLate: "Late: {subject}",
     },
   },
 

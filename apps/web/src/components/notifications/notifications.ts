@@ -8,9 +8,14 @@ import { slaClock } from "@/components/sla/sla";
  * - collabRequest: someone asked to help on a chat you hold
  * - slaBreach: a chat you hold has missed its reply target
  * - channelBroken: a channel can't send (owners and admins only)
- * The preview builds them from the sample inbox; the real app will store them when the events happen.
+ * - discountAsked / discountApproved / discountDeclined: a discount waiting for you, or the answer to yours
+ * - taskAssigned / taskLate: a task someone gave you, or yours that has passed its time
+ * The preview builds them from the sample inbox. The real app stores them (decided 2026-11-04, migration
+ * 20261104000001_notifications) and lib/notices-live.ts reads them.
  */
-export type NoticeKind = "handover" | "mention" | "collabRequest" | "slaBreach" | "channelBroken";
+export type NoticeKind =
+  | "handover" | "mention" | "collabRequest" | "slaBreach" | "channelBroken"
+  | "discountAsked" | "discountApproved" | "discountDeclined" | "taskAssigned" | "taskLate";
 
 export interface AppNotice {
   id: string;
@@ -22,6 +27,8 @@ export interface AppNotice {
   subject: string;
   /** A short quote: the handoff note or the note that mentioned you. */
   quote?: string;
+  /** The discount asked for, on the discount notices. Never an amount: amounts are not stored here. */
+  percent?: number;
   href: string;
   read: boolean;
 }

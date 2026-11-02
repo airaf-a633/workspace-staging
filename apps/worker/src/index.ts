@@ -7,7 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 import { loadEnv } from "./env";
 import "./channels/modules";
 import { processChannelEvent, processChannelMedia } from "./channels/inbound";
-import { processEraseMedia, processMailSubscribe, processMailSync, processMediaDownload, processPostmarkEvent, processSendMessage, processWhatsappEvent, scheduleMail, type Ctx } from "./handlers";
+import { processEraseMedia, processMailSubscribe, processMailSync, processMediaDownload, processPostmarkEvent, processSendMessage, processWhatsappEvent, scheduleMail, sweepNotices, type Ctx } from "./handlers";
 
 config({ path: fileURLToPath(new URL("../../../.env", import.meta.url)) });
 const env = loadEnv();
@@ -87,6 +87,8 @@ async function tick(queue: string): Promise<number> {
 
 const SCHEDULE_MS = 60_000;
 let lastSchedule = 0;
+const SWEEP_MS = 5 * 60_000;
+let lastSweep = 0;
 
 async function main() {
   console.log(`worker started against ${new URL(env.SUPABASE_URL).host}`);
@@ -95,6 +97,11 @@ async function main() {
     if ((ctx.microsoft || ctx.google) && Date.now() - lastSchedule > SCHEDULE_MS) {
       lastSchedule = Date.now();
       await scheduleMail(ctx).catch((e) => console.error("scheduleMail", e instanceof Error ? e.message : e));
+    }
+    // Every five minutes: "your task is late" notices (and old notices cleared).
+    if (Date.now() - lastSweep > SWEEP_MS) {
+      lastSweep = Date.now();
+      await sweepNotices(ctx).catch((e) => console.error("sweepNotices", e instanceof Error ? e.message : e));
     }
     let busy = false;
     for (const queue of Object.keys(HANDLERS)) {
