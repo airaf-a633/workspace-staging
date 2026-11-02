@@ -50,7 +50,32 @@ export interface Agent {
   team: string;
 }
 
-export function buildReport(f: ReportFilters, agents: Agent[], now: number) {
+/**
+ * What the Reports screen draws. The sample builds every part; a real workspace leaves out what nothing measures yet
+ * (satisfaction ratings, campaigns, reply targets), and the screen hides what is missing.
+ */
+export interface Report {
+  days: { at: number; n: number }[];
+  total: number;
+  prevTotal: number;
+  /** Minutes, the median. Null when there is nothing to measure. */
+  firstReply: number | null;
+  resolution: number | null;
+  resolvedPct: number | null;
+  withinTarget?: number;
+  backlog: number;
+  byChannel: { key: ChannelKey; n: number; firstReply: number | null; resolvedPct: number | null; csat?: number }[];
+  /** Seven weekdays (Monday first) by twelve two-hour blocks. */
+  heat: number[][];
+  team: { id: string; name: string; n: number; firstReply: number | null; resolved: number; csat?: number; handoversOut: number; handoversIn: number }[];
+  csat?: { score: number; responses: number; dist: number[]; comments: { name: string; channel: ChannelKey; score: number; text: string; agent: string }[] };
+  /** The open stages, then won. Values are whole currency units. */
+  pipeline: { stage: "new" | "quoted" | "negotiating" | "won"; n: number; value: number }[];
+  lost?: { n: number; reasons: { reason: string; n: number }[] };
+  campaigns?: { name: string; channel: ChannelKey; sent: number; delivered: number; read: number; replied: number; orders: number }[];
+}
+
+export function buildReport(f: ReportFilters, agents: Agent[], now: number): Report {
   const r = rng(hash(`${f.range}|${f.team}|${f.channel}`));
   const teamShare = f.team === "all" ? 1 : f.team.includes("sales") ? 0.55 : 0.45;
   const channels = CHANNEL_SHARE.filter(([c]) => f.channel === "all" || c === f.channel);
@@ -150,8 +175,6 @@ export function buildReport(f: ReportFilters, agents: Agent[], now: number) {
     campaigns,
   };
 }
-
-export type Report = ReturnType<typeof buildReport>;
 
 /** Customers' own words, shown as written. */
 const COMMENTS: { name: string; channel: ChannelKey; score: number; text: string; agent: string }[] = [

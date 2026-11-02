@@ -1,11 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp, DownloadSimple, Star, Table } from "@phosphor-icons/react";
 import { buttonClass } from "@/components/ui/button";
 import { ChannelMark } from "@/components/channels/channel-mark";
 import type { ChannelKey } from "@/components/channels/catalog";
 import { useFormat, useT } from "@/i18n/client";
+import { valueLabel } from "@/i18n/labels";
 import { buildReport, type Agent, type Range, type Report } from "./sample";
 
 /**
@@ -171,29 +173,60 @@ function downloadCsv(name: string, rows: (string | number)[][]) {
   URL.revokeObjectURL(a.href);
 }
 
-export function Reports({ agents, teams, teamScope, myTeams, canMoney, canExport, now }: Props) {
+interface Filters {
+  range: Range;
+  team: string;
+  channel: ChannelKey | "all";
+}
+
+interface ViewProps extends Filters {
+  report: Report;
+  onFilter: (next: Partial<Filters>) => void;
+  teams: { id: string; name: string }[];
+  /** "all" sees every team; "team" only their own (reports.view scope). */
+  teamScope: "all" | "team";
+  myTeams: string[];
+  /** The channels in the channel filter. */
+  channels: ChannelKey[];
+  canMoney: boolean;
+  canExport: boolean;
+  /** The preview's made-up numbers say so; real ones say that times are clock time. */
+  sample: boolean;
+}
+
+/** The Reports screen. The preview feeds it sample numbers, a real workspace feeds it its own; the report says which parts exist. */
+function ReportView({ report, range, team, channel, onFilter, teams, teamScope, myTeams, channels, canMoney, canExport, sample }: ViewProps) {
   const t = useT("reports");
   const tAll = useT();
   const fmt = useFormat();
   const visibleTeams = teamScope === "all" ? teams : teams.filter((x) => myTeams.includes(x.id));
-  const [tab, setTab] = useState<Tab>("conversations");
-  const [range, setRange] = useState<Range>(30);
-  const [team, setTeam] = useState(teamScope === "all" ? "all" : visibleTeams[0]?.id ?? "all");
-  const [channel, setChannel] = useState<ChannelKey | "all">("all");
+  const tabs = TABS.filter((k) => k !== "csat" || report.csat);
+  const [pick, setTab] = useState<Tab>("conversations");
+  const tab = tabs.includes(pick) ? pick : "conversations";
   const [tables, setTables] = useState<Record<string, boolean>>({});
   const toggle = (k: string) => () => setTables((x) => ({ ...x, [k]: !x[k] }));
-  const report = useMemo(() => buildReport({ range, team, channel }, agents, now), [range, team, channel, agents, now]);
   const delta = Math.round(((report.total - report.prevTotal) / Math.max(1, report.prevTotal)) * 100);
-  const minutes = (m: number) => (m < 60 ? tAll("time.minutes", { count: m }) : t("hours", { h: (m / 60).toFixed(1) }));
+  const minutes = (m: number | null) => (m === null ? "–" : m < 60 ? tAll("time.minutes", { count: m }) : t("hours", { h: (m / 60).toFixed(1) }));
   const maxCh = Math.max(...report.byChannel.map((c) => c.n), 1);
   const field = "min-h-9 rounded-full border border-input bg-surface px-3 text-sm";
+  const won = report.pipeline.find((p) => p.stage === "won");
+  const wonN = won?.n ?? 0;
+  const winRate = report.lost ? Math.round((wonN / Math.max(1, wonN + report.lost.n)) * 100) : Math.round((wonN / Math.max(1, wonN + 4)) * 100);
+  const teamCols: ("person" | "conversations" | "firstReply" | "resolved" | "csat" | "handedOver" | "received")[] = [
+    "person", "conversations", "firstReply", "resolved", ...(report.team.some((a) => a.csat !== undefined) ? (["csat"] as const) : []), "handedOver", "received",
+  ];
 
   function exportTab() {
     const name = `relay-${tab}-${range}d`;
-    if (tab === "conversations") downloadCsv(name, [["Channel", "Conversations", "First reply (min)", "Resolved %", "CSAT %"], ...report.byChannel.map((c) => [tAll(`channels.${c.key}`), c.n, c.firstReply ?? "", c.resolvedPct, c.csat])]);
-    if (tab === "team") downloadCsv(name, [["Person", "Conversations", "First reply (min)", "Resolved", "CSAT %", "Handed over", "Received"], ...report.team.map((a) => [a.name, a.n, a.firstReply, a.resolved, a.csat, a.handoversOut, a.handoversIn])]);
-    if (tab === "csat") downloadCsv(name, [["Rating", "Responses"], ...report.csat.dist.map((n, i) => [5 - i, n])]);
-    if (tab === "sales") downloadCsv(name, [["Campaign", "Channel", "Sent", "Delivered", "Read", "Replied", "Orders"], ...report.campaigns.map((c) => [c.name, tAll(`channels.${c.channel}`), c.sent, c.delivered, c.read, c.replied, c.orders])]);
+    const ch = (c: Report["byChannel"][number]) => tAll(`channels.${c.key}`);
+    if (tab === "conversations") downloadCsv(name, [["Channel", "Conversations", "First reply (min)", "Resolved"], ...report.byChannel.map((c) => [ch(c), c.n, c.firstReply ?? "", c.resolvedPct === null ? "" : `${c.resolvedPct}%`])]);
+    if (tab === "team") downloadCsv(name, [["Person", "Conversations", "First reply (min)", "Resolved", "Handed over", "Received"], ...report.team.map((a) => [a.name, a.n, a.firstReply ?? "", a.resolved, a.handoversOut, a.handoversIn])]);
+    if (tab === "csat" && report.csat) downloadCsv(name, [["Rating", "Responses"], ...report.csat.dist.map((n, i) => [5 - i, n])]);
+    if (tab === "sales") {
+      const money = canMoney;
+      downloadCsv(name, [["Stage", "Deals", ...(money ? ["Value"] : [])], ...report.pipeline.map((p) => [tAll(`stages.${p.stage}`), p.n, ...(money ? [p.value] : [])]),
+        ...(report.lost ? [["Lost", report.lost.n], ...report.lost.reasons.map((r) => [`Lost: ${r.reason}`, r.n])] : [])]);
+    }
   }
 
   return (
@@ -205,24 +238,24 @@ export function Reports({ agents, teams, teamScope, myTeams, canMoney, canExport
 
       {/* Filters: one row above every chart, applying to all of them. */}
       <div className="flex flex-wrap items-center gap-2">
-        <select value={range} onChange={(e) => setRange(Number(e.target.value) as Range)} className={field} aria-label={t("range")}>
+        <select value={range} onChange={(e) => onFilter({ range: Number(e.target.value) as Range })} className={field} aria-label={t("range")}>
           {([7, 30, 90] as const).map((d) => <option key={d} value={d}>{t("lastDays", { count: d })}</option>)}
         </select>
-        <select value={team} onChange={(e) => setTeam(e.target.value)} className={field} aria-label={t("team")}>
+        <select value={team} onChange={(e) => onFilter({ team: e.target.value })} className={field} aria-label={t("team")}>
           {teamScope === "all" && <option value="all">{t("allTeams")}</option>}
           {visibleTeams.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
         </select>
-        <select value={channel} onChange={(e) => setChannel(e.target.value as ChannelKey | "all")} className={field} aria-label={t("channel")}>
+        <select value={channel} onChange={(e) => onFilter({ channel: e.target.value as ChannelKey | "all" })} className={field} aria-label={t("channel")}>
           <option value="all">{t("allChannels")}</option>
-          {buildReport({ range, team: "all", channel: "all" }, [], now).byChannel.map((c) => <option key={c.key} value={c.key}>{tAll(`channels.${c.key}`)}</option>)}
+          {channels.map((c) => <option key={c} value={c}>{tAll(`channels.${c}`)}</option>)}
         </select>
-        <span className="text-xs text-muted">{t("sample")}</span>
+        <span className="text-xs text-muted">{sample ? t("sample") : t("clockTime")}</span>
       </div>
 
       <div role="tablist" aria-label={t("title")} className="flex gap-5 border-b border-border">
-        {TABS.map((k) => (
+        {tabs.map((k) => (
           <button key={k} role="tab" type="button" aria-selected={tab === k} onClick={() => setTab(k)} className={`-mb-px min-h-10 border-b-2 text-sm font-medium ${tab === k ? "border-primary text-text" : "border-transparent text-muted hover:text-text"}`}>
-            {t(`tabs.${k}`)}
+            {k === "sales" && !report.campaigns ? t("tabs.salesOnly") : t(`tabs.${k}`)}
           </button>
         ))}
       </div>
@@ -233,9 +266,10 @@ export function Reports({ agents, teams, teamScope, myTeams, canMoney, canExport
             <Kpi label={t("kpi.conversations")} value={fmt.number(report.total)} delta={delta} good="up" />
             <Kpi label={t("kpi.firstReply")} value={minutes(report.firstReply)} />
             <Kpi label={t("kpi.resolution")} value={minutes(report.resolution)} />
-            <Kpi label={t("kpi.resolved")} value={`${report.resolvedPct}%`} />
-            <Kpi label={t("kpi.withinTarget")} value={`${report.withinTarget}%`} />
+            <Kpi label={t("kpi.resolved")} value={report.resolvedPct === null ? "–" : `${report.resolvedPct}%`} />
+            {report.withinTarget !== undefined ? <Kpi label={t("kpi.withinTarget")} value={`${report.withinTarget}%`} /> : <Kpi label={t("kpi.open")} value={fmt.number(report.backlog)} />}
           </dl>
+          {report.total === 0 && <p className="rounded-[var(--radius-panel)] bg-surface p-5 text-muted ring-1 ring-border">{t("noChats")}</p>}
           <Panel title={t("perDay")} onTable={toggle("days")} tableOn={tables.days}>
             {tables.days ? (
               <table className="w-full text-sm"><thead><tr className="text-start text-muted"><th className="py-1 text-start font-medium">{t("day")}</th><th className="text-end font-medium">{t("kpi.conversations")}</th></tr></thead>
@@ -245,7 +279,7 @@ export function Reports({ agents, teams, teamScope, myTeams, canMoney, canExport
           <div className="grid gap-5 xl:grid-cols-2">
             <Panel title={t("byChannel")}>
               <ul className="grid gap-2.5">
-                {report.byChannel.map((c) => <BarRow key={c.key} label={tAll(`channels.${c.key}`)} mark={c.key} value={c.n} max={maxCh} text={`${fmt.number(c.n)} · ${c.firstReply === null ? t("calls") : minutes(c.firstReply)}`} />)}
+                {report.byChannel.map((c) => <BarRow key={c.key} label={tAll(`channels.${c.key}`)} mark={c.key} value={c.n} max={maxCh} text={`${fmt.number(c.n)} · ${c.key === "voice" ? t("calls") : minutes(c.firstReply)}`} />)}
               </ul>
               <p className="text-xs text-muted">{t("byChannelHelp")}</p>
             </Panel>
@@ -258,32 +292,36 @@ export function Reports({ agents, teams, teamScope, myTeams, canMoney, canExport
 
       {tab === "team" && (
         <Panel title={t("teamTitle")}>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[40rem] text-sm">
-              <thead><tr className="text-muted">{(["person", "conversations", "firstReply", "resolved", "csat", "handedOver", "received"] as const).map((k) => <th key={k} scope="col" className={`py-2 font-medium ${k === "person" ? "text-start" : "text-end"}`}>{t(`cols.${k}`)}</th>)}</tr></thead>
-              <tbody>
-                {report.team.map((a) => (
-                  <tr key={a.id} className="border-t border-border">
-                    <th scope="row" className="py-2.5 text-start font-medium">{a.name}</th>
-                    <td className="text-end tabular-nums">{a.n}</td>
-                    <td className="text-end tabular-nums">{minutes(a.firstReply)}</td>
-                    <td className="text-end tabular-nums">{a.resolved}</td>
-                    <td className="text-end tabular-nums">{a.csat}%</td>
-                    <td className="text-end tabular-nums">{a.handoversOut}</td>
-                    <td className="text-end tabular-nums">{a.handoversIn}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <ul className="grid gap-2.5 border-t border-border pt-4">
-            <li className="text-xs font-medium text-muted">{t("workload")}</li>
-            {report.team.map((a) => <BarRow key={a.id} label={a.name} value={a.n} max={report.team[0]?.n ?? 1} text={fmt.number(a.n)} />)}
-          </ul>
+          {report.team.length === 0 ? <p className="text-sm text-muted">{t("noPeople")}</p> : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[40rem] text-sm">
+                  <thead><tr className="text-muted">{teamCols.map((k) => <th key={k} scope="col" className={`py-2 font-medium ${k === "person" ? "text-start" : "text-end"}`}>{t(`cols.${k}`)}</th>)}</tr></thead>
+                  <tbody>
+                    {report.team.map((a) => (
+                      <tr key={a.id} className="border-t border-border">
+                        <th scope="row" className="py-2.5 text-start font-medium"><bdi>{a.name}</bdi></th>
+                        <td className="text-end tabular-nums">{a.n}</td>
+                        <td className="text-end tabular-nums">{minutes(a.firstReply)}</td>
+                        <td className="text-end tabular-nums">{a.resolved}</td>
+                        {a.csat !== undefined && <td className="text-end tabular-nums">{a.csat}%</td>}
+                        <td className="text-end tabular-nums">{a.handoversOut}</td>
+                        <td className="text-end tabular-nums">{a.handoversIn}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <ul className="grid gap-2.5 border-t border-border pt-4">
+                <li className="text-xs font-medium text-muted">{t("workload")}</li>
+                {report.team.map((a) => <BarRow key={a.id} label={a.name} value={a.n} max={Math.max(...report.team.map((x) => x.n), 1)} text={fmt.number(a.n)} />)}
+              </ul>
+            </>
+          )}
         </Panel>
       )}
 
-      {tab === "csat" && (
+      {tab === "csat" && report.csat && (
         <>
           <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-[var(--radius-panel)] bg-border ring-1 ring-border lg:grid-cols-3">
             <Kpi label={t("kpi.csat")} value={`${report.csat.score}%`} />
@@ -293,7 +331,7 @@ export function Reports({ agents, teams, teamScope, myTeams, canMoney, canExport
           <div className="grid gap-5 xl:grid-cols-2">
             <Panel title={t("distribution")}>
               <ul className="grid gap-2.5">
-                {report.csat.dist.map((n, i) => <BarRow key={i} label={t("stars", { count: 5 - i })} value={n} max={Math.max(...report.csat.dist)} text={fmt.number(n)} />)}
+                {report.csat.dist.map((n, i) => <BarRow key={i} label={t("stars", { count: 5 - i })} value={n} max={Math.max(...report.csat!.dist)} text={fmt.number(n)} />)}
               </ul>
               <p className="text-xs text-muted">{t("csatHelp")}</p>
             </Panel>
@@ -323,40 +361,87 @@ export function Reports({ agents, teams, teamScope, myTeams, canMoney, canExport
             <Panel title={t("pipeline")}>
               <ul className="grid gap-2.5">
                 {report.pipeline.map((p) => (
-                  <BarRow key={p.stage} label={tAll(`stages.${p.stage}`)} value={canMoney ? p.value : p.n} max={Math.max(...report.pipeline.map((x) => (canMoney ? x.value : x.n)))} text={canMoney ? `${fmt.moneyWhole(p.value)} · ${p.n}` : t("dealsN", { count: p.n })} />
+                  <BarRow key={p.stage} label={tAll(`stages.${p.stage}`)} value={canMoney ? p.value : p.n} max={Math.max(...report.pipeline.map((x) => (canMoney ? x.value : x.n)), 1)} text={canMoney ? `${fmt.moneyWhole(p.value)} · ${p.n}` : t("dealsN", { count: p.n })} />
                 ))}
               </ul>
               {!canMoney && <p className="text-xs text-muted">{t("valuesHidden")}</p>}
             </Panel>
             <dl className="grid content-start gap-px overflow-hidden rounded-[var(--radius-panel)] bg-border ring-1 ring-border">
-              <Kpi label={t("kpi.won")} value={canMoney ? fmt.moneyWhole(report.pipeline[3].value) : String(report.pipeline[3].n)} />
-              <Kpi label={t("kpi.winRate")} value={`${Math.round((report.pipeline[3].n / Math.max(1, report.pipeline[3].n + 4)) * 100)}%`} />
+              <Kpi label={t("kpi.won")} value={canMoney ? fmt.moneyWhole(won?.value ?? 0) : String(wonN)} />
+              <Kpi label={t("kpi.winRate")} value={`${winRate}%`} />
             </dl>
           </div>
-          <Panel title={t("campaigns")}>
-            {report.campaigns.length === 0 ? <p className="text-sm text-muted">{t("noCampaigns")}</p> : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[40rem] text-sm">
-                  <thead><tr className="text-muted">{(["campaign", "sent", "delivered", "read", "replied", "orders"] as const).map((k) => <th key={k} scope="col" className={`py-2 font-medium ${k === "campaign" ? "text-start" : "text-end"}`}>{t(`cols.${k}`)}</th>)}</tr></thead>
-                  <tbody>
-                    {report.campaigns.map((c) => (
-                      <tr key={c.name} className="border-t border-border">
-                        <th scope="row" className="py-2.5 text-start font-medium"><span className="flex items-center gap-2"><ChannelMark ch={c.channel} size={16} label={tAll(`channels.${c.channel}`)} />{c.name}</span></th>
-                        <td className="text-end tabular-nums">{fmt.number(c.sent)}</td>
-                        <td className="text-end tabular-nums">{fmt.number(c.delivered)}</td>
-                        <td className="text-end tabular-nums">{c.read ? fmt.number(c.read) : "—"}</td>
-                        <td className="text-end tabular-nums">{fmt.number(c.replied)}</td>
-                        <td className="text-end tabular-nums">{fmt.number(c.orders)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <p className="mt-2 text-xs text-muted">{t("smsRead")}</p>
-              </div>
-            )}
-          </Panel>
+          {report.lost && (
+            <Panel title={t("lostWhy")}>
+              {report.lost.n === 0 ? <p className="text-sm text-muted">{t("noLost")}</p> : (
+                <ul className="grid gap-2.5">
+                  {report.lost.reasons.map((r) => <BarRow key={r.reason} label={valueLabel(tAll, "lostReason", r.reason)} value={r.n} max={Math.max(...report.lost!.reasons.map((x) => x.n), 1)} text={t("dealsN", { count: r.n })} />)}
+                </ul>
+              )}
+            </Panel>
+          )}
+          {report.campaigns && (
+            <Panel title={t("campaigns")}>
+              {report.campaigns.length === 0 ? <p className="text-sm text-muted">{t("noCampaigns")}</p> : (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[40rem] text-sm">
+                    <thead><tr className="text-muted">{(["campaign", "sent", "delivered", "read", "replied", "orders"] as const).map((k) => <th key={k} scope="col" className={`py-2 font-medium ${k === "campaign" ? "text-start" : "text-end"}`}>{t(`cols.${k}`)}</th>)}</tr></thead>
+                    <tbody>
+                      {report.campaigns.map((c) => (
+                        <tr key={c.name} className="border-t border-border">
+                          <th scope="row" className="py-2.5 text-start font-medium"><span className="flex items-center gap-2"><ChannelMark ch={c.channel} size={16} label={tAll(`channels.${c.channel}`)} />{c.name}</span></th>
+                          <td className="text-end tabular-nums">{fmt.number(c.sent)}</td>
+                          <td className="text-end tabular-nums">{fmt.number(c.delivered)}</td>
+                          <td className="text-end tabular-nums">{c.read ? fmt.number(c.read) : "—"}</td>
+                          <td className="text-end tabular-nums">{fmt.number(c.replied)}</td>
+                          <td className="text-end tabular-nums">{fmt.number(c.orders)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <p className="mt-2 text-xs text-muted">{t("smsRead")}</p>
+                </div>
+              )}
+            </Panel>
+          )}
         </>
       )}
     </div>
+  );
+}
+
+/** The preview: filters live in the page and the numbers are made up (and the same for the same filters). */
+export function Reports({ agents, teams, teamScope, myTeams, canMoney, canExport, now }: Props) {
+  const visibleTeams = teamScope === "all" ? teams : teams.filter((x) => myTeams.includes(x.id));
+  const [range, setRange] = useState<Range>(30);
+  const [team, setTeam] = useState(teamScope === "all" ? "all" : visibleTeams[0]?.id ?? "all");
+  const [channel, setChannel] = useState<ChannelKey | "all">("all");
+  const report = useMemo(() => buildReport({ range, team, channel }, agents, now), [range, team, channel, agents, now]);
+  const channels = useMemo(() => buildReport({ range, team: "all", channel: "all" }, [], now).byChannel.map((c) => c.key), [range, now]);
+  return (
+    <ReportView
+      report={report} range={range} team={team} channel={channel} channels={channels} teams={teams} teamScope={teamScope} myTeams={myTeams} canMoney={canMoney} canExport={canExport} sample
+      onFilter={(f) => {
+        if (f.range !== undefined) setRange(f.range);
+        if (f.team !== undefined) setTeam(f.team);
+        if (f.channel !== undefined) setChannel(f.channel);
+      }}
+    />
+  );
+}
+
+/** A real workspace: the filters are in the address, so each change asks the server for the new numbers. */
+export function LiveReports({ report, range, team, channel, channels, teams, teamScope, myTeams, canMoney, canExport }: Omit<ViewProps, "onFilter" | "sample">) {
+  const router = useRouter();
+  const pathname = usePathname();
+  return (
+    <ReportView
+      report={report} range={range} team={team} channel={channel} channels={channels} teams={teams} teamScope={teamScope} myTeams={myTeams} canMoney={canMoney} canExport={canExport} sample={false}
+      onFilter={(f) => {
+        const next = { range, team, channel, ...f };
+        const q = new URLSearchParams({ range: String(next.range), team: next.team, channel: next.channel });
+        router.replace(`${pathname}?${q.toString()}`, { scroll: false });
+      }}
+    />
   );
 }

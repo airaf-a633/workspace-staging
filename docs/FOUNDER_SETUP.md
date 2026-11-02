@@ -217,6 +217,17 @@ Per-channel checklists (what to open and press to see a real message arrive) are
 - [ ] Open Home as each role (owner, sales manager, support manager, agent, viewer): the numbers should make sense for the role, there should be no made-up figures, and roles that cannot see deal values should see no money.
 - [ ] A brand-new test workspace should still show the setup checklist until its first chat, deal or task.
 
+### Reports (needs staging awake with migration 20261105000001 applied; costs nothing)
+- [ ] As the owner: open Reports. You should see Conversations, Team and Sales (no Satisfaction), no "Sample numbers" label, and the note about clock time.
+- [ ] Compare the numbers with what you know: reply to a test chat from the inbox, then check "Usually answered in" moves; resolve it and check "Resolved" and "Usually finished in".
+- [ ] Have the same test customer write again after you resolved the chat: Reports should count a second chat.
+- [ ] Change the time range, the team and the channel: the page should reload with new numbers and keep your choices in the address.
+- [ ] As a sales or support manager: only your own teams' chats should be counted, and the team filter should list only your teams.
+- [ ] As an agent: no Reports link, and the address shows "not found".
+- [ ] As a role without deal values: the Sales tab shows counts, not money, and says why.
+- [ ] Press "Export CSV" on each tab and open the file.
+- [ ] Imported history chats (if any) should not change the numbers.
+
 ## 6. Before launch
 
 - [ ] **Run the real-person test** from [docs/SIMPLICITY_AUDIT.md](SIMPLICITY_AUDIT.md): 3–5 people who've never seen Relay. *(2 hours.)*
