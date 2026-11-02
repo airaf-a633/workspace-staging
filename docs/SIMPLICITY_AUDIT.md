@@ -211,7 +211,50 @@ Final pass (19 October): every audit item is now done.
 
 Still to do: **test with real people** using the script above. That's the real test.
 
-## Channel setup screens (added 2026-11-02, NOT yet audited)
+## Channel setup screens (audited 2 November 2026)
 
-The setup and channel pages for Telegram, LINE, SMS, Voice, Slack, Discord and Teams were written in plain words, with short numbered steps and errors as sentences with what to do next. They have **not** been through this audit, and nobody non-technical has used them. Known heavy ones: Teams (an admin and Azure are unavoidable), X (a developer app and credits), SMS and Voice (a Twilio account), Slack and Discord (a developer portal each). Audit them after the channel build, the same way as the rest: can a distracted first-timer say where they are, what needs them, and what to press in five seconds?
+**What was audited:** the connect page and the channel page of API, Telegram, LINE, SMS, Voice, Slack, Discord, Teams, Viber and X, plus the three Request access pages (TikTok, WeChat, Apple Messages). Email, WhatsApp and website chat were audited earlier and are not covered here.
 
+**How, honestly:** staging is down, so the real pages could not be rendered, and no one outside the build has used them. This audit is a measurement of every string each screen can show, checked against the 12 rules, plus a read of each page's structure in code. `python scripts/audit-channel-screens.py` repeats the measurement. It cannot tell whether a page *looks* clear. Only the test with real people below can.
+
+### What was found, and what was done
+
+| | Finding | Rule | Status |
+|---|---|---|---|
+| 🔴 | **Channel pages showed everything at once**: status, steps, two or three notices, a rename form, a "replace password" form and Disconnect, 9 to 17 blocks on one screen. The one thing a person needs (is it working, what do I do next) was buried. | 5, 6 | **Fixed.** Renaming, replacing the password and Disconnect now sit behind **More settings**; cost and limit notes sit behind **Good to know**. Both open by themselves when the channel is disconnected, because reconnecting is then the main task. Money warnings that decide whether to keep going (X's per-message cost, the voicemail ring-time pitfall) stay visible, and the connect pages show every cost and legal note up front. |
+| 🔴 | **Instructions for the person running the server shown to customers**: "Set this app's public address (NEXT_PUBLIC_SITE_URL) to an https address" appeared on seven screens. A customer cannot do that. | 12 | **Fixed.** Now "Telegram needs a secure public address, and Relay doesn't have one yet. Tell whoever runs Relay." The same for Slack's missing app keys. |
+| 🔴 | **19 sentences over 20 words**, the worst 46 (Viber's contract) and 31 (X step 1). | 4 | **Fixed.** None left over 20 words; most are under 15. Every fact was kept. |
+| 🟠 | **Relay jargon**: "credentials" (SMS, Voice, Teams), "webhook address" (SMS, Voice, Viber, X), "messaging endpoint to give your Azure Bot", "because Relay can't do that for you". | 1 | **Fixed** where the word was ours: "account details", "Relay's address". **Kept** where it is the platform's own label on its own screen and the person must match it: Account SID, Auth Token, Client ID, Client Secret, Bearer Token, Directory (tenant) ID, Use webhook (LINE), HTTP POST (Twilio), messaging endpoint (Azure). Each is shown with a line saying where to find it. |
+| 🟠 | **One thing, three names**: "Name in the inbox", "Give the number a name", "Give the help desk a name", "Give the bot a name". The glossary says inbox rows are called channels. | 2 | **Fixed.** "Channel name" and "Give this channel a name" everywhere. |
+| 🟠 | **Words on the channel page**: 160 to 330 each. | 3, 5 | **Fixed.** First view is now 76 to 254 words (SMS 296 to 168, Voice 330 to 206, Slack 236 to 131, LINE 306 to 176, Teams 307 to 225). Total channel words went from 5,144 to 4,153. |
+| 🟠 | **Connect pages are still long** (LINE 375 words, Voice 340, SMS 309, Teams 299, X 287). Most of it is the platform's own steps and the field help. | 4, 6 | **Not fixed.** Splitting each into a short wizard (one step per screen) is the real answer, but it changes how every channel is connected, so it is a decision, not a polish. Until then each page keeps its steps to four or fewer and puts the form last. |
+| 🟠 | **Some setups cannot be simple**: Teams needs an Azure admin, SMS and Voice a Twilio account, X a developer app with credits, Slack and Discord a developer portal. | n/a | **Cannot be fixed by wording.** The pages say so up front ("You need someone with admin rights", the cost notes). An idea not built: a "Send these steps to your IT person" button that emails the steps. |
+| 🟢 | **Request access pages** (TikTok, WeChat, Apple) were shortened; each has one button and says what it does and does not do. | 9, 12 | **Fixed.** |
+| 🟢 | **API and Email channel pages** were not changed. | n/a | **Not audited this round.** |
+
+### Before and after (first view, from the script)
+
+| Screen | Words before | Words after | Sentences over 20 words |
+|---|---|---|---|
+| Telegram page | 167 | 116 | 0 |
+| LINE page | 306 | 176 | 1 to 0 |
+| SMS page | 296 | 168 | 1 to 0 |
+| Voice page | 330 | 206 | 0 |
+| Slack page | 236 | 131 | 2 to 0 |
+| Discord page | 333 | 254 | 0 |
+| Teams page | 307 | 225 | 2 to 0 |
+| Viber page | 221 | 161 | 1 to 0 |
+| X page | 247 | 176 | 1 to 0 |
+| **All channel screens** | **5,144 words** | **4,153 words** | **19 to 0** |
+
+### Test with real people: channel tasks
+
+Use the same method as above (3 to 5 people, think aloud, you never help), on a real connected workspace once staging is back. Tasks:
+1. "Your customers message you on Telegram. Connect it." (Telegram; the easiest, a baseline.)
+2. "A customer says their messages stopped arriving on this channel. Find out whether it's working." (The status area on a channel page.)
+3. "You changed your Twilio password. Make Relay work again." (More settings, then replace.)
+4. "You don't want to use this channel any more. Remove it, but keep the old chats." (More settings, then Disconnect.)
+5. "You want to know what X will cost you before connecting it." (The cost notice.)
+6. "Ask for TikTok to be added." (Request access.)
+
+Pass mark as before: done without help in under 2 minutes with an ease score of 4 or more. Setup tasks that depend on another company's website (Twilio, Azure, X) are timed from pressing Connect, not from opening that website.

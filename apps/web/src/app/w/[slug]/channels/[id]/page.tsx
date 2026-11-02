@@ -42,6 +42,7 @@ import { DEFAULT_GREETING, DEFAULT_NOTICE, ring as ringSeconds, voiceUrls } from
 import { requestNow } from "@/lib/now";
 import { updateEmailChannel, verifyEmailDomain } from "../email-actions";
 import { Submit } from "@/components/ui/submit";
+import { GoodToKnow, MoreSettings } from "@/components/channels/more-settings";
 
 export async function generateMetadata() {
   return { title: (await getT("settings"))("channels") };
@@ -338,6 +339,7 @@ async function TelegramChannel({ slug, ch, sp, workspaceId }: {
         </section>
       )}
 
+      <MoreSettings open={disconnected}>
       <section className="grid gap-3">
         <form action={updateTelegram} className="grid gap-4 sm:max-w-lg">
           <input type="hidden" name="slug" value={slug} />
@@ -375,6 +377,7 @@ async function TelegramChannel({ slug, ch, sp, workspaceId }: {
           </form>
         </section>
       )}
+      </MoreSettings>
     </SettingsFrame>
   );
 }
@@ -443,8 +446,11 @@ async function LineChannel({ slug, ch, sp, workspaceId }: {
         </section>
       )}
 
-      <Notice tone="info" title={t("costPageTitle")}>{t("costBody")}</Notice>
+      <GoodToKnow>
+        <Notice tone="info" title={t("costPageTitle")}>{t("costBody")}</Notice>
+      </GoodToKnow>
 
+      <MoreSettings open={disconnected}>
       <section className="grid gap-3">
         <form action={updateLine} className="grid gap-4 sm:max-w-lg">
           <input type="hidden" name="slug" value={slug} />
@@ -482,6 +488,7 @@ async function LineChannel({ slug, ch, sp, workspaceId }: {
           </form>
         </section>
       )}
+      </MoreSettings>
     </SettingsFrame>
   );
 }
@@ -549,9 +556,12 @@ async function SmsChannel({ slug, ch, sp, workspaceId }: {
         </section>
       )}
 
-      <Notice tone="info" title={t("stopTitle")}>{t("stopBody")}</Notice>
-      <Notice tone="info" title={t("costTitle")}>{t("costBody")}</Notice>
+      <GoodToKnow>
+        <Notice tone="info" title={t("stopTitle")}>{t("stopBody")}</Notice>
+        <Notice tone="info" title={t("costTitle")}>{t("costBody")}</Notice>
+      </GoodToKnow>
 
+      <MoreSettings open={disconnected}>
       <section className="grid gap-3">
         <form action={updateSms} className="grid gap-4 sm:max-w-lg">
           <input type="hidden" name="slug" value={slug} />
@@ -584,6 +594,7 @@ async function SmsChannel({ slug, ch, sp, workspaceId }: {
           </form>
         </section>
       )}
+      </MoreSettings>
     </SettingsFrame>
   );
 }
@@ -651,9 +662,12 @@ async function VoiceChannel({ slug, ch, sp, workspaceId }: {
       )}
 
       {s.forward_to && <Notice tone="info" title={t("voicemailRingTitle")}>{t("voicemailRingBody")}</Notice>}
-      <Notice tone="info" title={t("recordingTitle")}>{t("recordingBody")}</Notice>
-      <Notice tone="info" title={t("costTitle")}>{t("costBody")}</Notice>
+      <GoodToKnow>
+        <Notice tone="info" title={t("recordingTitle")}>{t("recordingBody")}</Notice>
+        <Notice tone="info" title={t("costTitle")}>{t("costBody")}</Notice>
+      </GoodToKnow>
 
+      <MoreSettings open={disconnected}>
       <section className="grid gap-3">
         <VoiceSettingsForm
           action={updateVoice}
@@ -686,6 +700,7 @@ async function VoiceChannel({ slug, ch, sp, workspaceId }: {
           </form>
         </section>
       )}
+      </MoreSettings>
     </SettingsFrame>
   );
 }
@@ -732,8 +747,11 @@ async function SlackChannel({ slug, ch, sp, workspaceId }: {
           </ol>
         </section>
       )}
-      <Notice tone="info" title={t("limitsTitle")}>{t("limitsBody")}</Notice>
+      <GoodToKnow>
+        <Notice tone="info" title={t("limitsTitle")}>{t("limitsBody")}</Notice>
+      </GoodToKnow>
 
+      <MoreSettings open={disconnected}>
       <section className="grid gap-3">
         <form action={updateSlack} className="grid gap-4 sm:max-w-lg">
           <input type="hidden" name="slug" value={slug} />
@@ -769,6 +787,7 @@ async function SlackChannel({ slug, ch, sp, workspaceId }: {
           </form>
         </section>
       )}
+      </MoreSettings>
     </SettingsFrame>
   );
 }
@@ -831,8 +850,11 @@ async function DiscordChannel({ slug, ch, sp, workspaceId }: {
           </ol>
         </section>
       )}
-      <Notice tone="info" title={t("limitsTitle")}>{t("limitsBody")}</Notice>
+      <GoodToKnow>
+        <Notice tone="info" title={t("limitsTitle")}>{t("limitsBody")}</Notice>
+      </GoodToKnow>
 
+      <MoreSettings open={disconnected}>
       <section className="grid gap-3">
         <form action={updateDiscord} className="grid gap-4 sm:max-w-lg">
           <input type="hidden" name="slug" value={slug} />
@@ -865,6 +887,7 @@ async function DiscordChannel({ slug, ch, sp, workspaceId }: {
           </form>
         </section>
       )}
+      </MoreSettings>
     </SettingsFrame>
   );
 }
@@ -940,8 +963,11 @@ async function TeamsChannel({ slug, ch, sp, workspaceId }: {
         </section>
       )}
 
-      <Notice tone="info" title={t("limitsTitle")}>{t("limitsBody")}</Notice>
+      <GoodToKnow>
+        <Notice tone="info" title={t("limitsTitle")}>{t("limitsBody")}</Notice>
+      </GoodToKnow>
 
+      <MoreSettings open={disconnected}>
       <section className="grid gap-3">
         <TeamsSettingsForm action={updateTeams} slug={slug} id={ch.id} name={ch.name} greeting={s.greeting ?? ""} canManage={canManage} />
       </section>
@@ -964,6 +990,7 @@ async function TeamsChannel({ slug, ch, sp, workspaceId }: {
           </form>
         </section>
       )}
+      </MoreSettings>
     </SettingsFrame>
   );
 }
@@ -1024,8 +1051,11 @@ async function ViberChannel({ slug, ch, sp, workspaceId }: {
           </ol>
         </section>
       )}
-      <Notice tone="info" title={t("limitsTitle")}>{t("limitsBody")}</Notice>
+      <GoodToKnow>
+        <Notice tone="info" title={t("limitsTitle")}>{t("limitsBody")}</Notice>
+      </GoodToKnow>
 
+      <MoreSettings open={disconnected}>
       <section className="grid gap-3">
         <ViberSettingsForm action={updateViber} slug={slug} id={ch.id} name={ch.name} senderName={s.sender_name ?? ""} welcome={s.welcome ?? ""} canManage={canManage} />
       </section>
@@ -1048,6 +1078,7 @@ async function ViberChannel({ slug, ch, sp, workspaceId }: {
           </form>
         </section>
       )}
+      </MoreSettings>
     </SettingsFrame>
   );
 }
@@ -1098,8 +1129,11 @@ async function XChannel({ slug, ch, sp, workspaceId }: {
         </section>
       )}
       <Notice tone="warn" title={t("costTitle")}>{t("costBody")}</Notice>
-      <Notice tone="info" title={t("limitsTitle")}>{t("limitsBody")}</Notice>
+      <GoodToKnow>
+        <Notice tone="info" title={t("limitsTitle")}>{t("limitsBody")}</Notice>
+      </GoodToKnow>
 
+      <MoreSettings open={disconnected}>
       <section className="grid gap-3">
         <form action={updateX} className="grid gap-4 sm:max-w-lg">
           <input type="hidden" name="slug" value={slug} />
@@ -1132,6 +1166,7 @@ async function XChannel({ slug, ch, sp, workspaceId }: {
           </form>
         </section>
       )}
+      </MoreSettings>
     </SettingsFrame>
   );
 }
