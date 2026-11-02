@@ -14,6 +14,13 @@ export function I18nProvider({ locale, messages, tz, children }: { locale: Local
   return <I18n.Provider value={value}>{children}</I18n.Provider>;
 }
 
+const CurrencyContext = createContext("USD");
+
+/** Inside a workspace: the currency its owner chose, so every amount is shown in it. */
+export function CurrencyProvider({ currency, children }: { currency: string; children: ReactNode }) {
+  return <CurrencyContext.Provider value={currency}>{children}</CurrencyContext.Provider>;
+}
+
 function useI18n() {
   const v = useContext(I18n);
   if (!v) throw new Error("I18nProvider is missing above this component");
@@ -40,7 +47,8 @@ export function useT(ns?: string): unknown {
 export function useFormat() {
   const { locale, tz } = useI18n();
   const t = useTranslator();
-  return useMemo(() => makeFormat(locale, t, tz), [locale, t, tz]);
+  const currency = useContext(CurrencyContext);
+  return useMemo(() => makeFormat(locale, t, tz, currency), [locale, t, tz, currency]);
 }
 
 export function useTimeZone() {

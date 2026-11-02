@@ -18,7 +18,7 @@ export interface BoardDeal {
   /** When the customer last wrote, for "No reply 3 days" on quoted deals. */
   lastCustomerAt?: number;
   followUp?: { text: string; due: string };
-  approval?: { byId: string; pct: number; note: string; status: "pending" | "approved" | "declined"; decidedById?: string };
+  approval?: { id?: string; byId: string; pct: number; note: string; status: "pending" | "approved" | "declined"; decidedById?: string };
   lostReason?: string;
   closedAt?: number;
   notes: { byId: string; text: string; at: number }[];
@@ -115,6 +115,7 @@ export function buildDeals(data: InboxData, customers: Customer[]): BoardDeal[] 
 /** One quiet line on the card, only when the deal needs something (decided 2026-09-30). */
 export function dealNeed(d: BoardDeal, now: number): { line: Line; tone: "warn" | "plain" } | null {
   if (d.approval?.status === "pending") return { line: { key: "deals.need.approval" }, tone: "warn" };
+  if (d.followUp?.due === "Late") return { line: { key: "deals.need.followUpLate" }, tone: "warn" };
   if (d.followUp?.due === "Today") return { line: { key: "deals.need.followUpToday" }, tone: "warn" };
   if (d.followUp?.due === "Tomorrow") return { line: { key: "deals.need.followUpTomorrow" }, tone: "plain" };
   if ((d.stage === "quoted" || d.stage === "negotiating") && d.lastCustomerAt && now - d.lastCustomerAt >= DAY) {

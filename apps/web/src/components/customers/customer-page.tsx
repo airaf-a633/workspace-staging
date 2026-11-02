@@ -166,7 +166,7 @@ export function CustomerPage({ c: initial, duplicate, company: initialCompany, s
         <div className="flex items-center gap-2">
           {c.conversationId && <Link href={`${base}/inbox?c=${c.conversationId}`} className={buttonClass("primary", "sm")}>{t("openChat")}</Link>}
           {canEdit && !editing && <button type="button" onClick={() => setEditing(true)} className={buttonClass("secondary", "sm")}><PencilSimple size={16} aria-hidden="true" /> {t("edit")}</button>}
-          {!save && <Link href={`${base}/deals`} className={buttonClass("secondary", "sm")}>{t("newDeal")}</Link>}
+          <Link href={`${base}/deals?new=${c.id}`} className={buttonClass("secondary", "sm")}>{t("newDeal")}</Link>
           {(canMerge || canErase) && (
             <details className="relative">
               <summary className={buttonClass("ghost", "sm", "!px-2 list-none [&::-webkit-details-marker]:hidden")} aria-label={tAll("common.moreActions")}>

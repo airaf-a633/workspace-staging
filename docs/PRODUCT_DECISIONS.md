@@ -637,3 +637,19 @@ Details, costs and what could not be verified are in docs/DEPLOY_WORKER.md. Deci
 - **Starts with staging**, once it is restored. Until then the worker can still run on the laptop (`pnpm worker`).
 - Not built or run: the image (no Docker on this machine) and the deploy itself (no Fly account yet).
 
+
+## Deals and tasks on real data (2026-11-03)
+
+Decided with the founder (answers to questions asked before building):
+
+- **One pipeline, fixed stages** New / Quoted / Negotiating. Stored as rows (`pipelines`, `pipeline_stages`) so editing stages or adding pipelines later is additive, not a rewrite. Won and Lost are outcomes, not stages. Won needs a final value; Lost needs a reason (Price, Stock, Went silent, Competitor, Other).
+- **One currency per workspace.** The owner picks it in Settings › Currency (new workspaces start in USD). Changing it relabels existing amounts; it does not convert them (the screen says so). Only currencies with two decimal places are offered, because money is stored in cents.
+- **Discount approvals are built now.** An agent asks for a percent off; a manager (owner or sales manager of the deal's team) approves or declines; they cannot decide their own request. Approving lowers the deal value by that percent. Approvals and the deal's history store the percent only, never an amount.
+- **Task extras built now:** Repeat (daily / weekly / monthly, next one created when finished, in the workspace's time zone), Snooze (later today / tomorrow / next week), Notes on a task. Undo of "done" also removes the repeat it created.
+- **Who sees money.** Deal values live in their own table (`deal_values`) with their own row-level security, so a role without `deals.values` cannot read the amount even by asking the database directly. Deal events and approvals contain no amounts for the same reason.
+- **Privacy.** Erasing a customer deletes their deals and tasks. Merging customers moves deals and tasks to the one that stays. Export includes both.
+- **Where the rules live.** Everything is a database function (create / update / win / lose / reopen / note / discount ask and decide; create / update / complete / undo / snooze / note / delete task), so the screens cannot skip a rule.
+
+Not built yet (on purpose): calendar sync for tasks (own step), editing stages or adding pipelines, deleting or archiving deals, notifications and Home dashboards for approvals and late tasks, converting amounts between currencies.
+
+Not verified yet: none of this has run on a real server. The database rules are tested (pgTAP, 56 checks across deals and tasks) and the mapping code has unit tests; the preview screens pass browser tests; the live browser tests are written but can only run once staging is awake and the new migrations are applied.

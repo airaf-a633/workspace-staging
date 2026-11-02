@@ -8,10 +8,10 @@ import { DEFAULT_TZ } from "./zone";
  * "Mon 28 Sep"), Western digits in Arabic too, money as "$1,250.00". Built from parts so the server
  * and the browser print the same thing.
  */
-/** Relay went global on 2026-10-07; amounts show in US dollars until workspaces pick their own currency. */
+/** US dollars unless a workspace picked its own currency (Settings › Currency, 2026-11-03). */
 const CURRENCY: "usd" | "aed" = "usd";
 
-export function makeFormat(locale: Locale, t: Translator, tz: string = DEFAULT_TZ) {
+export function makeFormat(locale: Locale, t: Translator, tz: string = DEFAULT_TZ, currency: string = "USD") {
   const loc = intlLocale(locale);
   const clock = new Intl.DateTimeFormat(loc, { timeZone: tz, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
   const dayParts = new Intl.DateTimeFormat(loc, { timeZone: tz, weekday: "short", day: "numeric", month: "short", year: "numeric" });
@@ -94,9 +94,9 @@ export function makeFormat(locale: Locale, t: Translator, tz: string = DEFAULT_T
       return bytes >= 1_048_576 ? t("time.mb", { n: (bytes / 1_048_576).toFixed(1) }) : t("time.kb", { n: String(Math.max(1, Math.round(bytes / 1024))) });
     },
     /** "$1,250.00", from minor units (cents). One workspace currency for now; per-workspace currency comes with billing. */
-    money: (amount: number) => t(`money.${CURRENCY}`, { amount: formatAed(toFils(amount), loc) }),
+    money: (amount: number) => (currency === "USD" ? t(`money.${CURRENCY}`, { amount: formatAed(toFils(amount), loc) }) : new Intl.NumberFormat(loc, { style: "currency", currency, numberingSystem: "latn" }).format(amount / 100)),
     /** "$1,250" for whole amounts on cards. */
-    moneyWhole: (amount: number) => t(`money.${CURRENCY}`, { amount: nf.format(Math.round(amount)) }),
+    moneyWhole: (amount: number) => (currency === "USD" ? t(`money.${CURRENCY}`, { amount: nf.format(Math.round(amount)) }) : new Intl.NumberFormat(loc, { style: "currency", currency, numberingSystem: "latn", maximumFractionDigits: 0 }).format(amount)),
   };
 }
 

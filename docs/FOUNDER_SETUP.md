@@ -198,6 +198,16 @@ This is the least certain channel: several X pages describe pieces of it and I h
 
 Per-channel checklists (what to open and press to see a real message arrive) are added here as each channel is built.
 
+### Deals and tasks (needs staging awake with migrations 20261103000001 and 20261103000002 applied; costs nothing)
+- [ ] As the owner: Settings › Currency, pick a currency, open Deals and check the amounts show in it.
+- [ ] As an agent: make a deal for a customer (from the Deals page and from the customer's page), move it New → Quoted → Negotiating.
+- [ ] As the same agent: "Ask for a discount" 10%. As the owner or sales manager: approve it; the deal value should drop by 10%.
+- [ ] Mark a deal Won (it must ask for a final value) and another Lost (it must ask for a reason); then Reopen one.
+- [ ] As a support manager or viewer: confirm you cannot see deal amounts (or the board at all for the viewer).
+- [ ] Add a task with "Every week", tick it done: the next one should appear a week later; press Undo and the new one should disappear.
+- [ ] Snooze a task, add a note to a task.
+- [ ] Erase a test customer who has a deal and a task: both should disappear.
+
 ## 6. Before launch
 
 - [ ] **Run the real-person test** from [docs/SIMPLICITY_AUDIT.md](SIMPLICITY_AUDIT.md): 3–5 people who've never seen Relay. *(2 hours.)*

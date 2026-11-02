@@ -11,7 +11,7 @@ export async function loadWorkspace(slug: string) {
   const user = await getUser();
   if (!user) redirect(`/sign-in?next=${encodeURIComponent(`/w/${slug}`)}`);
   const supabase = await createClient();
-  const { data: workspace } = await supabase.from("workspaces").select("id, name, slug, timezone").eq("slug", slug).maybeSingle();
+  const { data: workspace } = await supabase.from("workspaces").select("id, name, slug, timezone, currency").eq("slug", slug).maybeSingle();
   if (!workspace) notFound();
   const { data: me } = await supabase
     .from("members")

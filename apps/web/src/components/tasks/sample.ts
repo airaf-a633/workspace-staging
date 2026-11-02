@@ -18,6 +18,8 @@ export interface BoardTask {
   repeat: "daily" | "weekly" | "monthly" | null;
   comments: { byId: string; text: string; at: number }[];
   calendar: "Google" | "Outlook" | null;
+  /** The deal this follows up, when it is one. */
+  dealId?: string;
 }
 
 export const DAY = 86_400_000;

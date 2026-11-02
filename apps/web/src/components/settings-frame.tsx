@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { getT } from "@/i18n/server";
 
-export type SettingsSection = "members" | "teams" | "roles" | "channels" | "labels" | "contacts" | "sla" | "billing" | "ai" | "account";
+export type SettingsSection = "members" | "teams" | "roles" | "channels" | "labels" | "contacts" | "sla" | "billing" | "ai" | "account" | "money";
 
 /**
  * Settings as one page with a side sub-menu (decided 2026-09-30). The sections keep their own URLs
@@ -33,6 +33,8 @@ export async function SettingsFrame({ base, active, isOwner, children }: { base:
         // Reply targets and billing exist in the preview only until they're stored for real.
         ...(preview ? [{ key: "sla" as const, label: t("sla"), href: `${base}/sla` }] : []),
         { key: "ai", label: t("ai"), href: `${base}/ai` },
+        // Which currency deal values are shown in (owners only).
+        ...(!preview && isOwner ? [{ key: "money" as const, label: t("money"), href: `${base}/money` }] : []),
         // Billing is for owners and admins; others are sent back to Account if they open the link.
         ...(preview && isOwner ? [{ key: "billing" as const, label: t("billing"), href: `${base}/billing` }] : []),
       ],

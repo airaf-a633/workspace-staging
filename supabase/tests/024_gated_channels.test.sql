@@ -1,7 +1,7 @@
 -- Gated channels: "Request access" is saved once per channel, and renewing a stored token keeps the others.
 -- Seed: khalid ...01 owner, hana ...05 agent.
 begin;
-select plan(9);
+select plan(8);
 
 create function pg_temp.act_as(p_user uuid) returns void language plpgsql as $$
 begin

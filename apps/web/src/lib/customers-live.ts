@@ -2,12 +2,14 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ChannelKey } from "@/components/channels/catalog";
 import type { Company, CustomFieldDef, Customer, Lifecycle } from "@/components/customers/types";
+import { attachCrm } from "@/lib/crm-live";
 import { identity } from "@/lib/inbox-live";
+import { getTimeZone } from "@/i18n/server";
 
 /**
  * Real customers and companies (step 2b, decided 2026-10-20), in the same shapes the preview uses so the Contacts
- * screens don't change. Row-level security decides which customers each person sees. Deals, tasks, orders and
- * marketing consent arrive in later steps; until then they're empty, never invented.
+ * screens don't change. Row-level security decides which customers each person sees. Deals and tasks are the real ones
+ * (2026-11-03); orders arrive in a later step, and until then are empty, never invented.
  */
 
 interface ContactRow {
@@ -129,6 +131,7 @@ export async function loadCustomers(supabase: SupabaseClient, workspaceId: strin
   const customers = ((data ?? []) as unknown as ContactRow[])
     .map((c) => toCustomer(c, convs, companies))
     .sort((a, b) => (b.lastContact?.at ?? b.createdAt) - (a.lastContact?.at ?? a.createdAt));
+  await attachCrm(supabase, workspaceId, customers, await getTimeZone(), Date.now());
   const withPeople = [...companies.values()].map((co) => ({ ...co, people: customers.filter((c) => c.companyId === co.id) }));
   return { customers, companies: withPeople };
 }
@@ -142,6 +145,7 @@ export async function loadCustomer(supabase: SupabaseClient, workspaceId: string
   ]);
   if (!data) return null;
   const customer = toCustomer(data as unknown as ContactRow, convs, companies);
+  await attachCrm(supabase, workspaceId, [customer], await getTimeZone(), Date.now(), id);
   const domain = customer.email?.split("@")[1];
   const suggested = !customer.companyId && domain ? [...companies.values()].find((co) => co.domain === domain) ?? null : null;
   // A likely duplicate: another customer with exactly the same name (merging is always a person's choice).

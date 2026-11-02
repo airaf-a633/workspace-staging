@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/app-shell";
+import { CurrencyProvider } from "@/i18n/client";
 import { loadWorkspace } from "@/lib/workspace";
 import { signOut } from "../../(auth)/actions";
 
@@ -9,7 +10,7 @@ export default async function WorkspaceLayout(props: LayoutProps<"/w/[slug]">) {
 
   return (
     <AppShell base={`/w/${slug}`} workspaceName={workspace.name} memberName={me.display_name} roleName={role?.name ?? ""} signOut={signOut}>
-      {props.children}
+      <CurrencyProvider currency={workspace.currency ?? "USD"}>{props.children}</CurrencyProvider>
     </AppShell>
   );
 }

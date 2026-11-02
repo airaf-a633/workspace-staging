@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ArrowsClockwise, CalendarBlank, CaretDown, ChatText, Clock, Plus } from "@phosphor-icons/react";
 import { covers, type Viewer } from "@app/domain";
@@ -8,6 +9,7 @@ import { buttonClass } from "@/components/ui/button";
 import type { Person } from "@/components/inbox/types";
 import { useFormat, useT, useTimeZone } from "@/i18n/client";
 import { valueLabel } from "@/i18n/labels";
+import type { Outcome, TaskActions } from "@/components/deals/live";
 import { daysToWeekEnd, dueAt, nextDue, pickedDate, snoozeTo, whenOf, type BoardTask, type When } from "./sample";
 
 type View = "mine" | "team" | "all";
@@ -21,10 +23,12 @@ interface Props {
   viewer: Viewer;
   now: number;
   base: string;
+  /** On real data: saves each change on the server. Without it the list is the preview and changes stay on the screen. */
+  live?: TaskActions;
 }
 
 /* Tasks as one calm list grouped by when (decided 2026-09-30). Managers switch to their team, grouped by person. */
-export function TaskList({ tasks: initial, people, customers, viewer, now, base }: Props) {
+export function TaskList({ tasks: initial, people, customers, viewer, now, base, live }: Props) {
   const me = viewer.memberId;
   const scope = viewer.scopes["tasks.manage"] ?? "none";
   const [tasks, setTasks] = useState(initial);
@@ -34,6 +38,8 @@ export function TaskList({ tasks: initial, people, customers, viewer, now, base 
   const [undo, setUndo] = useState<{ before: BoardTask; created: string | null } | null>(null);
   const [draft, setDraft] = useState({ text: "", customerId: "", when: "today", date: "", time: "", ownerId: me, repeat: "" });
   const [comment, setComment] = useState("");
+  const [problem, setProblem] = useState<string | null>(null);
+  const router = useRouter();
 
   const tr = useT("tasks");
   const tAll = useT();
@@ -60,11 +66,27 @@ export function TaskList({ tasks: initial, people, customers, viewer, now, base 
     setTasks((all) => all.map((t) => (t.id === id ? { ...t, ...patch } : t)));
   }
 
+  // On real data the server is the truth: take its list again after every change.
+  const [seen, setSeen] = useState(initial);
+  if (seen !== initial) {
+    setSeen(initial);
+    setTasks(initial);
+  }
+
+  /** Saves a change on the server (real data only), tells the person if it was refused, and takes the server's list again. */
+  async function save(call: Promise<Outcome>) {
+    const r = await call;
+    setProblem(r.ok ? null : r.error);
+    router.refresh();
+  }
+
   function complete(t: BoardTask) {
     if (t.done) {
       update(t.id, { done: false, doneAt: undefined });
+      if (live) void save(live.undo(t.id));
       return;
     }
+    if (live) void save(live.complete(t.id));
     const next = nextDue(t, tz);
     const createdId = next ? `${t.id}-r${tasks.length}` : null;
     setTasks((all) => [
@@ -78,6 +100,7 @@ export function TaskList({ tasks: initial, people, customers, viewer, now, base 
   function undoComplete() {
     if (!undo) return;
     setTasks((all) => all.filter((x) => x.id !== undo.created).map((x) => (x.id === undo.before.id ? undo.before : x)));
+    if (live) void save(live.undo(undo.before.id));
     setUndo(null);
   }
 
@@ -109,6 +132,7 @@ export function TaskList({ tasks: initial, people, customers, viewer, now, base 
       calendar: null,
     };
     setTasks([task, ...tasks]);
+    if (live) void save(live.create({ text: task.text, ownerId: task.ownerId, contactId: task.customerId, due: task.due, hasTime: task.hasTime, repeat: task.repeat }));
     setDraft({ ...draft, text: "", customerId: "", time: "", repeat: "" });
   }
 
@@ -119,6 +143,13 @@ export function TaskList({ tasks: initial, people, customers, viewer, now, base 
     const clock = t.hasTime ? fmt.time(t.due) : "";
     return [day, clock].filter(Boolean).join(", ") || null;
   };
+
+  const problemText = problem
+    ? ({
+        not_allowed: tr("errors.not_allowed"), bad_text: tr("errors.bad_text"), repeat_needs_date: tr("errors.repeat_needs_date"),
+        bad_owner: tr("errors.bad_owner"), bad_contact: tr("errors.bad_contact"),
+      } as Record<string, string>)[problem] ?? tr("errors.failed")
+    : "";
 
   const chip = "min-h-9 rounded-full border border-input bg-surface px-3 text-sm";
 
@@ -169,7 +200,9 @@ export function TaskList({ tasks: initial, people, customers, viewer, now, base 
                     key={k}
                     type="button"
                     onClick={(e) => {
-                      update(t.id, snoozeTo(k, now, tz));
+                      const to = snoozeTo(k, now, tz);
+                      update(t.id, to);
+                      if (live) void save(live.snooze(t.id, to.due, to.hasTime));
                       e.currentTarget.closest("details")?.removeAttribute("open");
                     }}
                     className="min-h-10 rounded px-3 text-start text-sm hover:bg-surface-2"
@@ -196,6 +229,7 @@ export function TaskList({ tasks: initial, people, customers, viewer, now, base 
                   e.preventDefault();
                   if (!comment.trim()) return;
                   update(t.id, { comments: [...t.comments, { byId: me, text: comment.trim(), at: Date.now() }] });
+                  if (live) void save(live.note(t.id, comment.trim()));
                   setComment("");
                 }}
               >
@@ -237,6 +271,13 @@ export function TaskList({ tasks: initial, people, customers, viewer, now, base 
         </label>
         <span className="text-sm tabular-nums text-muted">{tr("openCount", { count: openTasks.length })}</span>
       </header>
+
+      {problem && (
+        <p role="alert" className="flex items-start justify-between gap-3 rounded-[var(--radius-control)] bg-warn-soft px-4 py-2.5 text-sm">
+          <span>{problemText}</span>
+          <button type="button" onClick={() => setProblem(null)} className="font-medium underline-offset-2 hover:underline">{tAll("common.close")}</button>
+        </p>
+      )}
 
       {scope !== "none" && (
         <form onSubmit={add} className="grid gap-2 rounded-[var(--radius-panel)] bg-surface p-3 shadow-[var(--shadow-1)] ring-1 ring-border" aria-label={tr("form")}>

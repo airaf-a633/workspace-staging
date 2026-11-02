@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CaretDown, Plus, WarningCircle, X } from "@phosphor-icons/react";
 import { canSeeDealValue, covers, type Viewer } from "@app/domain";
@@ -10,6 +11,7 @@ import { useFormat, useT } from "@/i18n/client";
 import { lineText, valueLabel } from "@/i18n/labels";
 import type { Person, Team } from "@/components/inbox/types";
 import { dealNeed, type BoardDeal } from "./sample";
+import type { DealActions, Outcome } from "./live";
 import { LOST_REASONS, OPEN_STAGES, STAGE, type OpenStage } from "./stages";
 
 type View = "mine" | "teams" | "all";
@@ -23,20 +25,26 @@ interface Props {
   base: string;
   /** A deal to open on arrival, e.g. from "Needs you now". */
   initialOpen?: string | null;
+  /** On real data: saves each change on the server. Without it the board is the preview and changes stay on the screen. */
+  live?: DealActions;
 }
 
 const ref = (d: BoardDeal) => ({ teamId: d.teamId, holderId: d.ownerId });
+/** The current moment, for what a person just did (kept out of the render so each call is plainly an event). */
+const stamp = () => Date.now();
 const toFils = (v: string) => Math.round(Number(v.replace(/[^\d.]/g, "")) * 100) || 0;
 
 /* The Deals board (decided 2026-09-30): compact cards, drag between stages, a side sheet for the details. */
-export function DealBoard({ deals: initial, people, teams, viewer, now, base, initialOpen = null }: Props) {
+export function DealBoard({ deals: initial, people, teams, viewer, now, base, initialOpen = null, live }: Props) {
   const me = viewer.memberId;
   const [deals, setDeals] = useState(initial);
   const [view, setView] = useState<View>(viewer.scopes["deals.view"] === "own" ? "mine" : viewer.scopes["deals.view"] === "all" ? "all" : "teams");
   const [closed, setClosed] = useState(false);
   const [openId, setOpenId] = useState<string | null>(initialOpen);
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState(!!live?.newFor);
   const [dragging, setDragging] = useState<string | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
+  const router = useRouter();
 
   const t = useT("deals");
   const tAll = useT();
@@ -64,6 +72,66 @@ export function DealBoard({ deals: initial, people, teams, viewer, now, base, in
   function update(id: string, patch: Partial<BoardDeal>) {
     setDeals((all) => all.map((d) => (d.id === id ? { ...d, ...patch } : d)));
   }
+
+  // On real data the server is the truth: take its list again after every change.
+  const [seen, setSeen] = useState(initial);
+  if (seen !== initial) {
+    setSeen(initial);
+    setDeals(initial);
+  }
+
+  /** Saves a change on the server (real data only), tells the person if it was refused, and takes the server's list again. */
+  async function save(call: Promise<Outcome>): Promise<Outcome> {
+    const r = await call;
+    setProblem(r.ok ? null : r.error);
+    router.refresh();
+    return r;
+  }
+
+  const problemText = (code: string) => {
+    const words: Record<string, string> = {
+      not_allowed: t("errors.not_allowed"), closed: t("errors.closed"), bad_title: t("errors.bad_title"), bad_value: t("errors.bad_value"),
+      bad_reason: t("errors.bad_reason"), bad_percent: t("errors.bad_percent"), bad_contact: t("errors.bad_contact"),
+      already_pending: t("errors.already_pending"), own_request: t("errors.own_request"), not_pending: t("errors.not_pending"),
+    };
+    return words[code] ?? t("errors.failed");
+  };
+
+  const act = {
+    move(id: string, stage: OpenStage) {
+      update(id, { stage });
+      if (live) void save(live.move(id, stage));
+    },
+    win(id: string, fils: number) {
+      update(id, { stage: "won", fils, closedAt: stamp() });
+      if (live) void save(live.win(id, fils));
+    },
+    lose(id: string, reason: string) {
+      update(id, { stage: "lost", lostReason: reason, closedAt: stamp() });
+      if (live) void save(live.lose(id, reason));
+    },
+    reopen(id: string) {
+      update(id, { stage: "new", lostReason: undefined, closedAt: undefined });
+      if (live) void save(live.reopen(id));
+    },
+    note(d: BoardDeal, text: string) {
+      update(d.id, { notes: [...d.notes, { byId: me, text, at: stamp() }] });
+      if (live) void save(live.note(d.id, text));
+    },
+    ask(d: BoardDeal, pct: number, text: string) {
+      update(d.id, { approval: { byId: me, pct, note: text, status: "pending" } });
+      if (live) void save(live.askDiscount(d.id, pct, text));
+    },
+    decide(d: BoardDeal, approve: boolean, text: string) {
+      const a = d.approval!;
+      update(d.id, {
+        approval: { ...a, status: approve ? "approved" : "declined", decidedById: me },
+        ...(approve ? { fils: Math.round(d.fils * (1 - a.pct / 100)) } : {}),
+        notes: [...d.notes, ...(text ? [{ byId: me, text, at: stamp() }] : [])],
+      });
+      if (live && a.id) void save(live.decide(a.id, approve, text));
+    },
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && (setOpenId(null), setCreating(false));
@@ -139,6 +207,13 @@ export function DealBoard({ deals: initial, people, teams, viewer, now, base, in
         )}
       </header>
 
+      {problem && (
+        <p role="alert" className="flex items-start justify-between gap-3 rounded-[var(--radius-control)] bg-warn-soft px-4 py-2.5 text-sm">
+          <span>{problemText(problem)}</span>
+          <button type="button" onClick={() => setProblem(null)} className="font-medium underline-offset-2 hover:underline">{tAll("common.close")}</button>
+        </p>
+      )}
+
       {!closed ? (
         <div className="grid items-start gap-4 md:grid-cols-3">
           {OPEN_STAGES.map((stage) => {
@@ -152,7 +227,7 @@ export function DealBoard({ deals: initial, people, teams, viewer, now, base, in
                 onDrop={(e) => {
                   const id = e.dataTransfer.getData("text/plain");
                   const d = deals.find((x) => x.id === id);
-                  if (d && canEdit(d)) update(id, { stage });
+                  if (d && canEdit(d) && (OPEN_STAGES as readonly string[]).includes(d.stage)) act.move(id, stage);
                   setDragging(null);
                 }}
                 className={`grid content-start gap-3 rounded-[var(--radius-panel)] bg-surface-2/70 p-3 ${dragging ? "outline-2 outline-dashed outline-border" : ""}`}
@@ -192,8 +267,19 @@ export function DealBoard({ deals: initial, people, teams, viewer, now, base, in
           <aside aria-label={creating ? t("new") : t("deal")} className="absolute inset-y-0 end-0 flex w-full max-w-md flex-col overflow-y-auto bg-surface shadow-[var(--shadow-2)]">
             {creating ? (
               <NewDeal
+                customers={live?.customers}
+                preset={live?.newFor ?? null}
+                canValue={canSeeDealValue(viewer, me)}
                 onCancel={() => setCreating(false)}
-                onCreate={(d) => {
+                onCreate={async (d) => {
+                  if (live) {
+                    const r = await save(live.create({ title: d.title, contactId: d.contactId, valueMinor: d.fils }));
+                    if (r.ok) {
+                      setCreating(false);
+                      if (r.id) setOpenId(r.id);
+                    }
+                    return;
+                  }
                   const deal: BoardDeal = { ...d, id: `new-${deals.length}`, ownerId: me, teamId: viewer.teamIds[0] ?? teams[0]?.id ?? "", createdAt: now, customerId: null, notes: [] };
                   setDeals([deal, ...deals]);
                   setCreating(false);
@@ -215,7 +301,8 @@ export function DealBoard({ deals: initial, people, teams, viewer, now, base, in
                   base={base}
                   now={now}
                   onClose={() => setOpenId(null)}
-                  update={(patch) => update(selected.id, patch)}
+                  act={act}
+                  canAsk={canEdit(selected) && selected.approval?.status !== "pending"}
                 />
               )
             )}
@@ -238,9 +325,21 @@ function DealSheet(p: {
   base: string;
   now: number;
   onClose: () => void;
-  update: (patch: Partial<BoardDeal>) => void;
+  act: {
+    move: (id: string, stage: OpenStage) => void;
+    win: (id: string, fils: number) => void;
+    lose: (id: string, reason: string) => void;
+    reopen: (id: string) => void;
+    note: (d: BoardDeal, text: string) => void;
+    ask: (d: BoardDeal, pct: number, text: string) => void;
+    decide: (d: BoardDeal, approve: boolean, text: string) => void;
+  };
+  canAsk: boolean;
 }) {
-  const { d, name, update } = p;
+  const { d, name, act } = p;
+  const [asking, setAsking] = useState(false);
+  const [pct, setPct] = useState("5");
+  const [why, setWhy] = useState("");
   const [closing, setClosing] = useState<null | "won" | "lost">(null);
   const [finalValue, setFinalValue] = useState((d.fils / 100).toFixed(2));
   const [reason, setReason] = useState<string>("");
@@ -276,7 +375,7 @@ function DealSheet(p: {
             <div className="flex items-center justify-between gap-3">
               <dt className="text-muted"><label htmlFor="deal-stage">{t("stage")}</label></dt>
               <dd>
-                <select id="deal-stage" value={d.stage} onChange={(e) => update({ stage: e.target.value as OpenStage })} className="min-h-9 rounded-full border border-input bg-surface px-3 text-sm">
+                <select id="deal-stage" value={d.stage} onChange={(e) => act.move(d.id, e.target.value as OpenStage)} className="min-h-9 rounded-full border border-input bg-surface px-3 text-sm">
                   {OPEN_STAGES.map((s) => <option key={s} value={s}>{tAll(`stages.${s}`)}</option>)}
                 </select>
               </dd>
@@ -310,8 +409,8 @@ function DealSheet(p: {
                   <label className="sr-only" htmlFor="decision-note">{t("noteFor", { name: name(d.approval.byId) })}</label>
                   <input id="decision-note" value={decision} onChange={(e) => setDecision(e.target.value)} placeholder={t("noteForOptional", { name: name(d.approval.byId) })} className={field} />
                   <div className="flex justify-end gap-2">
-                    <button type="button" onClick={() => update({ approval: { ...d.approval!, status: "declined", decidedById: p.me }, notes: [...d.notes, ...(decision ? [{ byId: p.me, text: decision, at: Date.now() }] : [])] })} className={buttonClass("secondary", "sm")}>{t("decline")}</button>
-                    <button type="button" onClick={() => update({ approval: { ...d.approval!, status: "approved", decidedById: p.me }, fils: discounted, notes: [...d.notes, ...(decision ? [{ byId: p.me, text: decision, at: Date.now() }] : [])] })} className={buttonClass("primary", "sm")}>{t("approve", { pct: d.approval.pct })}</button>
+                    <button type="button" onClick={() => act.decide(d, false, decision)} className={buttonClass("secondary", "sm")}>{t("decline")}</button>
+                    <button type="button" onClick={() => act.decide(d, true, decision)} className={buttonClass("primary", "sm")}>{t("approve", { pct: d.approval.pct })}</button>
                   </div>
                 </div>
               ) : (
@@ -335,7 +434,7 @@ function DealSheet(p: {
               onSubmit={(e) => {
                 e.preventDefault();
                 if (!note.trim()) return;
-                update({ notes: [...d.notes, { byId: p.me, text: note.trim(), at: Date.now() }] });
+                act.note(d, note.trim());
                 setNote("");
               }}
             >
@@ -345,12 +444,46 @@ function DealSheet(p: {
             </form>
           )}
         </section>
+
+        {isOpen && p.canAsk && (
+          asking ? (
+            <form
+              className="grid gap-2 rounded-[var(--radius-panel)] bg-surface-2 p-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const n = Number(pct);
+                if (n > 0 && n <= 100) {
+                  act.ask(d, n, why.trim());
+                  setAsking(false);
+                  setWhy("");
+                }
+              }}
+            >
+              <label htmlFor="discount-pct" className="text-sm font-medium">{t("discountPct")}</label>
+              <input id="discount-pct" inputMode="decimal" dir="ltr" value={pct} onChange={(e) => setPct(e.target.value)} className={field} autoFocus />
+              <label htmlFor="discount-why" className="text-sm font-medium">{t("discountWhy")}</label>
+              <input id="discount-why" value={why} onChange={(e) => setWhy(e.target.value)} placeholder={tAll("common.optional")} className={field} />
+              <div className="flex justify-end gap-2">
+                <button type="button" onClick={() => setAsking(false)} className={buttonClass("ghost", "sm")}>{tAll("common.cancel")}</button>
+                <button type="submit" disabled={!(Number(pct) > 0 && Number(pct) <= 100)} className={buttonClass("primary", "sm")}>{t("discountAsk")}</button>
+              </div>
+            </form>
+          ) : (
+            <div><button type="button" onClick={() => setAsking(true)} className={buttonClass("secondary", "sm")}>{t("discountOpen")}</button></div>
+          )
+        )}
       </div>
+
+      {!isOpen && p.canClose && (
+        <footer className="mt-auto flex justify-end border-t border-border px-5 py-4">
+          <button type="button" onClick={() => act.reopen(d.id)} className={buttonClass("secondary", "sm")}>{t("reopen")}</button>
+        </footer>
+      )}
 
       {isOpen && p.canClose && (
         <footer className="mt-auto grid gap-3 border-t border-border px-5 py-4">
           {closing === "won" ? (
-            <form className="grid gap-2" onSubmit={(e) => { e.preventDefault(); if (toFils(finalValue) > 0) update({ stage: "won", fils: toFils(finalValue), closedAt: Date.now() }); }}>
+            <form className="grid gap-2" onSubmit={(e) => { e.preventDefault(); if (toFils(finalValue) > 0) act.win(d.id, toFils(finalValue)); }}>
               <label htmlFor="final-value" className="text-sm font-medium">{t("finalValue")}</label>
               <input id="final-value" inputMode="decimal" dir="ltr" value={finalValue} onChange={(e) => setFinalValue(e.target.value)} className={field} autoFocus />
               <p className="text-sm text-muted">{t("finalValueHelp")}</p>
@@ -360,7 +493,7 @@ function DealSheet(p: {
               </div>
             </form>
           ) : closing === "lost" ? (
-            <form className="grid gap-2" onSubmit={(e) => { e.preventDefault(); if (reason) update({ stage: "lost", lostReason: reason, closedAt: Date.now() }); }}>
+            <form className="grid gap-2" onSubmit={(e) => { e.preventDefault(); if (reason) act.lose(d.id, reason); }}>
               <label htmlFor="lost-reason" className="text-sm font-medium">{t("whyLost")}</label>
               <select id="lost-reason" value={reason} onChange={(e) => setReason(e.target.value)} className={field} autoFocus>
                 <option value="">{t("chooseReason")}</option>
@@ -383,20 +516,35 @@ function DealSheet(p: {
   );
 }
 
-function NewDeal({ onCancel, onCreate }: { onCancel: () => void; onCreate: (d: Pick<BoardDeal, "customerName" | "title" | "fils" | "stage">) => void }) {
-  const [form, setForm] = useState({ customer: "", title: "", value: "" });
+function NewDeal({
+  onCancel, onCreate, customers, preset, canValue,
+}: {
+  onCancel: () => void;
+  onCreate: (d: Pick<BoardDeal, "customerName" | "title" | "fils" | "stage"> & { contactId: string | null }) => void | Promise<void>;
+  /** On real data: the customers to choose from. */
+  customers: { id: string; name: string }[] | undefined;
+  preset: { id: string; name: string } | null;
+  canValue: boolean;
+}) {
+  const [form, setForm] = useState({ customer: preset?.name ?? "", title: "", value: "" });
   const [tried, setTried] = useState(false);
+  const [saving, setSaving] = useState(false);
   const field = "min-h-11 w-full rounded-[var(--radius-control)] border border-input bg-surface px-3 text-base";
-  const ok = form.customer.trim() && form.title.trim();
+  // On real data the customer must be one that exists; in the preview any name will do.
+  const chosen = customers ? customers.find((c) => c.name.toLowerCase() === form.customer.trim().toLowerCase()) : undefined;
+  const ok = form.title.trim() && (customers ? !!chosen : form.customer.trim());
   const t = useT("deals");
   const tAll = useT();
   return (
     <form
       className="flex h-full flex-col"
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
         setTried(true);
-        if (ok) onCreate({ customerName: form.customer.trim(), title: form.title.trim(), fils: toFils(form.value), stage: "new" });
+        if (!ok || saving) return;
+        setSaving(true);
+        await onCreate({ customerName: chosen?.name ?? form.customer.trim(), contactId: chosen?.id ?? null, title: form.title.trim(), fils: toFils(form.value), stage: "new" });
+        setSaving(false);
       }}
     >
       <header className="flex items-center justify-between border-b border-border px-5 py-4">
@@ -404,15 +552,19 @@ function NewDeal({ onCancel, onCreate }: { onCancel: () => void; onCreate: (d: P
         <button type="button" onClick={onCancel} className={buttonClass("ghost", "sm", "!px-2")} aria-label={tAll("common.close")}><X size={20} aria-hidden="true" /></button>
       </header>
       <div className="grid gap-4 px-5 py-5">
-        <label className="grid gap-1.5 text-sm font-medium">{t("form.customer")}<input className={field} value={form.customer} onChange={(e) => setForm({ ...form, customer: e.target.value })} autoFocus placeholder={t("form.customerPlaceholder")} /></label>
-        <label className="grid gap-1.5 text-sm font-medium">{t("form.title")}<input className={field} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder={t("form.titlePlaceholder")} /></label>
-        <label className="grid gap-1.5 text-sm font-medium">{t("form.value")}<input className={field} inputMode="decimal" dir="ltr" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} placeholder={tAll("common.optional")} /></label>
-        {tried && !ok && <p role="alert" className="text-sm text-fail">{t("form.error")}</p>}
-        <p className="text-sm text-muted">{t("form.help")}</p>
+        <label className="grid gap-1.5 text-sm font-medium">
+          {t("form.customer")}
+          <input className={field} list={customers ? "deal-customers" : undefined} value={form.customer} onChange={(e) => setForm({ ...form, customer: e.target.value })} autoFocus={!preset} placeholder={t(customers ? "form.customerPick" : "form.customerPlaceholder")} />
+          {customers && <datalist id="deal-customers">{customers.map((c) => <option key={c.id} value={c.name} />)}</datalist>}
+        </label>
+        <label className="grid gap-1.5 text-sm font-medium">{t("form.title")}<input className={field} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} autoFocus={!!preset} placeholder={t("form.titlePlaceholder")} /></label>
+        {canValue && <label className="grid gap-1.5 text-sm font-medium">{t("form.value")}<input className={field} inputMode="decimal" dir="ltr" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} placeholder={tAll("common.optional")} /></label>}
+        {tried && !ok && <p role="alert" className="text-sm text-fail">{t(customers ? "form.errorPick" : "form.error")}</p>}
+        <p className="text-sm text-muted">{t(customers ? "form.helpLive" : "form.help")}</p>
       </div>
       <footer className="mt-auto flex justify-end gap-2 border-t border-border px-5 py-4">
         <button type="button" onClick={onCancel} className={buttonClass("ghost", "sm")}>{tAll("common.cancel")}</button>
-        <button type="submit" className={buttonClass("primary", "sm")}>{t("form.submit")}</button>
+        <button type="submit" disabled={saving} className={buttonClass("primary", "sm")}>{t("form.submit")}</button>
       </footer>
     </form>
   );
