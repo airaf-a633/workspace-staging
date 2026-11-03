@@ -7,7 +7,7 @@ import { PILOT, PLANS, TRIAL_DAYS, type PlanFeature } from "@/lib/plans";
 
 export async function generateMetadata() {
   const t = await getT("pricing");
-  return PILOT ? { title: t("pilot.metaTitle"), description: t("pilot.metaDescription") } : { title: t("metaTitle"), description: t("metaDescription") };
+  return { title: t("metaTitle"), description: t("metaDescription") };
 }
 
 /* Pricing (2026-10-19): one price per user, every channel on every plan, no per-channel or per-conversation fees. */
@@ -21,52 +21,13 @@ export default async function Pricing() {
   const t = await getT("pricing");
   const b = await getT("billing");
 
-  // The private pilot (decided 2026-11-03): no prices, plans or trial are shown; the page says what works today and what is coming.
-  if (PILOT) {
-    return (
-      <main className="overflow-x-clip">
-        <section className="mx-auto grid max-w-3xl gap-10 px-4 pb-24 pt-14 lg:pt-20">
-          <header className="grid gap-4 text-center">
-            <h1 className="display text-4xl sm:text-5xl">{t("pilot.title")}</h1>
-            <p className="text-lg text-muted">{t("pilot.body")}</p>
-          </header>
-          <div className="grid gap-6 sm:grid-cols-2">
-            <section className="grid content-start gap-3 rounded-[var(--radius-panel)] bg-surface p-6 ring-1 ring-border" aria-labelledby="pilot-now">
-              <h2 id="pilot-now" className="text-lg font-semibold">{t("pilot.nowTitle")}</h2>
-              <ul className="grid gap-3">
-                {NOW.map((k) => (
-                  <li key={k} className="flex gap-3"><Check size={20} className="mt-0.5 shrink-0 text-primary" aria-hidden="true" />{t(`pilot.now.${k}`)}</li>
-                ))}
-              </ul>
-            </section>
-            <section className="grid content-start gap-3 rounded-[var(--radius-panel)] bg-surface p-6 ring-1 ring-border" aria-labelledby="pilot-soon">
-              <h2 id="pilot-soon" className="text-lg font-semibold">{t("pilot.soonTitle")}</h2>
-              <ul className="grid gap-3">
-                {SOON.map((k) => (
-                  <li key={k} className="flex gap-3 text-muted"><Minus size={20} className="mt-0.5 shrink-0" aria-hidden="true" />{t(`pilot.soon.${k}`)}</li>
-                ))}
-              </ul>
-            </section>
-          </div>
-          <div className="bg-hero grid gap-4 rounded-[var(--radius-panel)] px-6 py-10 text-center text-white">
-            <h2 className="display text-3xl">{t("pilot.joinTitle")}</h2>
-            <p className="text-white/80">{t("pilot.joinBody")}</p>
-            <div className="flex flex-wrap justify-center gap-3">
-              <Link href="/sign-up" className={buttonClass("light", "lg")}>{t("pilot.join")}</Link>
-              <Link href="/preview" className={buttonClass("glass", "lg")}>{t("pilot.demo")}</Link>
-            </div>
-          </div>
-        </section>
-      </main>
-    );
-  }
-
   return (
     <main className="overflow-x-clip">
       <section className="mx-auto grid max-w-7xl gap-12 px-4 pb-20 pt-14 lg:pt-20">
         <header className="mx-auto grid max-w-2xl gap-4 text-center">
           <h1 className="display text-4xl sm:text-5xl">{t("title")}</h1>
           <p className="text-lg text-muted">{t("body", { days: TRIAL_DAYS })}</p>
+          {PILOT && <p role="note" className="mx-auto rounded-[var(--radius-control)] bg-primary-soft px-4 py-3 text-sm text-primary">{t("pilot.banner")}</p>}
         </header>
         <PricingPlans />
         <p className="mx-auto max-w-2xl text-center text-sm text-muted">{t("messagesNote")}</p>
@@ -113,6 +74,31 @@ export default async function Pricing() {
           </div>
         </div>
       </section>
+
+
+      {PILOT && (
+        <section className="mx-auto grid max-w-5xl gap-6 px-4 pb-20" aria-labelledby="pilot-status">
+          <h2 id="pilot-status" className="display text-3xl">{t("pilot.statusTitle")}</h2>
+          <div className="grid gap-6 sm:grid-cols-2">
+            <section className="grid content-start gap-3 rounded-[var(--radius-panel)] bg-surface p-6 ring-1 ring-border" aria-labelledby="pilot-now">
+              <h3 id="pilot-now" className="text-lg font-semibold">{t("pilot.nowTitle")}</h3>
+              <ul className="grid gap-3">
+                {NOW.map((k) => (
+                  <li key={k} className="flex gap-3"><Check size={20} className="mt-0.5 shrink-0 text-primary" aria-hidden="true" />{t(`pilot.now.${k}`)}</li>
+                ))}
+              </ul>
+            </section>
+            <section className="grid content-start gap-3 rounded-[var(--radius-panel)] bg-surface p-6 ring-1 ring-border" aria-labelledby="pilot-soon">
+              <h3 id="pilot-soon" className="text-lg font-semibold">{t("pilot.soonTitle")}</h3>
+              <ul className="grid gap-3">
+                {SOON.map((k) => (
+                  <li key={k} className="flex gap-3 text-muted"><Minus size={20} className="mt-0.5 shrink-0" aria-hidden="true" />{t(`pilot.soon.${k}`)}</li>
+                ))}
+              </ul>
+            </section>
+          </div>
+        </section>
+      )}
 
       <section className="mx-auto grid max-w-5xl gap-8 px-4 py-24">
         <h2 className="display text-3xl sm:text-4xl">{t("faqTitle")}</h2>

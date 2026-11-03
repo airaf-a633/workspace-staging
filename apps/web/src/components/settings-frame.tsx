@@ -30,13 +30,13 @@ export async function SettingsFrame({ base, active, isOwner, children }: { base:
         { key: "channels", label: t("channels"), href: `${base}/channels` },
         { key: "labels" as const, label: t("labels"), href: `${base}/labels` },
         { key: "contacts" as const, label: t("contacts"), href: `${base}/contact-settings` },
-        // Reply targets are stored for real (2026-11-03). Billing exists in the preview only until it is.
+        // Reply targets are stored for real (2026-11-03). Billing is a designed screen with sample data until billing exists, and says so.
         { key: "sla" as const, label: t("sla"), href: `${base}/sla` },
         { key: "ai", label: t("ai"), href: `${base}/ai` },
         // Which currency deal values are shown in (owners only).
         ...(!preview && isOwner ? [{ key: "money" as const, label: t("money"), href: `${base}/money` }] : []),
         // Billing is for owners and admins; others are sent back to Account if they open the link.
-        ...(preview && isOwner ? [{ key: "billing" as const, label: t("billing"), href: `${base}/billing` }] : []),
+        ...(isOwner ? [{ key: "billing" as const, label: preview ? t("billing") : `${t("billing")} (${t("previewTag")})`, href: `${base}/billing` }] : []),
       ],
     },
   ];

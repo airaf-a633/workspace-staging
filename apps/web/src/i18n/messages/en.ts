@@ -20,6 +20,7 @@ export const en = {
     dismiss: "Dismiss",
     soon: "Soon",
     comingSoon: "Coming soon",
+    previewNotice: "Preview: this screen shows sample data and is not live yet. Nothing you do here is saved or sent.",
     optional: "Optional",
     optionalSr: "(optional)",
     none: "None",
@@ -185,6 +186,7 @@ export const en = {
     campaigns: "Campaigns",
     settings: "Settings",
     signOut: "Sign out",
+    previewTag: "Preview",
   },
 
   settings: {
@@ -198,6 +200,7 @@ export const en = {
     labels: "Labels",
     contacts: "Contacts and privacy",
     sla: "Reply targets",
+    previewTag: "Preview",
     billing: "Billing",
     money: "Currency",
     ai: "AI",
@@ -1276,9 +1279,9 @@ export const en = {
       answer: { title: "Answer from one place", body: "Take a chat, reply, hand it over with a note. Managers see who's waiting and what's slipping from their home." },
     },
     pricing: {
-      title: "Free while we are in the private pilot",
-      body: "Relay is open to a small group of invited businesses, and nothing is charged during the pilot. Prices will be announced afterwards.",
-      link: "About the pilot",
+      title: "Simple pricing, every channel included",
+      body: "One price per user. No fees per channel or per conversation. Free during the private pilot; these are the planned prices.",
+      link: "See full pricing",
       per: "per user / month",
     },
     hero: {
@@ -1336,7 +1339,7 @@ export const en = {
       items: {
         channels: { q: "Which channels can I connect?", a: "In the private pilot today: website chat, email, Telegram, LINE and Discord. On the way, as each platform's approval or our own testing finishes: WhatsApp, Instagram, Messenger, SMS, voice, TikTok, X, Viber, WeChat, Slack, Microsoft Teams, Apple Messages and our API. Some, like WhatsApp and Instagram, need the platform's approval first." },
         phone: { q: "Can my team keep using the WhatsApp app?", a: "WhatsApp is not part of the pilot yet. When it is, a WhatsApp number will work in the phone app and in Relay at the same time, and replies from either side will show in the same conversation." },
-        price: { q: "How much does it cost?", a: "Nothing during the private pilot. Prices will be announced when the pilot ends, and you will hear before anything is charged." },
+        price: { q: "How much does it cost?", a: "Planned prices start at $19 per user per month, with every channel included on every plan. Relay is free for the businesses in the private pilot, and nothing is charged until we announce billing." },
         ai: { q: "Does the AI reply to customers on its own?", a: "Only if you switch on the after-hours assistant, and only from your own business knowledge. Everything else is a suggestion a person approves." },
         data: { q: "Where is my data kept?", a: "In the EU (Frankfurt). Your customers' data belongs to you; export or delete it at any time." },
         cancel: { q: "Can I cancel any time?", a: "Yes, from Settings, with no call needed. You keep access until the end of the period you paid for." },
@@ -2555,9 +2558,9 @@ export const en = {
 
   pricing: {
     metaTitle: "Pricing",
-    metaDescription: "One price per user. Every channel on every plan, no per-conversation fees. Start a 14-day free trial, no card needed.",
+    metaDescription: "One price per user. Every channel on every plan, no per-conversation fees. Free for the businesses in the private pilot.",
     title: "One price per user. Every channel included.",
-    body: "No fees per channel, per inbox or per conversation. Try any plan free for {days} days, no card needed.",
+    body: "No fees per channel, per inbox or per conversation. Relay is free during the private pilot; these are the planned prices and may change.",
     billingLabel: "Billing period",
     monthly: "Monthly",
     yearly: "Yearly",
@@ -2566,7 +2569,7 @@ export const en = {
     perUser: "per user / month",
     billedYearly: "{total} per user, billed once a year",
     billedMonthly: "Billed monthly, cancel any time",
-    cta: "Start {days}-day free trial",
+    cta: "Join the pilot",
     demo: "Try the demo first",
     for: {
       starter: "For a small team that wants every channel in one place.",
@@ -2581,7 +2584,7 @@ export const en = {
     notIncluded: "Not included",
     faqTitle: "Pricing questions",
     faq: {
-      trial: { q: "How does the free trial work?", a: "You get {days} days with everything in Growth, no card needed. At the end you pick a plan, or the workspace pauses with your data kept, so you can pick up where you left off." },
+      trial: { q: "Is there a free trial?", a: "Nothing is charged during the private pilot, and no card is needed. We will tell you how plans and billing work before the pilot ends." },
       user: { q: "Who counts as a user?", a: "Anyone on your team who signs in to Relay. Customers never count, and neither do people who only receive a report by email." },
       messages: { q: "Do you charge per message or per channel?", a: "No. Every plan includes every channel and unlimited conversations. The only extra cost is what Meta and phone carriers charge for WhatsApp and SMS, passed on at cost." },
       credits: { q: "What are AI credits?", a: "Reply suggestions, summaries and translations each use a credit. Credits are shared across the team. If you run out, AI pauses until next month or you add more. The inbox keeps working either way." },
@@ -2589,12 +2592,10 @@ export const en = {
       cancel: { q: "What happens if we cancel?", a: "Cancel from Settings with no call needed. You keep access until the end of the period you paid for, and you can export your conversations and contacts." },
     },
     finalTitle: "See it with your own channels",
-    finalBody: "Connect your email or website chat in a few minutes and try Relay free for {days} days.",
+    finalBody: "Connect your email or website chat in a few minutes. Free during the private pilot.",
     pilot: {
-      metaTitle: "The private pilot",
-      metaDescription: "Relay is free for the businesses in its private pilot. See what you can use today and what is coming.",
-      title: "Free while we are in the private pilot",
-      body: "Relay is open to a small group of invited businesses. Nothing is charged during the pilot, and no card is needed. Prices will be announced when it ends.",
+      banner: "Relay is in a private pilot for invited businesses. It is free, and nothing is charged. The plans and prices below are the planned ones and may change.",
+      statusTitle: "Where Relay is today",
       nowTitle: "Works today",
       now: { inbox: "Website chat, email, Telegram, LINE and Discord in one shared inbox", handoff: "Handovers with notes, teams and roles", crm: "Customers, deals and tasks", homes: "Reply targets with opening hours, reports and a home for every manager" },
       soonTitle: "Coming soon",
@@ -2613,7 +2614,7 @@ export const en = {
     body: "Relay is built around one idea: every customer message lands in one place, and the right person always knows it's theirs.",
     jump: "Jump to a feature",
     start: "Join the pilot",
-    pricing: "About the pilot",
+    pricing: "See pricing",
     soon: "Coming soon",
     finalTitle: "Try it with your own customers",
     finalBody: "Free during the private pilot, no card needed. Connect email or website chat in minutes.",

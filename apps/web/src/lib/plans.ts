@@ -25,8 +25,9 @@ export const POPULAR: PlanKey = "growth";
 export const TRIAL_DAYS = 14;
 
 /**
- * The private pilot (decided 2026-11-03): free for invited businesses until launch pricing is announced. While it is true the public
- * website shows no prices, plans or trial, and says what is still coming. Set to false when billing exists and prices are published.
+ * The private pilot (decided 2026-11-03): free for invited businesses until launch pricing is announced. The public website still
+ * shows every plan and price (the founder wants the product showcased, 2026-11-03), with a note that the pilot is free and
+ * a section saying what works today and what is coming. Set to false when billing exists.
  */
 export const PILOT = true;
 

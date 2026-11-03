@@ -24,6 +24,13 @@ export async function loadWorkspace(slug: string) {
   return { supabase, user, workspace, me };
 }
 
+/** How far a permission reaches for the signed-in person: none, own, team or all (the same answer the database uses). */
+export async function scopeOf(workspaceId: string, permission: string): Promise<"none" | "own" | "team" | "all"> {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("permission_scope", { p_workspace: workspaceId, p_permission: permission });
+  return data === "all" || data === "team" || data === "own" ? data : "none";
+}
+
 export async function can(workspaceId: string, permission: string): Promise<boolean> {
   const supabase = await createClient();
   const { data } = await supabase.rpc("has_permission", { p_workspace: workspaceId, p_permission: permission });

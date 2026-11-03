@@ -43,6 +43,8 @@ interface Props {
 
 /* Five to six destinations, each with an icon AND a label. Nothing is icon-only. */
 function navItems(base: string, t: TFor<"nav">, reports: boolean, help: boolean, campaigns: boolean) {
+  // In a real workspace Campaigns and the Help Center are designed screens with sample data (2026-11-03): the menu says so.
+  const tag = base.startsWith("/preview") ? undefined : t("previewTag");
   return [
     { key: "home", href: base, label: t("home"), Icon: House, match: (p: string) => p === base },
     { key: "inbox", href: `${base}/inbox`, label: t("inbox"), Icon: ChatsCircle, match: (p: string) => p.startsWith(`${base}/inbox`) },
@@ -50,8 +52,8 @@ function navItems(base: string, t: TFor<"nav">, reports: boolean, help: boolean,
     { key: "deals", href: `${base}/deals`, label: t("deals"), Icon: Handshake, match: (p: string) => p.startsWith(`${base}/deals`) },
     { key: "tasks", href: `${base}/tasks`, label: t("tasks"), Icon: CheckSquare, match: (p: string) => p.startsWith(`${base}/tasks`) },
     ...(reports ? [{ key: "reports", href: `${base}/reports`, label: t("reports"), Icon: ChartBar, match: (p: string) => p.startsWith(`${base}/reports`) }] : []),
-    ...(campaigns ? [{ key: "campaigns", href: `${base}/campaigns`, label: t("campaigns"), Icon: Megaphone, match: (p: string) => p.startsWith(`${base}/campaigns`) }] : []),
-    ...(help ? [{ key: "help", href: `${base}/help`, label: t("helpCenter"), Icon: BookOpenText, match: (p: string) => p.startsWith(`${base}/help`) }] : []),
+    ...(campaigns ? [{ key: "campaigns", tag, href: `${base}/campaigns`, label: t("campaigns"), Icon: Megaphone, match: (p: string) => p.startsWith(`${base}/campaigns`) }] : []),
+    ...(help ? [{ key: "help", tag, href: `${base}/help`, label: t("helpCenter"), Icon: BookOpenText, match: (p: string) => p.startsWith(`${base}/help`) }] : []),
     {
       key: "settings",
       href: `${base}/settings`,
@@ -121,7 +123,7 @@ export function AppShell({ base, workspaceName, memberName, roleName, signOut, f
           </div>
         )}
         <nav className={`grid gap-1 ${rail ? "justify-items-center px-2 pt-2" : "px-3"}`}>
-          {items.map(({ href, label, Icon, match }) => {
+          {items.map(({ href, label, Icon, match, tag }) => {
             const active = match(path);
             return (
               <Link
@@ -135,6 +137,7 @@ export function AppShell({ base, workspaceName, memberName, roleName, signOut, f
               >
                 <Icon size={22} weight={active ? "fill" : "regular"} aria-hidden="true" />
                 <span className={rail ? "sr-only" : ""}>{label}</span>
+                {tag && !rail && <span className="ms-auto rounded-full bg-surface-2 px-2 py-0.5 text-xs font-normal text-muted">{tag}</span>}
               </Link>
             );
           })}

@@ -7,7 +7,7 @@ import { HeroInbox } from "@/components/marketing/hero-inbox";
 import { ManagerHomesPreview } from "@/components/marketing/manager-homes-preview";
 import { buttonClass } from "@/components/ui/button";
 import { getT } from "@/i18n/server";
-import { PILOT, PLANS, TRIAL_DAYS } from "@/lib/plans";
+import { PLANS, TRIAL_DAYS } from "@/lib/plans";
 
 /*
  * Relay landing page (rebrand 2026-10-07). Calm and product-led: the product itself is the visual
@@ -201,7 +201,6 @@ export default async function Landing() {
           <p className="max-w-[44ch] text-muted">{t("pricing.body", { days: TRIAL_DAYS })}</p>
           <Link href="/pricing" className={buttonClass("secondary", "md", "w-fit")}>{t("pricing.link")}</Link>
         </div>
-        {!PILOT && (
         <ul className="reveal grid gap-4 sm:grid-cols-3">
           {PLANS.map((p) => (
             <li key={p.key} className={`grid gap-1 rounded-[var(--radius-panel)] p-6 ${p.key === "growth" ? "bg-primary text-on-primary" : "bg-surface ring-1 ring-border"}`}>
@@ -211,7 +210,6 @@ export default async function Landing() {
             </li>
           ))}
         </ul>
-        )}
       </section>
 
       {/* 7. Questions. */}

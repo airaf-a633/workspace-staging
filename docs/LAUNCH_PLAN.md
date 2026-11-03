@@ -6,7 +6,7 @@
 
 - **A private pilot.** A handful of invited businesses use Relay for real, **free**, with no card and no billing. Anyone creating an account needs an **invite code** (or a teammate's invitation).
 - **Channels on day one:** Website chat, Email, Telegram, LINE and Discord. They need no platform review. Every other channel shows "coming soon".
-- **Not in the launch:** WhatsApp, Instagram and Messenger (Meta verification has not started; it takes weeks), SMS and Voice, TikTok, WeChat, Apple, X, Viber, Help Center, Campaigns, Billing and paid plans.
+- **Shown, but not live (labelled "Preview" or "Coming soon", never hidden):** WhatsApp, Instagram and Messenger (Meta verification has not started; it takes weeks), SMS and Voice, TikTok, WeChat, Apple, X, Viber, and the Help Center, Campaigns and Billing screens (designed screens with sample data, marked "Preview" in the menu and by a note on each screen). The public website shows every plan and price, with a note that the pilot is free.
 - **Slack and Microsoft Teams:** the 3 November answer ticked both "Slack, Teams" and "None of these", so they are **off** until you say otherwise. They would each need another account and test.
 - **Legal:** pilots sign a short pilot agreement ([PILOT_AGREEMENT_DRAFT.md](PILOT_AGREEMENT_DRAFT.md)). It is a starting point and needs a lawyer's eyes before you rely on it.
 
@@ -57,7 +57,7 @@ Website chat and Email stay: without them there is nothing to show a pilot.
 - **Nothing since 19 October has met a real provider.** Expect real-world differences from the docs on each channel.
 - **Discord needs a second always-on process** (the Gateway). If it falls over, Discord messages stop arriving.
 - **The invite gate lives in the database**, so it needs the migration `20261107000001_pilot_access` applied. If it is missing, sign-up is open. The go/no-go list checks this from outside.
-- **Public website copy was changed only where it promised prices, a trial and features that do not exist.** Some pages (the Features page, the FAQ and the comparison pages) still describe WhatsApp and Instagram as part of the product. Treat the site as "in a pilot", not as a promise, until the copy pass is finished.
+- **The website now showcases everything** (founder's decision, 3 November). Prices are shown as planned prices with a pilot-is-free note; WhatsApp, Instagram and Messenger are marked "on the way" in the Features page, the FAQ and the comparison pages. A pilot who clicks Campaigns, the Help Center or Billing in the app sees sample data under a "Preview" note: nothing is saved, sent or charged. If a pilot mistakes a preview for something live, that is on the labelling, so the labelling is part of the real-person test.
 
 ## Where things live
 

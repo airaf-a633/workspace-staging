@@ -4,7 +4,7 @@ import { ArrowSquareOut, Check } from "@phosphor-icons/react/dist/ssr";
 import { buttonClass } from "@/components/ui/button";
 import { getT } from "@/i18n/server";
 import { CHECKED_ON, RIVALS, rival, type RivalKey } from "@/lib/competitors";
-import { PILOT, PLANS, TRIAL_DAYS, yearlyMonthly } from "@/lib/plans";
+import { PLANS, TRIAL_DAYS, yearlyMonthly } from "@/lib/plans";
 
 export function generateStaticParams() {
   return RIVALS.map((r) => ({ rival: r.key }));
@@ -45,7 +45,6 @@ export default async function Compare(props: PageProps<"/compare/[rival]">) {
         </div>
       </header>
 
-      {!PILOT && (
       <section className="border-y border-border bg-surface">
         <div className="mx-auto grid max-w-5xl gap-6 px-4 py-16">
           <h2 className="display text-3xl">{t("pricesTitle")}</h2>
@@ -90,7 +89,6 @@ export default async function Compare(props: PageProps<"/compare/[rival]">) {
           <p className="rounded-[var(--radius-control)] bg-surface-2 px-4 py-3 text-sm">{t(`rivals.${key}.priceNote`)}</p>
         </div>
       </section>
-      )}
 
       <section className="mx-auto grid max-w-5xl gap-10 px-4 py-20 md:grid-cols-2">
         <div className="grid content-start gap-4">

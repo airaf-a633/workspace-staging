@@ -726,3 +726,14 @@ Not verified yet: the invite gate has been tested in the local database only; on
 
 Also changed on 3 November, found while writing [ENVIRONMENT.md](ENVIRONMENT.md): the app's public address (`NEXT_PUBLIC_SITE_URL`) used to fall back silently to `http://127.0.0.1:3000`, so a deployment without it would have sent sign-up emails and invitation links pointing at localhost. It is now required in production (the request stops with a clear error) and is used for sign-in emails and invitation links through one helper (`appOrigin`). The website copy pass also now marks WhatsApp, Instagram and Messenger as "on the way" in the Features page, the FAQ and the comparison pages, and the Ask AI panel says AI is not switched on in the pilot. The preview and sample screens still show WhatsApp and Instagram conversations, because they are labelled sample data.
 
+### Showcase, not hide (2026-11-03, same day, later)
+
+The founder reversed part of the pilot decision above: "we wanna showcase it, not hide the pages". Chosen from the options offered: **show everything and label what is not live.**
+
+- **Website:** the full Pricing page with all plans and prices is back, the price tables on the comparison pages, and the landing price cards. A note says Relay is in a private pilot, free, and that the prices are the planned ones and may change. The pricing page gets a section "Where Relay is today" (works today / coming soon). The 14-day trial wording is not brought back (there is no trial or billing yet): the FAQ says nothing is charged during the pilot. The sign-up button says "Join the pilot" (an invite code is still needed). `PILOT` in `lib/plans.ts` now only switches this note and section on.
+- **App:** Campaigns, the Help Center and Billing are in a real workspace's menu again, for the people whose role has them (`campaigns.manage` or approving imported-list sends; `canned.use`; `billing.manage`). They are the designed screens with sample data, with a "Preview" tag in the menu and a note at the top of each: "this screen shows sample data and is not live yet. Nothing you do here is saved or sent." Nothing on them touches real data except Billing's member count.
+- **Channels:** unchanged. Every channel tile is visible; the five that work can be connected, the rest say "Soon". Their connect pages were never removed.
+- **What stays:** the invite code, the pilot agreement, and the "on the way" wording for WhatsApp, Instagram and Messenger.
+
+Built: five real routes (`/w/[slug]/campaigns`, `campaigns/[id]`, `help`, `help/[id]`, `billing`), a permission helper (`scopeOf`), a `PreviewNotice`, menu tags, and the restored website sections. Not verified: the new real-app screens compile and type-check but have not been opened in a browser (they need a signed-in session on a real database); their browser test (`e2e/live.showcase.spec.ts`) is written but can only run once staging is awake.
+
