@@ -228,6 +228,20 @@ Per-channel checklists (what to open and press to see a real message arrive) are
 - [ ] Press "Export CSV" on each tab and open the file.
 - [ ] Imported history chats (if any) should not change the numbers.
 
+### Reply targets (needs staging awake with migration 20261106000001 applied and the worker running; costs nothing)
+- [ ] As the owner, open Settings > Reply targets. Each team should show Monday to Friday 9 to 17. Change one team (for example open all week with "All day") and press Save hours; reload: it should still be there.
+- [ ] Add a closed day for tomorrow. Try to add another that overlaps it: it should be refused with a plain message. Remove the first.
+- [ ] Add a rule: first reply within 5 minutes. With a test customer, write in on a channel that team uses. The chat in the inbox should say "Answer due in ..." and count down; at about 4 minutes it turns amber, at 5 red ("late by").
+- [ ] Reply from the inbox: the flag should go away. Do the same with a reply typed on the business's phone app (WhatsApp Business) or in Slack/Discord/Teams, if you have those connected: they should stop it too.
+- [ ] Close the team for the whole day (or set the closed-day list to include today) and have a customer write in: the clock should not move.
+- [ ] Resolve the chat, then write again as the customer: a new chat starts, with a fresh clock.
+- [ ] After the chat has been late for a few minutes (the sweep runs every five minutes): the person holding it should get a bell notice at the warning and another when it is late; the owner and the team's manager should hear when it is late; a chat nobody holds should tell the people on that team and the managers. Answering the chat should clear the notice.
+- [ ] Turn off "Tell the team's managers when a chat is late": only the holder should hear about the next one.
+- [ ] As a sales or support manager: you can change your own team's hours and rules that name only your teams, not other teams' or rules for every team, and not the alert settings. As an agent or viewer: the screen is read-only.
+- [ ] Open Reports: "Within reply target" should appear next to "Open now" once some chats have a first-reply rule, and match what you saw in the inbox.
+- [ ] Open Home as a support manager: "Over target" should show a number, and late chats should appear under "Needs you now".
+- [ ] Check the workspace's time zone is right (the owner sees it under the opening hours): clocks follow it.
+
 ## 6. Before launch
 
 - [ ] **Run the real-person test** from [docs/SIMPLICITY_AUDIT.md](SIMPLICITY_AUDIT.md): 3–5 people who've never seen Relay. *(2 hours.)*

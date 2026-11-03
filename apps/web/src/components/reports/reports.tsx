@@ -249,7 +249,7 @@ function ReportView({ report, range, team, channel, onFilter, teams, teamScope, 
           <option value="all">{t("allChannels")}</option>
           {channels.map((c) => <option key={c} value={c}>{tAll(`channels.${c}`)}</option>)}
         </select>
-        <span className="text-xs text-muted">{sample ? t("sample") : t("clockTime")}</span>
+        <span className="text-xs text-muted">{sample ? t("sample") : report.withinTarget !== undefined ? t("clockTimeTarget") : t("clockTime")}</span>
       </div>
 
       <div role="tablist" aria-label={t("title")} className="flex gap-5 border-b border-border">
@@ -262,12 +262,13 @@ function ReportView({ report, range, team, channel, onFilter, teams, teamScope, 
 
       {tab === "conversations" && (
         <>
-          <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-[var(--radius-panel)] bg-border ring-1 ring-border lg:grid-cols-5">
+          <dl className={`grid grid-cols-2 gap-px overflow-hidden rounded-[var(--radius-panel)] bg-border ring-1 ring-border ${report.withinTarget !== undefined && !sample ? "lg:grid-cols-6" : "lg:grid-cols-5"}`}>
             <Kpi label={t("kpi.conversations")} value={fmt.number(report.total)} delta={delta} good="up" />
             <Kpi label={t("kpi.firstReply")} value={minutes(report.firstReply)} />
             <Kpi label={t("kpi.resolution")} value={minutes(report.resolution)} />
             <Kpi label={t("kpi.resolved")} value={report.resolvedPct === null ? "–" : `${report.resolvedPct}%`} />
-            {report.withinTarget !== undefined ? <Kpi label={t("kpi.withinTarget")} value={`${report.withinTarget}%`} /> : <Kpi label={t("kpi.open")} value={fmt.number(report.backlog)} />}
+            {report.withinTarget !== undefined && <Kpi label={t("kpi.withinTarget")} value={`${report.withinTarget}%`} />}
+            {(report.withinTarget === undefined || !sample) && <Kpi label={t("kpi.open")} value={fmt.number(report.backlog)} />}
           </dl>
           {report.total === 0 && <p className="rounded-[var(--radius-panel)] bg-surface p-5 text-muted ring-1 ring-border">{t("noChats")}</p>}
           <Panel title={t("perDay")} onTable={toggle("days")} tableOn={tables.days}>

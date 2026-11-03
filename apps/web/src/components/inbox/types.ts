@@ -1,6 +1,6 @@
 import type { Scope, ConversationPermission } from "@app/domain";
 import type { ChannelKey } from "@/components/channels/catalog";
-import type { SlaSettings } from "@/components/sla/sla";
+import type { ServerClock, SlaSettings } from "@/components/sla/sla";
 
 /** Shapes follow the M2 data model (docs/milestones/M2-plan.md) so real rows can replace the sample later. */
 
@@ -186,6 +186,8 @@ export interface Conversation {
   unread: number;
   lastCustomerAt: number | null;
   imported?: boolean;
+  /** Real chats: the reply-target clocks the database is running for this chat (empty when no rule applies). */
+  slaClocks?: ServerClock[];
   /** Someone replied from the phone app while a draft was waiting in the inbox. */
   phoneReply?: { authorId: string; draft: string };
   messages: Message[];

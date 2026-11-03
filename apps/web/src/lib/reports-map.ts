@@ -10,6 +10,8 @@ export interface ConversationsResult {
   resolutionSeconds: number | null;
   resolved: number;
   backlog: number;
+  /** Chats the rules gave a first-reply target and that can be judged, and how many were answered inside it (migration 20261106000001). */
+  withinTarget?: { n: number; ok: number };
   days: { day: string; n: number }[];
   byChannel: { channel: string; n: number; firstReplySeconds: number | null; resolved: number }[];
   heat: { dow: number; block: number; n: number }[];
@@ -32,8 +34,8 @@ const minutes = (seconds: number | null) => (seconds === null ? null : Math.max(
 const pct = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 100) : null);
 
 /**
- * The real report in the shape the Reports screen draws. Satisfaction, campaigns and the reply-target number are left out
- * (nothing measures them yet), and the screen hides what is missing.
+ * The real report in the shape the Reports screen draws. Satisfaction and campaigns are left out (nothing measures them yet),
+ * and so is "within target" until a reply-target rule has judged at least one chat; the screen hides what is missing.
  */
 export function toReport(c: ConversationsResult, sales: SalesResult, opts: { tz: string; nameOf: (memberId: string) => string }): Report {
   const heat = Array.from({ length: 7 }, () => Array.from({ length: 12 }, () => 0));
@@ -52,6 +54,7 @@ export function toReport(c: ConversationsResult, sales: SalesResult, opts: { tz:
     resolution: minutes(c.resolutionSeconds),
     resolvedPct: pct(c.resolved, c.total),
     backlog: c.backlog,
+    ...(c.withinTarget && c.withinTarget.n > 0 ? { withinTarget: pct(c.withinTarget.ok, c.withinTarget.n) ?? 0 } : {}),
     byChannel: c.byChannel.map((x) => ({ key: x.channel as ChannelKey, n: x.n, firstReply: minutes(x.firstReplySeconds), resolvedPct: pct(x.resolved, x.n) })),
     heat,
     team: c.team

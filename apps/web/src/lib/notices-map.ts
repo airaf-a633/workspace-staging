@@ -1,4 +1,5 @@
 import type { AppNotice, NoticeKind } from "../components/notifications/notifications";
+import { noticeTarget } from "./sla-map";
 
 /** A stored notice as the database returns it (notifications joined to the person who did it). */
 export interface NoticeRow {
@@ -7,6 +8,7 @@ export interface NoticeRow {
   subject: string;
   quote: string | null;
   percent: number | string | null;
+  sla_target?: string | null;
   conversation_id: string | null;
   deal_id: string | null;
   task_id: string | null;
@@ -26,6 +28,8 @@ const KIND: Record<string, NoticeKind> = {
   discount_declined: "discountDeclined",
   task_assigned: "taskAssigned",
   task_late: "taskLate",
+  sla_warn: "slaWarn",
+  sla_breach: "slaBreach",
 };
 
 /** Where a notice leads: the chat, the deal, the task list, or the channels. */
@@ -52,6 +56,7 @@ export function toNotices(rows: NoticeRow[], base: string): AppNotice[] {
       subject: r.subject,
       ...(r.quote ? { quote: r.quote } : {}),
       ...(r.percent !== null && r.percent !== undefined ? { percent: Number(r.percent) } : {}),
+      ...(noticeTarget(r.sla_target ?? null) ? { target: noticeTarget(r.sla_target ?? null) } : {}),
       href: link(r, base),
       read: r.read_at !== null,
     });

@@ -49,6 +49,11 @@ describe("a real report in the screen's shape", () => {
     expect(r.csat).toBeUndefined();
     expect(r.campaigns).toBeUndefined();
     expect(r.withinTarget).toBeUndefined();
+    expect(toReport({ ...conv(), withinTarget: { n: 0, ok: 0 } }, sales(), opts).withinTarget).toBeUndefined();
+  });
+  it("shows the share answered within target once a rule has judged chats", () => {
+    expect(toReport({ ...conv(), withinTarget: { n: 4, ok: 3 } }, sales(), opts).withinTarget).toBe(75);
+    expect(toReport({ ...conv(), withinTarget: { n: 3, ok: 0 } }, sales(), opts).withinTarget).toBe(0);
   });
   it("puts each day at midday in the workspace's zone", () => {
     const [d] = toReport(conv(), sales(), { ...opts, tz: "Asia/Dubai" }).days;

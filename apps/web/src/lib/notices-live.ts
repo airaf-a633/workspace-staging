@@ -10,7 +10,7 @@ import { toNotices, type NoticeRow } from "@/lib/notices-map";
 export async function loadNotices(supabase: SupabaseClient, workspaceId: string, base: string): Promise<AppNotice[]> {
   const { data } = await supabase
     .from("notifications")
-    .select("id, kind, subject, quote, percent, conversation_id, deal_id, task_id, channel_id, created_at, read_at, actor:members!actor_member_id(display_name)")
+    .select("id, kind, subject, quote, percent, sla_target, conversation_id, deal_id, task_id, channel_id, created_at, read_at, actor:members!actor_member_id(display_name)")
     .eq("workspace_id", workspaceId)
     .order("created_at", { ascending: false })
     .limit(50);

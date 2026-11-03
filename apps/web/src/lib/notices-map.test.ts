@@ -17,9 +17,9 @@ describe("stored notices to bell items", () => {
     expect(n?.actor).toBe("Omar");
   });
   it("maps every stored kind to a bell kind", () => {
-    const kinds = ["handover", "mention", "collab_request", "channel_broken", "discount_asked", "discount_approved", "discount_declined", "task_assigned", "task_late"];
+    const kinds = ["handover", "mention", "collab_request", "channel_broken", "discount_asked", "discount_approved", "discount_declined", "task_assigned", "task_late", "sla_warn", "sla_breach"];
     expect(toNotices(kinds.map((k, i) => row({ id: `n${i}`, kind: k })), "/w/q").map((n) => n.kind)).toEqual([
-      "handover", "mention", "collabRequest", "channelBroken", "discountAsked", "discountApproved", "discountDeclined", "taskAssigned", "taskLate",
+      "handover", "mention", "collabRequest", "channelBroken", "discountAsked", "discountApproved", "discountDeclined", "taskAssigned", "taskLate", "slaWarn", "slaBreach",
     ]);
   });
   it("sends discounts to the deal (with the percent), tasks to the list and channels to the channels page", () => {
@@ -31,6 +31,14 @@ describe("stored notices to bell items", () => {
     expect(d).toMatchObject({ href: "/w/q/deals?deal=d1", percent: 10 });
     expect(t?.href).toBe("/w/q/tasks");
     expect(c?.href).toBe("/w/q/channels");
+  });
+  it("carries which reply target a notice is about, and leads to the chat", () => {
+    const [w, b] = toNotices([
+      row({ kind: "sla_warn", conversation_id: "c1", sla_target: "first_reply" }),
+      row({ id: "n2", kind: "sla_breach", conversation_id: "c1", sla_target: "resolution" }),
+    ], "/w/q");
+    expect(w).toMatchObject({ kind: "slaWarn", target: "firstReply", href: "/w/q/inbox?c=c1" });
+    expect(b).toMatchObject({ kind: "slaBreach", target: "resolution" });
   });
   it("marks read ones read and skips kinds it doesn't know", () => {
     const out = toNotices([row({ read_at: "2026-11-04T11:00:00Z" }), row({ id: "n2", kind: "from_the_future" })], "/w/q");

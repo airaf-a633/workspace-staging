@@ -5,6 +5,7 @@ import { buildSampleInbox } from "@/components/inbox/sample-data";
 import { loadWorkspace } from "@/lib/workspace";
 import { LiveRefresh } from "@/components/inbox/live-refresh";
 import { loadLiveInbox } from "@/lib/inbox-live";
+import { attachSlaClocks } from "@/lib/sla-live";
 import { markConversationRead, saveInboxAction } from "./actions";
 import { getT, getTimeZone } from "@/i18n/server";
 
@@ -42,11 +43,13 @@ export default async function InboxPage(props: PageProps<"/w/[slug]/inbox">) {
   const viewer = { memberId: me.id, teamIds: (links ?? []).filter((l) => l.member_id === me.id).map((l) => l.team_id), scopes: mine.scopes };
   // Real chats once the first one exists; the sample chats until then (decided 2026-10-02).
   const live = await loadLiveInbox(supabase, workspace.id, real.map(({ id, name, role, canReply }) => ({ id, name, role, canReply })), teamRows, viewer, tz);
+  // Real chats carry the clocks the database is running (reply targets, 2026-11-03). Without a rule the inbox keeps its flat 30-minute flag.
+  const slaLive = live ? await attachSlaClocks(supabase, workspace.id, workspace.timezone || "UTC", live) : false;
   const data = live ?? buildSampleInbox(real, teamRows, viewer, tz);
 
   return (
     <Suspense>
-      <LiveRefresh workspaceId={workspace.id} />
+      <LiveRefresh workspaceId={workspace.id} tickSeconds={slaLive ? 120 : undefined} />
       <Inbox data={data} onOpen={live ? markConversationRead : undefined} onAction={live ? saveInboxAction : undefined} />
     </Suspense>
   );

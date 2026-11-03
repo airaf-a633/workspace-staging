@@ -31,6 +31,7 @@ describe("a real Home's numbers", () => {
   it("follows the role's order and leaves out what can't be computed", () => {
     expect(realNumbers(facts({})).map((o) => o.key)).toEqual(["pipeline", "won", "openChats", "unassigned"]);
     expect(realNumbers(facts({ template: "support_manager", chats: { openChats: 2, waitingCustomer: 1, unassigned: 0 } })).map((o) => o.key)).toEqual(["openChats", "waitingCustomer", "unassigned"]);
+    expect(realNumbers(facts({ template: "support_manager", chats: { openChats: 2, waitingCustomer: 1, overTarget: 3, unassigned: 0 } })).map((o) => o.key)).toEqual(["openChats", "waitingCustomer", "overTarget", "unassigned"]);
   });
   it("shows no money to someone who can see only their own deals' values, or none", () => {
     for (const dealValues of ["own", "none"] as const) {

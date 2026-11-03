@@ -1,12 +1,12 @@
 import type { Conversation, InboxData } from "@/components/inbox/types";
-import { slaClock } from "@/components/sla/sla";
+import { slaClock, type Target } from "@/components/sla/sla";
 
 /**
  * What the bell shows (decided 2026-10-19): things that need *this* person, never a feed of everything.
  * - handover: a chat was handed to you
  * - mention: someone wrote @you in a note
  * - collabRequest: someone asked to help on a chat you hold
- * - slaBreach: a chat you hold has missed its reply target
+ * - slaWarn / slaBreach: a chat has used most of, or passed, a reply target (the holder; at breach also the team's managers)
  * - channelBroken: a channel can't send (owners and admins only)
  * - discountAsked / discountApproved / discountDeclined: a discount waiting for you, or the answer to yours
  * - taskAssigned / taskLate: a task someone gave you, or yours that has passed its time
@@ -14,7 +14,7 @@ import { slaClock } from "@/components/sla/sla";
  * 20261104000001_notifications) and lib/notices-live.ts reads them.
  */
 export type NoticeKind =
-  | "handover" | "mention" | "collabRequest" | "slaBreach" | "channelBroken"
+  | "handover" | "mention" | "collabRequest" | "slaWarn" | "slaBreach" | "channelBroken"
   | "discountAsked" | "discountApproved" | "discountDeclined" | "taskAssigned" | "taskLate";
 
 export interface AppNotice {
@@ -29,6 +29,8 @@ export interface AppNotice {
   quote?: string;
   /** The discount asked for, on the discount notices. Never an amount: amounts are not stored here. */
   percent?: number;
+  /** Which reply target, on the reply-target notices. */
+  target?: Target;
   href: string;
   read: boolean;
 }
@@ -56,7 +58,8 @@ export function buildNotices(data: InboxData, base: string, canManageChannels: b
     }
     if (data.sla && c.holderId === me && c.status === "open") {
       const clock = slaClock(c, data.sla, data.now);
-      if (clock?.state === "breach") out.push({ id: `s-${c.id}`, kind: "slaBreach", at: data.now - 60_000, subject: c.contact.name, href: link(c), read: false });
+      if (clock?.state === "breach") out.push({ id: `s-${c.id}`, kind: "slaBreach", at: data.now - 60_000, subject: c.contact.name, target: clock.target, href: link(c), read: false });
+      else if (clock?.state === "warn") out.push({ id: `w-${c.id}`, kind: "slaWarn", at: data.now - 120_000, subject: c.contact.name, target: clock.target, href: link(c), read: false });
     }
   }
   if (canManageChannels) {

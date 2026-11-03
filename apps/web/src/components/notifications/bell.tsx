@@ -11,6 +11,7 @@ const ICON: Record<NoticeKind, typeof Bell> = {
   handover: ArrowsLeftRight,
   mention: At,
   collabRequest: UserPlus,
+  slaWarn: Clock,
   slaBreach: Clock,
   channelBroken: PlugsConnected,
   discountAsked: CurrencyCircleDollar,
@@ -23,6 +24,7 @@ const TONE: Record<NoticeKind, string> = {
   handover: "bg-primary-soft text-primary",
   mention: "bg-primary-soft text-primary",
   collabRequest: "bg-primary-soft text-primary",
+  slaWarn: "bg-warn-soft text-warn",
   slaBreach: "bg-fail-soft text-fail",
   channelBroken: "bg-fail-soft text-fail",
   discountAsked: "bg-primary-soft text-primary",
@@ -135,7 +137,7 @@ export function NotificationBell({
                       </span>
                       <span className="grid min-w-0 flex-1 gap-0.5 text-sm">
                         <span>
-                          {t.rich(`kinds.${n.kind}`, {
+                          {t.rich(n.kind === "slaWarn" || n.kind === "slaBreach" ? `kinds.${n.kind}.${n.target ?? "firstReply"}` : `kinds.${n.kind}`, {
                             actor: <bdi className="font-semibold">{n.actor ?? t("someone")}</bdi>,
                             subject: <bdi className="font-semibold">{n.subject}</bdi>,
                             percent: String(n.percent ?? ""),

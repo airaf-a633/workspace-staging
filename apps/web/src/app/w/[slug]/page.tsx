@@ -7,6 +7,7 @@ import { SetupChecklist } from "@/components/setup-checklist";
 import { loadBoardDeals, loadBoardTasks } from "@/lib/crm-live";
 import { loadChannelInboxes, loadLiveInbox } from "@/lib/inbox-live";
 import { requestNow } from "@/lib/now";
+import { attachSlaClocks } from "@/lib/sla-live";
 import { setupSteps, type TeamShape } from "@/lib/setup";
 import { loadPeople } from "@/lib/viewer";
 import { loadWorkspace } from "@/lib/workspace";
@@ -36,6 +37,8 @@ export default async function WorkspaceHome(props: PageProps<"/w/[slug]">) {
   ]);
   const shape = (ws?.team_shape ?? null) as TeamShape;
   const live = await loadLiveInbox(supabase, workspace.id, people.map(({ id, name, role, canReply }) => ({ id, name, role, canReply })), teams, viewer, tz);
+  // Reply targets: the database's clocks on the chats, so "over target" counts and "Needs you now" are real (2026-11-03).
+  if (live) await attachSlaClocks(supabase, workspace.id, workspace.timezone || "UTC", live);
   const firstName = me.display_name.split(" ")[0];
   const tSetup = await getT("setup");
   const common = await getT("common");

@@ -1,5 +1,5 @@
 import type { ChannelInbox, Conversation, InboxData, Label, Message, Person, Team, ViewerInfo } from "./types";
-import type { SlaSettings } from "@/components/sla/sla";
+import type { SlaSettings, TeamSchedule } from "@/components/sla/sla";
 
 /**
  * Sample conversations for Northwind Home (decided 2026-10-07): a global online brand selling home goods and
@@ -65,12 +65,18 @@ export const SAMPLE_LABELS: Label[] = [
 export function sampleSla(teamId: (key: "sales" | "support" | "general") => string): SlaSettings {
   const week: [string, string] = ["07:00", "22:00"];
   const weekend: [string, string] = ["09:00", "18:00"];
+  const long = [week, week, week, week, week, weekend, weekend];
+  // Sales closes earlier on weekdays and is shut on Sundays; the sample shows one closed day too.
+  const sales = [["09:00", "18:00"], ["09:00", "18:00"], ["09:00", "18:00"], ["09:00", "18:00"], ["09:00", "18:00"], weekend, null] as TeamSchedule["week"];
   return {
     tz: "Europe/London",
-    hours: [week, week, week, week, week, weekend, weekend],
+    schedules: {
+      [teamId("sales")]: { week: sales, closures: [{ id: "c-xmas", from: "2026-12-25", to: "2026-12-26", hours: null, label: "Christmas" }] },
+      [teamId("support")]: { week: long, closures: [] },
+      [teamId("general")]: { week: long, closures: [] },
+    },
     warnAt: 0.8,
     alertManager: true,
-    reassignOnBreach: true,
     policies: [
       { id: "p-vip", name: "VIP customers", active: true, match: { vip: true }, firstReply: 15, nextReply: 30, resolution: 8 * 60 },
       { id: "p-chat", name: "Messaging and social", active: true, match: { channels: ["whatsapp", "webchat", "instagram", "messenger", "telegram", "sms", "tiktok", "line"] }, firstReply: 30, nextReply: 60, resolution: 24 * 60 },

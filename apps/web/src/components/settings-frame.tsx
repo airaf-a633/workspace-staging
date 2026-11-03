@@ -30,8 +30,8 @@ export async function SettingsFrame({ base, active, isOwner, children }: { base:
         { key: "channels", label: t("channels"), href: `${base}/channels` },
         { key: "labels" as const, label: t("labels"), href: `${base}/labels` },
         { key: "contacts" as const, label: t("contacts"), href: `${base}/contact-settings` },
-        // Reply targets and billing exist in the preview only until they're stored for real.
-        ...(preview ? [{ key: "sla" as const, label: t("sla"), href: `${base}/sla` }] : []),
+        // Reply targets are stored for real (2026-11-03). Billing exists in the preview only until it is.
+        { key: "sla" as const, label: t("sla"), href: `${base}/sla` },
         { key: "ai", label: t("ai"), href: `${base}/ai` },
         // Which currency deal values are shown in (owners only).
         ...(!preview && isOwner ? [{ key: "money" as const, label: t("money"), href: `${base}/money` }] : []),

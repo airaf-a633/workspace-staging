@@ -7,7 +7,7 @@ import type { BoardTask } from "../tasks/sample";
 /*
  * The numbers on a real Home (decided 2026-11-04): only ones that are computed from the workspace's real chats, deals and
  * tasks, never the made-up figures the preview shows. Roles keep their own set; a number nobody can compute yet
- * (revenue, median reply, orders, meetings, reply targets) is left out until Reports and those features exist.
+ * (revenue, median reply, orders, meetings) is left out; "over target" shows once the workspace has a reply-target rule until Reports and those features exist.
  */
 export type StatKey = keyof typeof en.home.stats;
 export type Value = { usd: number } | { min: number } | { n: number };
@@ -16,10 +16,10 @@ export const REAL_NUMBERS: Record<RoleTemplateKey, StatKey[]> = {
   owner: ["pipeline", "won", "openChats", "unassigned"],
   admin: ["pipeline", "won", "openChats", "unassigned"],
   sales_manager: ["pipeline", "won", "followUpsToday", "overdueTasks"],
-  support_manager: ["openChats", "waitingCustomer", "unassigned"],
+  support_manager: ["openChats", "waitingCustomer", "overTarget", "unassigned"],
   ops_manager: ["tasksToday", "overdueTasks"],
   agent: ["yourOpenChats", "yourOpenDeals", "followUpsToday", "overdueTasks"],
-  viewer: ["openChats", "waitingCustomer"],
+  viewer: ["openChats", "waitingCustomer", "overTarget"],
 };
 
 export interface HomeFacts {
