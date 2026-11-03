@@ -24,6 +24,12 @@ export const PLANS: Plan[] = [
 export const POPULAR: PlanKey = "growth";
 export const TRIAL_DAYS = 14;
 
+/**
+ * The private pilot (decided 2026-11-03): free for invited businesses until launch pricing is announced. While it is true the public
+ * website shows no prices, plans or trial, and says what is still coming. Set to false when billing exists and prices are published.
+ */
+export const PILOT = true;
+
 /** What a user costs per month when billed yearly (ten months for twelve), rounded to cents. */
 export function yearlyMonthly(price: number) {
   return Math.round((price * 10 * 100) / 12) / 100;

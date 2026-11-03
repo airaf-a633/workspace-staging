@@ -2,6 +2,23 @@
 
 *Things only you can do: accounts, verifications and secrets. Each says why it matters and roughly how long it takes. Secrets always go in `.env` (never in chat). Tick them off as you go. Last updated 19 October 2026.*
 
+## 0. Launch by 15 November (private pilot): your part
+
+The plan and dates are in [LAUNCH_PLAN.md](LAUNCH_PLAN.md). These are the things only you can do, in the order they hold things up.
+
+- [ ] **Start Meta Business verification today** (Business Settings › Security Center › Start verification). It is not needed for 15 November, but it is the longest wait for WhatsApp, Instagram and Messenger afterwards. *(A few days to 2 weeks.)*
+- [ ] **Restore staging and move it to Supabase Pro** ($25 a month; Pro projects do not pause). The pilot will hold real customers' messages, so also open the plan's page in the Supabase dashboard and tell me what it says about **backups** (I have not checked). *(10 minutes.)*
+- [ ] **Put your database connection string in `.env`** as `SUPABASE_DB_URL` (Dashboard › Connect › Session pooler, with your password; never in chat). I use it to apply the missing migrations and run the tests on staging. *(2 minutes.)*
+- [ ] **Open the Fly.io account** and tell me when it exists; I will walk you through [DEPLOY_WORKER.md](DEPLOY_WORKER.md). *(30 minutes.)*
+- [ ] **Buy the domain**, and set `NEXT_PUBLIC_SITE_URL` in `.env` and in Vercel to the app's address. *(15 minutes.)*
+- [ ] **Postmark: create the account and start its review** (section 2 below). **Then set up Supabase custom SMTP** (Dashboard › Authentication › Emails › SMTP settings, with Postmark's SMTP details). This one cannot be skipped: Supabase's built-in email sends 2 messages an hour and only to people on your own Supabase team, so without it no pilot receives a sign-up or sign-in email. *(Review about a day; setup 15 minutes.)*
+- [ ] **Vercel project for the app**: add the environment variables from `.env` (the list is in [DEPLOY_STAGING.md](DEPLOY_STAGING.md)), and in Supabase › Authentication › URL Configuration add `https://YOUR-APP/auth/callback`. *(20 minutes.)*
+- [ ] **Telegram bot, LINE channel and Discord app**: the steps are in section 7. *(About an hour each.)*
+- [ ] **Decide about Slack and Microsoft Teams.** Your answer on 3 November ticked both "Slack, Teams" and "None of these", so I left them off.
+- [ ] **Have a lawyer read [PILOT_AGREEMENT_DRAFT.md](PILOT_AGREEMENT_DRAFT.md)** and fill in the brackets.
+- [ ] **Line up people:** 3 to 5 who have never seen Relay for the real-person test on 11 and 12 November, and the first pilot businesses.
+- [ ] **On launch week, make invite codes** in the Supabase SQL editor: `select public.create_pilot_invite('Acme', 1, 30);` prints a code like `4F2A-91CC-07BD-E3A8`. Then **check the gate yourself**: open `/sign-up` in a private window, try without a code and with a made-up one (both must be refused), then with a real one. If anyone gets in without a code, tell me at once.
+
 ## 1. Now: unblocks testing
 
 - [ ] **Restore staging.** Supabase dashboard › project `workspace-staging` › Restore. *(2 minutes, plus a few minutes to wake up.)*

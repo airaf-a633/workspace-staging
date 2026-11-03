@@ -54,16 +54,20 @@ export async function sendMagicLink(form: FormData) {
 export async function signUp(form: FormData) {
   const next = safeNext(form.get("next"));
   const parsed = z
-    .object({ name: z.string().trim().min(1, "needName").max(80, "needName"), email, password })
-    .safeParse({ name: form.get("name"), email: form.get("email"), password: form.get("password") });
+    .object({ name: z.string().trim().min(1, "needName").max(80, "needName"), email, password, invite: z.string().trim().max(40, "badInvite") })
+    .safeParse({ name: form.get("name"), email: form.get("email"), password: form.get("password"), invite: form.get("invite") ?? "" });
   if (!parsed.success) back("/sign-up", next, parsed.error.issues[0]!.message);
 
   const supabase = await createClient();
+  // Pilot access (decided 2026-11-03): an invite code, or a workspace invitation to this email, is needed to create an account. The
+  // database refuses anything else; this check only lets the page say so in words. If it cannot be asked, the database still decides.
+  const allowed = await supabase.rpc("signup_allowed", { p_email: parsed.data.email, p_code: parsed.data.invite });
+  if (!allowed.error && allowed.data !== true) back("/sign-up", next, "badInvite");
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
-      data: { name: parsed.data.name },
+      data: { name: parsed.data.name, invite_code: parsed.data.invite },
       emailRedirectTo: `${publicEnv().siteUrl}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   });

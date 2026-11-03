@@ -37,6 +37,7 @@ export default async function SignUp(props: PageProps<"/sign-up">) {
         <TextInput label={t("yourName")} name="name" autoComplete="name" required />
         <TextInput label={t("workEmail")} name="email" type="email" autoComplete="email" dir="ltr" required />
         <TextInput label={t("password")} name="password" type="password" autoComplete="new-password" dir="ltr" minLength={10} help={t("passwordHelp")} required />
+        <TextInput label={t("signUp.invite")} name="invite" autoComplete="off" dir="ltr" help={t("signUp.inviteHelp")} required={!next.startsWith("/invite/")} />
         <Submit pending={t("signUp.pending")}>{t("signUp.submit")}</Submit>
       </form>
       <p className="text-sm text-muted">

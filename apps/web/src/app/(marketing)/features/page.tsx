@@ -40,6 +40,8 @@ const SECTIONS: { key: SectionKey; Icon: Icon; demo?: "handoff" | "homes" | "cha
   { key: "security", Icon: ShieldCheck },
 ];
 const POINTS = ["one", "two", "three"] as const;
+/** Not built yet (the private pilot, 2026-11-03): the page says so instead of promising them. */
+const SOON: SectionKey[] = ["help", "campaigns"];
 
 export default async function Features() {
   const t = await getT("features");
@@ -66,6 +68,7 @@ export default async function Features() {
                 <Icon size={22} />
               </span>
               <h2 className="display text-3xl sm:text-4xl">{t(`sections.${key}.title`)}</h2>
+              {SOON.includes(key) && <span className="w-fit rounded-full bg-surface-2 px-3 py-1 text-sm text-muted ring-1 ring-border">{t("soon")}</span>}
               <p className="max-w-[52ch] text-muted">{t(`sections.${key}.body`)}</p>
               <ul className="grid gap-3">
                 {POINTS.map((p) => (

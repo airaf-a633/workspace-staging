@@ -2,7 +2,9 @@
 begin;
 select plan(31);
 
--- Test users (created as the database owner, before switching to app roles)
+-- Test users (created as the database owner, before switching to app roles). The pilot sign-up gate is switched off for this test only
+-- (this runs inside a transaction that is rolled back), so it also passes on a database where the gate is on.
+update public.app_settings set value = 'off' where key = 'invite_only';
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'khalid@unit.test'),
   ('00000000-0000-0000-0000-00000000000b', 'sara@unit.test'),

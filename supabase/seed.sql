@@ -5,6 +5,9 @@
 --   Noor Salon (noor):          a separate business run by an outsider.
 -- Every seed user's password is: Password1234
 
+-- Test accounts are created without invite codes here; the migration ships with the pilot gate switched on.
+update public.app_settings set value = 'off' where key = 'invite_only';
+
 do $$
 declare
   pw text := extensions.crypt('Password1234', extensions.gen_salt('bf'));

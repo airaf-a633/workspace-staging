@@ -782,7 +782,9 @@ export const en = {
     },
     signUp: {
       title: "Create your account",
-      description: "Your 14-day trial starts when you connect WhatsApp. No card needed.",
+      description: "Relay is in a private pilot, free to use. You need an invite code to create an account.",
+      invite: "Invite code",
+      inviteHelp: "From the person who invited you to the pilot. Not needed if a teammate invited you to their workspace.",
       haveAccount: "Already have an account?",
       submit: "Create account",
       pending: "Creating account…",
@@ -806,6 +808,7 @@ export const en = {
       linkFailed: "Couldn't send the link. Try again in a minute.",
       tooMany: "Too many attempts. Wait a minute and try again.",
       signUpFailed: "Couldn't create the account. Check the details and try again.",
+      badInvite: "That invite code doesn't work. Check it, or ask for a new one.",
       linkExpired: "That sign-in link has expired or was already used. Send yourself a new one.",
     },
   },
@@ -1214,7 +1217,7 @@ export const en = {
 
   getReady: {
     title: "Connecting opens as soon as Meta approves our platform",
-    body: "We'll email you the moment it's ready. Your 14-day trial starts when your first number connects, so nothing is lost by waiting. Meanwhile, these four things make connecting take minutes.",
+    body: "We'll email you the moment it's ready. Meanwhile, these four things make connecting take minutes.",
     setUpTeams: "Set up teams",
     steps: {
       verify: {
@@ -1245,7 +1248,7 @@ export const en = {
   site: {
     nav: { label: "Site", features: "Features", pricing: "Pricing", channels: "Channels", demo: "Demo", questions: "Questions" },
     signIn: "Sign in",
-    startTrial: "Start free",
+    startTrial: "Join the pilot",
     tryDemo: "Try the demo",
     menu: "Menu",
     footer: {
@@ -1264,24 +1267,24 @@ export const en = {
 
   landing: {
     metaTitle: "every customer channel, one calm inbox",
-    metaDescription: "Relay brings WhatsApp, email, Instagram, website chat and more into one shared inbox, with a home for every manager.",
-    trust: { trial: "{days}-day free trial", card: "No card needed", eu: "Data stored in the EU" },
+    metaDescription: "Relay brings website chat, email, Telegram, LINE, Discord and more into one shared inbox, with a home for every manager. In a private pilot now.",
+    trust: { trial: "Free during the private pilot", card: "No card needed", eu: "Data stored in the EU" },
     steps: {
       title: "Up and running in an afternoon",
-      connect: { title: "Connect your channels", body: "Link your email, website chat, WhatsApp or Instagram. Each one takes a few minutes and uses the platform's official connection." },
+      connect: { title: "Connect your channels", body: "Link your email, website chat, Telegram, LINE or Discord. Each one takes a few minutes and uses the platform's official connection." },
       invite: { title: "Invite your team", body: "Add teammates, put them in teams and pick a role for each. Relay routes new chats to the right team on its own." },
       answer: { title: "Answer from one place", body: "Take a chat, reply, hand it over with a note. Managers see who's waiting and what's slipping from their home." },
     },
     pricing: {
-      title: "Simple pricing, every channel included",
-      body: "One price per user. No fees per channel or per conversation. Try any plan free for {days} days.",
-      link: "See full pricing",
+      title: "Free while we are in the private pilot",
+      body: "Relay is open to a small group of invited businesses, and nothing is charged during the pilot. Prices will be announced afterwards.",
+      link: "About the pilot",
       per: "per user / month",
     },
     hero: {
       title: "Every customer channel in one calm inbox",
-      body: "WhatsApp, email, Instagram, website chat and 14 more, shared by your team, with a home for every manager.",
-      start: "Start free",
+      body: "Website chat, email, Telegram, LINE, Discord and more on the way, shared by your team, with a home for every manager.",
+      start: "Join the pilot",
       demo: "Try the demo",
     },
     heroInbox: {
@@ -1333,13 +1336,13 @@ export const en = {
       items: {
         channels: { q: "Which channels can I connect?", a: "WhatsApp, website chat, email, Instagram, Messenger, Telegram, SMS, voice, TikTok, X, LINE, Viber, WeChat, Discord, Slack, Microsoft Teams, Apple Messages and our API. Some, like WhatsApp and Instagram, need the platform's approval first; we guide you through it." },
         phone: { q: "Can my team keep using the WhatsApp app?", a: "Yes. A WhatsApp number works in the phone app and in Relay at the same time, and replies from either side show in the same conversation." },
-        price: { q: "How much does it cost?", a: "From $19 per user per month, with every channel included on every plan. Yearly billing gives you two months free, and every plan starts with a 14-day free trial, no card needed." },
+        price: { q: "How much does it cost?", a: "Nothing during the private pilot. Prices will be announced when the pilot ends, and you will hear before anything is charged." },
         ai: { q: "Does the AI reply to customers on its own?", a: "Only if you switch on the after-hours assistant, and only from your own business knowledge. Everything else is a suggestion a person approves." },
         data: { q: "Where is my data kept?", a: "In the EU (Frankfurt). Your customers' data belongs to you; export or delete it at any time." },
         cancel: { q: "Can I cancel any time?", a: "Yes, from Settings, with no call needed. You keep access until the end of the period you paid for." },
       },
     },
-    final: { title: "Bring every conversation into one place", body: "Start free. Connect your first channel in a few minutes." },
+    final: { title: "Bring every conversation into one place", body: "Join the private pilot. Connect your first channel in a few minutes." },
   },
 
   demo: {
@@ -2587,6 +2590,20 @@ export const en = {
     },
     finalTitle: "See it with your own channels",
     finalBody: "Connect your email or website chat in a few minutes and try Relay free for {days} days.",
+    pilot: {
+      metaTitle: "The private pilot",
+      metaDescription: "Relay is free for the businesses in its private pilot. See what you can use today and what is coming.",
+      title: "Free while we are in the private pilot",
+      body: "Relay is open to a small group of invited businesses. Nothing is charged during the pilot, and no card is needed. Prices will be announced when it ends.",
+      nowTitle: "Works today",
+      now: { inbox: "Website chat, email, Telegram, LINE and Discord in one shared inbox", handoff: "Handovers with notes, teams and roles", crm: "Customers, deals and tasks", homes: "Reply targets with opening hours, reports and a home for every manager" },
+      soonTitle: "Coming soon",
+      soon: { meta: "WhatsApp, Instagram and Messenger (they need Meta's approval, which takes weeks)", help: "Help Center", campaigns: "Campaigns", billing: "Billing and paid plans" },
+      joinTitle: "Want to be in the pilot?",
+      joinBody: "You need an invite code. Ask the person who told you about Relay, or write to us.",
+      join: "Join the pilot",
+      demo: "Try the demo first",
+    },
   },
 
   features: {
@@ -2595,10 +2612,11 @@ export const en = {
     title: "Everything your team needs to answer customers well",
     body: "Relay is built around one idea: every customer message lands in one place, and the right person always knows it's theirs.",
     jump: "Jump to a feature",
-    start: "Start free",
-    pricing: "See pricing",
+    start: "Join the pilot",
+    pricing: "About the pilot",
+    soon: "Coming soon",
     finalTitle: "Try it with your own customers",
-    finalBody: "Free for {days} days, no card needed. Connect email or website chat in minutes.",
+    finalBody: "Free during the private pilot, no card needed. Connect email or website chat in minutes.",
     sections: {
       inbox: {
         nav: "Shared inbox",
@@ -2684,7 +2702,7 @@ export const en = {
   },
 
   compare: {
-    start: "Start {days}-day free trial",
+    start: "Join the pilot",
     demo: "Try the demo",
     pricesTitle: "Prices side by side",
     tier: "Plan level",
@@ -2700,7 +2718,7 @@ export const en = {
     whyTitle: "Why teams pick Relay",
     othersTitle: "Other comparisons",
     finalTitle: "See the difference with your own customers",
-    finalBody: "Free for {days} days, no card needed. Every channel is included on every plan.",
+    finalBody: "Free during the private pilot, no card needed. Connect email or website chat in minutes.",
     rivals: {
       zendesk: {
         summary: "Zendesk is a deep ticketing platform for large support departments. Relay is a shared inbox for teams of 2 to 50 who talk to customers on WhatsApp, Instagram, email and chat.",

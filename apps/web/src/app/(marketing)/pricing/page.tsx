@@ -3,20 +3,63 @@ import { Check, Minus } from "@phosphor-icons/react/dist/ssr";
 import { PricingPlans } from "@/components/marketing/pricing-plans";
 import { buttonClass } from "@/components/ui/button";
 import { getT } from "@/i18n/server";
-import { PLANS, TRIAL_DAYS, type PlanFeature } from "@/lib/plans";
+import { PILOT, PLANS, TRIAL_DAYS, type PlanFeature } from "@/lib/plans";
 
 export async function generateMetadata() {
   const t = await getT("pricing");
-  return { title: t("metaTitle"), description: t("metaDescription") };
+  return PILOT ? { title: t("pilot.metaTitle"), description: t("pilot.metaDescription") } : { title: t("metaTitle"), description: t("metaDescription") };
 }
 
 /* Pricing (2026-10-19): one price per user, every channel on every plan, no per-channel or per-conversation fees. */
 const ROWS: PlanFeature[] = ["inbox", "channels", "helpCenter", "reports", "sla", "campaigns", "customRoles", "sso", "audit", "api"];
 const FAQ = ["trial", "user", "messages", "credits", "change", "cancel"] as const;
 
+const NOW = ["inbox", "handoff", "crm", "homes"] as const;
+const SOON = ["meta", "help", "campaigns", "billing"] as const;
+
 export default async function Pricing() {
   const t = await getT("pricing");
   const b = await getT("billing");
+
+  // The private pilot (decided 2026-11-03): no prices, plans or trial are shown; the page says what works today and what is coming.
+  if (PILOT) {
+    return (
+      <main className="overflow-x-clip">
+        <section className="mx-auto grid max-w-3xl gap-10 px-4 pb-24 pt-14 lg:pt-20">
+          <header className="grid gap-4 text-center">
+            <h1 className="display text-4xl sm:text-5xl">{t("pilot.title")}</h1>
+            <p className="text-lg text-muted">{t("pilot.body")}</p>
+          </header>
+          <div className="grid gap-6 sm:grid-cols-2">
+            <section className="grid content-start gap-3 rounded-[var(--radius-panel)] bg-surface p-6 ring-1 ring-border" aria-labelledby="pilot-now">
+              <h2 id="pilot-now" className="text-lg font-semibold">{t("pilot.nowTitle")}</h2>
+              <ul className="grid gap-3">
+                {NOW.map((k) => (
+                  <li key={k} className="flex gap-3"><Check size={20} className="mt-0.5 shrink-0 text-primary" aria-hidden="true" />{t(`pilot.now.${k}`)}</li>
+                ))}
+              </ul>
+            </section>
+            <section className="grid content-start gap-3 rounded-[var(--radius-panel)] bg-surface p-6 ring-1 ring-border" aria-labelledby="pilot-soon">
+              <h2 id="pilot-soon" className="text-lg font-semibold">{t("pilot.soonTitle")}</h2>
+              <ul className="grid gap-3">
+                {SOON.map((k) => (
+                  <li key={k} className="flex gap-3 text-muted"><Minus size={20} className="mt-0.5 shrink-0" aria-hidden="true" />{t(`pilot.soon.${k}`)}</li>
+                ))}
+              </ul>
+            </section>
+          </div>
+          <div className="bg-hero grid gap-4 rounded-[var(--radius-panel)] px-6 py-10 text-center text-white">
+            <h2 className="display text-3xl">{t("pilot.joinTitle")}</h2>
+            <p className="text-white/80">{t("pilot.joinBody")}</p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link href="/sign-up" className={buttonClass("light", "lg")}>{t("pilot.join")}</Link>
+              <Link href="/preview" className={buttonClass("glass", "lg")}>{t("pilot.demo")}</Link>
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="overflow-x-clip">

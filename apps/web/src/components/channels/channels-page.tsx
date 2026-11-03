@@ -10,8 +10,11 @@ import { CHANNELS, type ChannelGroup, type ChannelKey } from "./catalog";
 const GROUPS: ChannelGroup[] = ["messaging", "social", "web", "work", "developer"];
 /** What most businesses connect first; the rest of the catalogue is one click deeper (simplicity pass 2026-10-19). */
 const POPULAR: ChannelKey[] = ["whatsapp", "email", "webchat", "instagram", "messenger"];
-/** Channels a real workspace can connect today. */
-const LIVE_CHANNELS: ChannelKey[] = ["whatsapp", "webchat", "email", "api", "telegram", "line", "sms", "voice", "slack", "discord", "teams", "tiktok", "wechat", "apple", "viber", "x"];
+/**
+ * Channels a real workspace can connect during the private pilot (decided 2026-11-03): the ones that need no platform review and
+ * have been built to the end. Every other channel shows "coming soon" until it has been tried for real (docs/LAUNCH_PLAN.md).
+ */
+const LIVE_CHANNELS: ChannelKey[] = ["webchat", "email", "telegram", "line", "discord"];
 /** Channels that cannot be connected yet: their page explains why and offers "Request access". */
 const GATED: ChannelKey[] = ["tiktok", "wechat", "apple"];
 
@@ -74,7 +77,9 @@ export async function ChannelsPage({
   };
 
   if (showAdd) {
-    const popular = POPULAR.map((k) => CHANNELS.find((c) => c.key === k)!).filter(Boolean);
+    // A real workspace sees the channels it can connect first; the preview shows what most businesses connect first.
+    const first = live ? LIVE_CHANNELS : POPULAR;
+    const popular = first.map((k) => CHANNELS.find((c) => c.key === k)!).filter(Boolean);
     return (
       <SettingsFrame base={base} active="channels" isOwner={isOwner}>
         <div className="grid gap-2">
@@ -97,7 +102,7 @@ export async function ChannelsPage({
           </summary>
           <div className="mt-4 grid gap-6">
             {GROUPS.map((g) => {
-              const list = CHANNELS.filter((c) => c.group === g && !POPULAR.includes(c.key));
+              const list = CHANNELS.filter((c) => c.group === g && !first.includes(c.key));
               if (list.length === 0) return null;
               return (
                 <div key={g} className="grid gap-2">
