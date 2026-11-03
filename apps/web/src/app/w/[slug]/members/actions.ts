@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { publicEnv } from "@/lib/public-env";
+import { appOrigin } from "@/lib/app-origin";
 import { loadWorkspace } from "@/lib/workspace";
 
 /* Errors go back as codes (members.errors.<code>): the page words them, and nothing personal lands in the URL. */
@@ -30,7 +30,7 @@ export async function inviteMember(form: FormData) {
   // Show the link once, then forget it. Only its hash is stored in the database.
   const store = await cookies();
   const once = { httpOnly: true, sameSite: "strict" as const, maxAge: 120, path: `/w/${slug}/members` };
-  store.set("invite_link", `${publicEnv().siteUrl}/invite/${token}`, once);
+  store.set("invite_link", `${await appOrigin()}/invite/${token}`, once);
   // The email rides in the same short-lived cookie, not the URL (no personal data in URLs).
   store.set("invite_email", parsed.data.email, once);
   redirect(`/w/${slug}/members?invited=1`);

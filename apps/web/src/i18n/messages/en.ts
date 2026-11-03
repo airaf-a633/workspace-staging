@@ -1334,8 +1334,8 @@ export const en = {
     faq: {
       title: "Questions",
       items: {
-        channels: { q: "Which channels can I connect?", a: "WhatsApp, website chat, email, Instagram, Messenger, Telegram, SMS, voice, TikTok, X, LINE, Viber, WeChat, Discord, Slack, Microsoft Teams, Apple Messages and our API. Some, like WhatsApp and Instagram, need the platform's approval first; we guide you through it." },
-        phone: { q: "Can my team keep using the WhatsApp app?", a: "Yes. A WhatsApp number works in the phone app and in Relay at the same time, and replies from either side show in the same conversation." },
+        channels: { q: "Which channels can I connect?", a: "In the private pilot today: website chat, email, Telegram, LINE and Discord. On the way, as each platform's approval or our own testing finishes: WhatsApp, Instagram, Messenger, SMS, voice, TikTok, X, Viber, WeChat, Slack, Microsoft Teams, Apple Messages and our API. Some, like WhatsApp and Instagram, need the platform's approval first." },
+        phone: { q: "Can my team keep using the WhatsApp app?", a: "WhatsApp is not part of the pilot yet. When it is, a WhatsApp number will work in the phone app and in Relay at the same time, and replies from either side will show in the same conversation." },
         price: { q: "How much does it cost?", a: "Nothing during the private pilot. Prices will be announced when the pilot ends, and you will hear before anything is charged." },
         ai: { q: "Does the AI reply to customers on its own?", a: "Only if you switch on the after-hours assistant, and only from your own business knowledge. Everything else is a suggestion a person approves." },
         data: { q: "Where is my data kept?", a: "In the EU (Frankfurt). Your customers' data belongs to you; export or delete it at any time." },
@@ -1404,7 +1404,7 @@ export const en = {
     screens: { home: "Home", inbox: "Inbox", customers: "Customers", deals: "Deals", tasks: "Tasks", settings: "Settings" },
     intro: "Hi {name}. Ask about your customers and deals, ask me to do some work, or describe something you want done automatically. I only see what your role can see.",
     limits: "I never send to customers or change anything until you confirm. Billing, numbers and team members are off-limits.",
-    notYet: "AI switches on after WhatsApp is connected. Try it now in the preview.",
+    notYet: "AI is coming soon. It is not switched on in the pilot. Try it in the preview.",
     placeholder: "Ask or describe what you need…",
     inputLabel: "Message for AI",
     send: "Ask",
@@ -2621,7 +2621,7 @@ export const en = {
       inbox: {
         nav: "Shared inbox",
         title: "Every channel in one shared inbox",
-        body: "WhatsApp, email, Instagram, Messenger, website chat, SMS, calls and more arrive in the same list. Your team works from one screen instead of six apps.",
+        body: "Website chat, email, Telegram, LINE and Discord arrive in the same list today, with WhatsApp, Instagram, Messenger, SMS and calls on the way. Your team works from one screen instead of six apps.",
         points: {
           one: "One customer is one card, even when they write on two channels.",
           two: "Take a chat so nobody answers twice. Mark it done when it's finished.",
@@ -2721,22 +2721,22 @@ export const en = {
     finalBody: "Free during the private pilot, no card needed. Connect email or website chat in minutes.",
     rivals: {
       zendesk: {
-        summary: "Zendesk is a deep ticketing platform for large support departments. Relay is a shared inbox for teams of 2 to 50 who talk to customers on WhatsApp, Instagram, email and chat.",
+        summary: "Zendesk is a deep ticketing platform for large support departments. Relay is a shared inbox for teams of 2 to 50 who talk to customers on messaging apps, email and chat.",
         priceNote: "Zendesk's monthly-billed prices are higher: $69 for Suite Team and $149 for Suite Professional. AI agent resolutions are billed on top of seats.",
         fit: "You run a large support operation with dedicated admins, need advanced ticket workflows and workforce management, and have the budget and time for a longer setup.",
         why: {
           one: "Set up in an afternoon, not a project. No admin needed to get started.",
-          two: "Messaging channels like WhatsApp and Instagram feel native, not bolted on to email tickets.",
-          three: "AI credits are included in every plan instead of being billed per resolution.",
+          two: "Messaging channels feel native, not bolted on to email tickets.",
+          three: "Handovers with notes and a home for every manager, without a project to set them up.",
         },
       },
       intercom: {
-        summary: "Intercom is built around website messaging and its Fin AI agent. Relay is a shared inbox for every channel, priced per user with AI credits included.",
+        summary: "Intercom is built around website messaging and its Fin AI agent. Relay is a shared inbox for every channel, built for teams that hand customers between people.",
         priceNote: "On top of seats, Intercom charges for its Fin AI agent from $0.99 per outcome. Relay includes AI credits in every plan.",
         fit: "Your customers mostly reach you through your website or app, you want an AI agent that answers customers on its own, and you're comfortable with usage-based AI costs.",
         why: {
-          one: "One predictable price per user. No per-outcome AI bill that grows with your volume.",
-          two: "WhatsApp, Instagram, SMS and calls sit next to website chat in the same inbox.",
+          one: "One place for every channel your customers use, not only your website.",
+          two: "Messaging channels sit next to website chat in the same inbox.",
           three: "Handovers with notes and manager homes for teams that pass customers between people.",
         },
       },
@@ -2745,9 +2745,9 @@ export const en = {
         priceNote: "Front's Starter plan is limited to 10 seats and Professional to 50. Relay has no seat cap on any plan.",
         fit: "Most of your customer conversations happen over email, and your team lives in email-style workflows with rules and shared drafts.",
         why: {
-          one: "Every channel on every plan, including the entry plan.",
-          two: "WhatsApp and Instagram conversations behave like chats, not emails.",
-          three: "Lower entry price, with no cap on how many people can join.",
+          one: "Every channel in the same inbox, not only email.",
+          two: "Messaging conversations behave like chats, not emails.",
+          three: "Teams, roles and a home for every manager from the start, for teams of any size.",
         },
       },
       chatwoot: {

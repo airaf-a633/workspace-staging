@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { adoptProfileLocale } from "@/i18n/profile";
 import { createClient } from "@/lib/supabase/server";
-import { publicEnv } from "@/lib/public-env";
+import { appOrigin } from "@/lib/app-origin";
 import { safeNext } from "@/lib/safe-next";
 
 /*
@@ -43,7 +43,7 @@ export async function sendMagicLink(form: FormData) {
     email: parsed.data,
     options: {
       shouldCreateUser: false,
-      emailRedirectTo: `${publicEnv().siteUrl}/auth/callback?next=${encodeURIComponent(next)}`,
+      emailRedirectTo: `${await appOrigin()}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   });
   // Same message whether or not the account exists, so the form can't be used to discover accounts.
@@ -68,7 +68,7 @@ export async function signUp(form: FormData) {
     password: parsed.data.password,
     options: {
       data: { name: parsed.data.name, invite_code: parsed.data.invite },
-      emailRedirectTo: `${publicEnv().siteUrl}/auth/callback?next=${encodeURIComponent(next)}`,
+      emailRedirectTo: `${await appOrigin()}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   });
   if (error) back("/sign-up", next, error.status === 429 ? "tooMany" : "signUpFailed");

@@ -63,5 +63,6 @@ Website chat and Email stay: without them there is nothing to show a pilot.
 
 - Decisions: [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md), "Private pilot launch (2026-11-03)".
 - Your setup list: [FOUNDER_SETUP.md](FOUNDER_SETUP.md), "Launch by 15 November".
+- Every environment variable, where it goes and who creates it: [ENVIRONMENT.md](ENVIRONMENT.md).
 - Worker hosting steps: [DEPLOY_WORKER.md](DEPLOY_WORKER.md). Staging app: [DEPLOY_STAGING.md](DEPLOY_STAGING.md).
 - Making invite codes: in the Supabase SQL editor run `select public.create_pilot_invite('Acme', 1, 30);` (a note, how many people may use it, days it lasts). Revoke one with `update public.pilot_invites set revoked_at = now() where note = 'Acme';`.
