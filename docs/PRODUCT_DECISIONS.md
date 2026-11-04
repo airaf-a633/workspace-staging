@@ -737,3 +737,9 @@ The founder reversed part of the pilot decision above: "we wanna showcase it, no
 
 Built: five real routes (`/w/[slug]/campaigns`, `campaigns/[id]`, `help`, `help/[id]`, `billing`), a permission helper (`scopeOf`), a `PreviewNotice`, menu tags, and the restored website sections. Not verified: the new real-app screens compile and type-check but have not been opened in a browser (they need a signed-in session on a real database); their browser test (`e2e/live.showcase.spec.ts`) is written but can only run once staging is awake.
 
+### Security pass on what a visitor can reach (2026-11-03)
+
+`scripts/db-audit-exposure.mjs` (`pnpm db:audit`) lists, from the real migrations, what the anonymous role can run or touch. It found 14 functions and one table open to someone who is not signed in. The sensitive ones (create a workspace, invite, accept an invitation, create a role) already refused a caller with no account, and the table's row-level security returned nothing, so nothing could be read or changed. But the right to try should not be there either. Migration `20261107000002_close_anon_exposure.sql` takes it back (from the public and the anonymous role; signed-in people and the server keep theirs). Now only four things remain open to a visitor: three harmless lookup helpers and `signup_allowed` (which only says whether a code works). New checks in pgTAP 031 confirm a visitor cannot create a workspace, accept an invitation, ask who belongs to a workspace or read the requests table.
+
+Reviewed at the route level only: the public API routes use a signature, a secret in the address, Basic auth or an API key (website chat has a send limit in the database); I did not test any of them with real provider traffic. Not done: a test of the whole app against a real Supabase project, rate limits on the sign-up code check, and a penetration test.
+

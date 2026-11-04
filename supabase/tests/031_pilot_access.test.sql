@@ -2,7 +2,7 @@
 -- end and can be revoked, and nobody signed in can make or read codes.
 -- Seed: khalid ...01 owner of qamar; noor ...07 owns the other business.
 begin;
-select plan(22);
+select plan(26);
 
 create function pg_temp.act_as(p_user uuid) returns void language plpgsql as $$
 begin
@@ -59,6 +59,15 @@ select is((select public.signup_allowed('x@example.com', 'nope')), false, 'but a
 reset role;
 set local role anon;
 select is((select public.signup_allowed('x@example.com', 'nope')), false, 'including someone not signed in');
+reset role;
+
+-- What someone who is not signed in cannot do at all (no leftover sign-in from the steps above)
+select set_config('request.jwt.claims', '', true);
+set local role anon;
+select throws_ok($$ select public.create_workspace('Evil', 'evil-co', 'Eve') $$, '42501', null, 'a visitor cannot create a workspace');
+select throws_ok($$ select public.accept_invite('abc', 'Eve') $$, '42501', null, 'or accept an invitation');
+select throws_ok($$ select public.is_member(gen_random_uuid()) $$, '42501', null, 'or ask who belongs to a workspace');
+select throws_ok($$ select count(*) from public.channel_access_requests $$, '42501', null, 'or read a table of requests');
 reset role;
 
 select * from finish();
