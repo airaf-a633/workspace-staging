@@ -21,8 +21,10 @@ export function setupSteps(
   { shape, memberCount, connected, base, done = [] }: { shape: TeamShape; memberCount: number; connected: boolean; base: string; done?: string[] },
 ): SetupStep[] {
   const preview = base.startsWith("/preview");
-  // Screens that only exist in the preview so far show as coming soon in a real workspace.
-  const link = (path: string) => (preview ? { href: `${base}${path}`, soon: null } : { href: null, soon: common("comingSoon") });
+  // Screens that exist in a real workspace link to them; the others (Try AI) show as coming soon there. Website chat, contact
+  // import and reply targets were preview-only when this list was written and are real now (checked 2026-11-04).
+  const real = (path: string) => ({ href: `${base}${path}`, soon: null });
+  const link = (path: string) => (preview ? real(path) : { href: null, soon: common("comingSoon") });
   return [
     { title: t("connect.title"), body: t("connect.body"), done: connected, href: `${base}/channels`, soon: null },
     {
@@ -32,9 +34,9 @@ export function setupSteps(
       href: `${base}/members?invite=1`,
       soon: null,
     },
-    { title: t("widget.title"), body: t("widget.body"), done: done.includes("widget"), ...link("/channels/new/webchat") },
-    { title: t("import.title"), body: t("import.body"), done: done.includes("import"), ...link("/customers/import") },
-    { title: t("targets.title"), body: t("targets.body"), done: done.includes("targets"), ...link("/sla") },
+    { title: t("widget.title"), body: t("widget.body"), done: done.includes("widget"), ...real("/channels/new/webchat") },
+    { title: t("import.title"), body: t("import.body"), done: done.includes("import"), ...real("/customers/import") },
+    { title: t("targets.title"), body: t("targets.body"), done: done.includes("targets"), ...real("/sla") },
     { title: t("ai.title"), body: t("ai.body"), done: done.includes("ai"), ...link("/ai") },
   ];
 }

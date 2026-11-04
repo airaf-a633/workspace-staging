@@ -9,6 +9,7 @@ import { loadChannelInboxes, loadLiveInbox } from "@/lib/inbox-live";
 import { requestNow } from "@/lib/now";
 import { attachSlaClocks } from "@/lib/sla-live";
 import { setupSteps, type TeamShape } from "@/lib/setup";
+import { loadSetupFacts } from "@/lib/setup-live";
 import { loadPeople } from "@/lib/viewer";
 import { loadWorkspace } from "@/lib/workspace";
 import { getFormat, getT, getTimeZone } from "@/i18n/server";
@@ -45,7 +46,8 @@ export default async function WorkspaceHome(props: PageProps<"/w/[slug]">) {
   const t = await getT("home");
 
   if (!live && deals.length === 0 && tasks.length === 0) {
-    const steps = setupSteps(tSetup, common, { shape, memberCount: memberCount ?? 0, connected: false, base });
+    const facts = await loadSetupFacts(supabase, workspace.id);
+    const steps = setupSteps(tSetup, common, { shape, memberCount: memberCount ?? 0, connected: facts.connected, done: facts.done, base });
     return (
       <>
         <header className="grid gap-2">
@@ -76,7 +78,8 @@ export default async function WorkspaceHome(props: PageProps<"/w/[slug]">) {
   // Only the setup steps that can be finished in a real workspace today count; the rest say "coming soon" on the checklist.
   let setup: { done: number; total: number; href: string } | undefined;
   if (template === "owner" || template === "admin") {
-    const doable = setupSteps(tSetup, common, { shape, memberCount: memberCount ?? 0, connected: data.inboxes.length > 0, base }).filter((s) => s.soon === null);
+    const facts = await loadSetupFacts(supabase, workspace.id);
+    const doable = setupSteps(tSetup, common, { shape, memberCount: memberCount ?? 0, connected: data.inboxes.length > 0, done: facts.done, base }).filter((s) => s.soon === null);
     const next = doable.find((s) => !s.done && s.href);
     if (next?.href) setup = { done: doable.filter((s) => s.done).length, total: doable.length, href: next.href };
   }

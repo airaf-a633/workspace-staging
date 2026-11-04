@@ -62,7 +62,8 @@ export async function signUp(form: FormData) {
   // Pilot access (decided 2026-11-03): an invite code, or a workspace invitation to this email, is needed to create an account. The
   // database refuses anything else; this check only lets the page say so in words. If it cannot be asked, the database still decides.
   const allowed = await supabase.rpc("signup_allowed", { p_email: parsed.data.email, p_code: parsed.data.invite });
-  if (!allowed.error && allowed.data !== true) back("/sign-up", next, "badInvite");
+  // Someone coming from a workspace invitation who used another email address gets told that, not about an invite code.
+  if (!allowed.error && allowed.data !== true) back("/sign-up", next, next.startsWith("/invite/") ? "badInviteEmail" : "badInvite");
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,

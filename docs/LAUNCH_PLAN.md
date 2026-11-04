@@ -36,7 +36,7 @@
 - [ ] Each of the five channels has received and sent a real message end to end.
 - [ ] Someone without an invite code **cannot** create an account (try it), and someone with one can, including receiving the confirmation email.
 - [ ] `pnpm db:audit` lists only the four things an anonymous visitor is meant to reach (three harmless helpers and `signup_allowed`), no tables, no policies. (It runs on the local copy of the schema; against the real database, also check in the Supabase SQL editor that the migrations `20261107000001` and `20261107000002` are applied.)
-- [ ] A business owner can invite a teammate, the teammate gets the email and joins.
+- [ ] A business owner can invite a teammate: the owner copies the invitation link (Relay does not email it) and sends it; the teammate opens it, signs up with the **same email address the invitation names**, confirms the sign-up email, and joins.
 - [ ] Backups are on and one restore has been tried.
 - [ ] Errors reach somewhere you will look (Vercel and Fly logs at least; Sentry if set up).
 - [ ] The pilot agreement is in front of every pilot.

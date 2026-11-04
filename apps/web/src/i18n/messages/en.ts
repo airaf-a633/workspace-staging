@@ -238,7 +238,7 @@ export const en = {
     progress: "{done} of {total} done",
     connect: {
       title: "Connect a channel",
-      body: "WhatsApp, email, Instagram, website chat or any of the others, so conversations start arriving.",
+      body: "Website chat, email, Telegram, LINE or Discord, so conversations start arriving. More channels are on the way.",
     },
     invite: {
       title: "Invite your team",
@@ -812,6 +812,7 @@ export const en = {
       tooMany: "Too many attempts. Wait a minute and try again.",
       signUpFailed: "Couldn't create the account. Check the details and try again.",
       badInvite: "That invite code doesn't work. Check it, or ask for a new one.",
+      badInviteEmail: "Use the email address the invitation was sent to. If you need it sent to another address, ask the person who invited you.",
       linkExpired: "That sign-in link has expired or was already used. Send yourself a new one.",
     },
   },

@@ -21,6 +21,8 @@ test("the owner sees the rules and every team's hours, and can change them (the 
 test("a closed day can be added to a team and removed again", async ({ page }) => {
   await page.goto("/preview/elena/sla");
   await expect(page.getByRole("heading", { name: "Closed days and special hours" })).toBeVisible({ timeout: 45_000 });
+  // Let the time-zone check and any dev-server reload finish first; they refresh the page and would wipe what is typed.
+  await page.waitForLoadState("networkidle");
   await page.getByRole("button", { name: "Add a closed day" }).click();
   await page.getByLabel("First day").fill("2027-03-05");
   await page.getByLabel("Name (optional)").fill("Founders day");
@@ -34,6 +36,8 @@ test("a closed day can be added to a team and removed again", async ({ page }) =
 test("a day with special hours is refused when it closes before it opens", async ({ page }) => {
   await page.goto("/preview/elena/sla");
   await expect(page.getByRole("heading", { name: "Closed days and special hours" })).toBeVisible({ timeout: 45_000 });
+  // Let the time-zone check and any dev-server reload finish first; they refresh the page and would wipe what is typed.
+  await page.waitForLoadState("networkidle");
   await page.getByRole("button", { name: "Add a closed day" }).click();
   await page.getByLabel("First day").fill("2027-03-05");
   await page.getByLabel("Open different hours").check();

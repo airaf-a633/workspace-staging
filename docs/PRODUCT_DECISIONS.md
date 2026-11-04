@@ -743,3 +743,13 @@ Built: five real routes (`/w/[slug]/campaigns`, `campaigns/[id]`, `help`, `help/
 
 Reviewed at the route level only: the public API routes use a signature, a secret in the address, Basic auth or an API key (website chat has a send limit in the database); I did not test any of them with real provider traffic. Not done: a test of the whole app against a real Supabase project, rate limits on the sign-up code check, and a penetration test.
 
+### First-run path review for the pilot (2026-11-04)
+
+Read end to end (no server): sign-up with a code, the confirmation email, `/auth/callback`, "Create your business", the first Home screen, the website-chat install code, and inviting a teammate. Found and fixed:
+
+- **The setup checklist on a new workspace's Home pointed at screens that were preview-only when it was written.** "Add the chat to your website", "Import your contacts" and "Set reply targets" showed as "coming soon", though all three are real now; they link to their screens. "Try AI" stays "coming soon". The checklist now ticks what the workspace has actually done (a channel connected, the website chat added, a reply-target rule on); it used to treat every new workspace as having connected nothing. Contact import and AI are not tracked, so they stay unticked.
+- **"Connect a channel" promised WhatsApp and Instagram.** It now names the five channels that work and says more are on the way.
+- **A teammate who signs up with a different email address than the invitation went to** was told "That invite code doesn't work", which means nothing to them. They are now told to use the address the invitation was sent to.
+- **Checked and fine:** the website-chat install code and every invitation link are built from the required `NEXT_PUBLIC_SITE_URL`; no other place builds a localhost address.
+- **Worth knowing, not changed:** a teammate invitation is not emailed. The owner copies the link (shown once) and sends it themselves; the checklist in the plan now says so. Anyone with an account can create more workspaces of their own.
+
