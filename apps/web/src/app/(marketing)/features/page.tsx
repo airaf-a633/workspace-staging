@@ -11,7 +11,7 @@ import {
   UsersThree,
 } from "@phosphor-icons/react/dist/ssr";
 import type { Icon } from "@phosphor-icons/react";
-import { CHANNELS } from "@/components/channels/catalog";
+import { CHANNELS, PILOT_CHANNELS } from "@/components/channels/catalog";
 import { ChannelMark } from "@/components/channels/channel-mark";
 import { HandoffDemo } from "@/components/marketing/handoff-demo";
 import { ManagerHomesPreview } from "@/components/marketing/manager-homes-preview";
@@ -45,6 +45,7 @@ const SOON: SectionKey[] = ["help", "campaigns"];
 
 export default async function Features() {
   const t = await getT("features");
+  const tl = await getT("landing");
 
   return (
     <main className="overflow-x-clip">
@@ -60,13 +61,10 @@ export default async function Features() {
         </nav>
       </header>
 
-      {SECTIONS.map(({ key, Icon, demo }, i) => (
+      {SECTIONS.map(({ key, demo }, i) => (
         <section key={key} id={key} className={`scroll-mt-24 ${i % 2 ? "bg-surface" : ""} border-t border-border`}>
           <div className={`mx-auto grid items-center gap-12 px-4 py-20 ${demo ? "max-w-7xl lg:grid-cols-2" : "max-w-3xl"}`}>
             <div className={`grid content-center gap-5 ${demo && i % 2 ? "lg:order-2" : ""}`}>
-              <span className="grid size-11 place-items-center rounded-[var(--radius-control)] bg-primary-soft text-primary" aria-hidden="true">
-                <Icon size={22} />
-              </span>
               <h2 className="display text-3xl sm:text-4xl">{t(`sections.${key}.title`)}</h2>
               {SOON.includes(key) && <span className="w-fit rounded-full bg-surface-2 px-3 py-1 text-sm text-muted ring-1 ring-border">{t("soon")}</span>}
               <p className="max-w-[52ch] text-muted">{t(`sections.${key}.body`)}</p>
@@ -90,13 +88,29 @@ export default async function Features() {
               </div>
             )}
             {demo === "channels" && (
-              <ul className="reveal grid grid-cols-4 gap-5 rounded-[var(--radius-panel)] bg-surface p-8 ring-1 ring-border sm:grid-cols-6">
-                {CHANNELS.map((c) => (
-                  <li key={c.key} className="grid place-items-center">
-                    <ChannelMark ch={c.key} size={40} />
-                  </li>
-                ))}
-              </ul>
+              <div className="reveal grid gap-6 rounded-[var(--radius-panel)] bg-surface p-8 ring-1 ring-border">
+                <div className="grid gap-3">
+                  <h3 className="text-sm font-medium text-muted">{tl("channels.live")}</h3>
+                  <ul className="flex flex-wrap gap-x-6 gap-y-3">
+                    {CHANNELS.filter((c) => PILOT_CHANNELS.includes(c.key)).map((c) => (
+                      <li key={c.key} className="flex items-center gap-2.5 font-medium">
+                        <ChannelMark ch={c.key} size={32} label={false} />
+                        {c.name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="grid gap-3">
+                  <h3 className="text-sm font-medium text-muted">{tl("channels.soon")}</h3>
+                  <ul className="flex flex-wrap gap-3">
+                    {CHANNELS.filter((c) => !PILOT_CHANNELS.includes(c.key)).map((c) => (
+                      <li key={c.key}>
+                        <ChannelMark ch={c.key} size={32} quiet />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             )}
           </div>
         </section>

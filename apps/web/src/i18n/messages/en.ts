@@ -758,7 +758,7 @@ export const en = {
   authFrame: {
     headline: "Every customer conversation, one shared inbox.",
     points: {
-      phone: "WhatsApp, email, Instagram, chat and 14 more",
+      phone: "Website chat, email, Telegram, LINE and Discord",
       handoff: "Hand chats over with a note, never lose context",
       noMarkup: "A home for every manager",
     },
@@ -2562,12 +2562,12 @@ export const en = {
     metaTitle: "Pricing",
     metaDescription: "One price per user. Every channel on every plan, no per-conversation fees. Free for the businesses in the private pilot.",
     title: "One price per user. Every channel included.",
-    body: "No fees per channel, per inbox or per conversation. Relay is free during the private pilot; these are the planned prices and may change.",
+    body: "No fees per channel, per inbox or per conversation.",
     billingLabel: "Billing period",
     monthly: "Monthly",
     yearly: "Yearly",
     twoMonthsFree: "2 months free",
-    popular: "Most teams pick this",
+    popular: "Recommended",
     perUser: "per user / month",
     billedYearly: "{total} per user, billed once a year",
     billedMonthly: "Billed monthly, cancel any time",
