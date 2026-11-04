@@ -1286,7 +1286,7 @@ export const en = {
     },
     hero: {
       title: "Every customer channel in one calm inbox",
-      body: "Website chat, email, Telegram, LINE, Discord and more on the way, shared by your team, with a home for every manager.",
+      body: "Website chat, email, Telegram, LINE and Discord in one shared inbox, with a home for every manager. WhatsApp and Instagram are on the way.",
       start: "Join the pilot",
       demo: "Try the demo",
     },
@@ -1306,6 +1306,8 @@ export const en = {
       title: "Meet customers where they already are",
       body: "Connect a channel in minutes. Every conversation lands in the same inbox, with the same tools.",
       more: "See every channel",
+      live: "Works in the pilot",
+      soon: "On the way",
     },
     homes: {
       title: "A home for every manager",

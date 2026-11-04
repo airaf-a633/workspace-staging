@@ -65,3 +65,9 @@ export const CHANNELS: Channel[] = [
 ];
 
 export const channel = (key: ChannelKey) => CHANNELS.find((c) => c.key === key)!;
+
+/**
+ * Channels that work in the private pilot (decided 2026-11-03): they need no platform review and are built to the end. The Channels
+ * page lets a business connect only these; the public landing page shows them apart from the ones that are on the way.
+ */
+export const PILOT_CHANNELS: ChannelKey[] = ["webchat", "email", "telegram", "line", "discord"];

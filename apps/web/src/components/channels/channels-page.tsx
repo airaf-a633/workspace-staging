@@ -5,16 +5,12 @@ import { buttonClass } from "@/components/ui/button";
 import type { ChannelInbox } from "@/components/inbox/types";
 import { getT } from "@/i18n/server";
 import { ChannelMark } from "./channel-mark";
-import { CHANNELS, type ChannelGroup, type ChannelKey } from "./catalog";
+import { CHANNELS, PILOT_CHANNELS, type ChannelGroup, type ChannelKey } from "./catalog";
 
 const GROUPS: ChannelGroup[] = ["messaging", "social", "web", "work", "developer"];
 /** What most businesses connect first; the rest of the catalogue is one click deeper (simplicity pass 2026-10-19). */
 const POPULAR: ChannelKey[] = ["whatsapp", "email", "webchat", "instagram", "messenger"];
-/**
- * Channels a real workspace can connect during the private pilot (decided 2026-11-03): the ones that need no platform review and
- * have been built to the end. Every other channel shows "coming soon" until it has been tried for real (docs/LAUNCH_PLAN.md).
- */
-const LIVE_CHANNELS: ChannelKey[] = ["webchat", "email", "telegram", "line", "discord"];
+const LIVE_CHANNELS = PILOT_CHANNELS;
 /** Channels that cannot be connected yet: their page explains why and offers "Request access". */
 const GATED: ChannelKey[] = ["tiktok", "wechat", "apple"];
 

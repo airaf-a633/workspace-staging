@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowsLeftRight, ChartBar, Check, ChatsCircle, Lightning, MagnifyingGlass, Sparkle } from "@phosphor-icons/react/dist/ssr";
-import { CHANNELS } from "@/components/channels/catalog";
+import { CHANNELS, PILOT_CHANNELS } from "@/components/channels/catalog";
 import { ChannelMark } from "@/components/channels/channel-mark";
 import { HandoffDemo } from "@/components/marketing/handoff-demo";
 import { HeroInbox } from "@/components/marketing/hero-inbox";
@@ -31,7 +31,7 @@ export default async function Landing() {
   return (
     <main className="overflow-x-clip">
       {/* 1. Hero: the promise on the left, a working inbox on the right. */}
-      <section className="mx-auto grid max-w-7xl items-center gap-12 px-4 pb-20 pt-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16 lg:pb-28 lg:pt-20">
+      <section className="mx-auto grid max-w-7xl items-center gap-12 px-4 pb-14 pt-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16 lg:pb-16 lg:pt-20">
         <div className="grid content-center gap-6">
           <h1 className="display text-4xl sm:text-5xl lg:text-6xl">{t("hero.title")}</h1>
           <p className="max-w-[46ch] text-lg text-muted">{t("hero.body")}</p>
@@ -60,23 +60,39 @@ export default async function Landing() {
             <h2 className="display text-3xl sm:text-4xl">{t("channels.title")}</h2>
             <p className="max-w-[44ch] text-muted">{t("channels.body")}</p>
           </div>
-          <ul className="reveal grid grid-cols-6 gap-4 sm:grid-cols-9">
-            {CHANNELS.map((c) => (
-              <li key={c.key} className="grid place-items-center">
-                <ChannelMark ch={c.key} size={44} />
-              </li>
-            ))}
-          </ul>
+          <div className="reveal grid gap-6">
+            <div className="grid gap-3">
+              <h3 className="text-sm font-medium text-muted">{t("channels.live")}</h3>
+              <ul className="flex flex-wrap gap-x-6 gap-y-3">
+                {CHANNELS.filter((c) => PILOT_CHANNELS.includes(c.key)).map((c) => (
+                  <li key={c.key} className="flex items-center gap-2.5 font-medium">
+                    <ChannelMark ch={c.key} size={32} label={false} />
+                    {c.name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="grid gap-3">
+              <h3 className="text-sm font-medium text-muted">{t("channels.soon")}</h3>
+              <ul className="flex flex-wrap gap-3">
+                {CHANNELS.filter((c) => !PILOT_CHANNELS.includes(c.key)).map((c) => (
+                  <li key={c.key}>
+                    <ChannelMark ch={c.key} size={32} quiet />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* 2b. Getting started: three numbered steps, so people from an ad know what happens after "Start free". */}
       <section className="mx-auto grid max-w-7xl gap-10 px-4 pt-24">
         <h2 className="display max-w-2xl text-3xl sm:text-4xl">{t("steps.title")}</h2>
-        <ol className="reveal grid gap-4 md:grid-cols-3">
+        <ol className="reveal grid gap-x-10 gap-y-8 md:grid-cols-3">
           {STEPS.map((k, i) => (
-            <li key={k} className="grid content-start gap-3 rounded-[var(--radius-panel)] bg-surface p-6 ring-1 ring-border">
-              <span className="display grid size-10 place-items-center rounded-full bg-primary-soft text-lg text-primary" aria-hidden="true">{i + 1}</span>
+            <li key={k} className="grid content-start gap-3 border-t border-border pt-5">
+              <span className="display text-lg tabular-nums text-primary" aria-hidden="true">{i + 1}</span>
               <h3 className="text-lg font-semibold">{t(`steps.${k}.title`)}</h3>
               <p className="text-muted">{t(`steps.${k}.body`)}</p>
             </li>
@@ -122,7 +138,6 @@ export default async function Landing() {
         <div className="reveal grid gap-4 md:grid-cols-6">
           <article className="grid content-between gap-8 rounded-[var(--radius-panel)] bg-ai-soft p-6 md:col-span-4 md:row-span-2">
             <div className="grid gap-2">
-              <Sparkle size={24} weight="fill" className="text-ai" aria-hidden="true" />
               <h3 className="text-xl font-semibold">{t("bento.ai.title")}</h3>
               <p className="max-w-[48ch] text-muted">{t("bento.ai.body")}</p>
             </div>
