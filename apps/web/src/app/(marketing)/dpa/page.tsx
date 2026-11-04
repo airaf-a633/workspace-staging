@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { company } from "@/lib/company";
 
 /*
  * DRAFT data processing agreement, written 2026-09-28. Must be reviewed by a UAE lawyer before launch
@@ -41,7 +42,7 @@ export default function DataProcessingAgreement() {
         <p className="text-sm text-muted">Last updated: {UPDATED}</p>
         <p>
           This agreement (&ldquo;DPA&rdquo;) is part of the <Link className="underline" href="/terms">Terms of service</Link> between{" "}
-          <strong>[COMPANY LEGAL NAME]</strong> (&ldquo;we&rdquo;, the <strong>processor</strong>) and the business using Relay (&ldquo;you&rdquo;,
+          <strong>{company("legalName")}</strong> (&ldquo;we&rdquo;, the <strong>processor</strong>) and the business using Relay (&ldquo;you&rdquo;,
           the <strong>controller</strong>). It applies whenever we process personal data on your behalf. By accepting the Terms you accept this DPA. If the
           two conflict on data protection, this DPA wins.
         </p>

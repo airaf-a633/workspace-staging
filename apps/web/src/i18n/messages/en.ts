@@ -187,6 +187,24 @@ export const en = {
     settings: "Settings",
     signOut: "Sign out",
     previewTag: "Preview",
+    feedback: "Send feedback",
+  },
+
+  pilotFeedback: {
+    title: "Tell us what is wrong or missing",
+    description: "Relay is in a private pilot, so this is how we learn. A person reads every message.",
+    kind: "What is it about?",
+    kinds: { broken: "Something is broken", confusing: "Something is confusing", wish: "Something is missing", other: "Something else" },
+    message: "What happened, or what do you need?",
+    messageHelp: "Say what you were trying to do. You do not need to explain anything technical.",
+    send: "Send",
+    sending: "Sending…",
+    thanks: "Thank you. We read every message.",
+    errors: {
+      needMessage: "Choose what it is about and write a message first.",
+      tooMany: "That is a lot of messages for one day. Please try again tomorrow.",
+      failed: "That did not send. Try again in a minute.",
+    },
   },
 
   settings: {
@@ -201,6 +219,7 @@ export const en = {
     contacts: "Contacts and privacy",
     sla: "Reply targets",
     previewTag: "Preview",
+    feedback: "Send feedback",
     billing: "Billing",
     money: "Currency",
     ai: "AI",

@@ -38,6 +38,8 @@ interface Props {
   noticesLive?: { workspaceId: string; memberId: string; read: (ids: string[] | null) => Promise<void> };
   /** Show Campaigns (campaigns.manage, or owners and admins who approve). Preview only so far. */
   campaigns?: boolean;
+  /** Real workspaces: where "Send feedback" leads (the pilot, 2026-11-05). */
+  feedbackHref?: string;
   children: ReactNode;
 }
 
@@ -64,7 +66,7 @@ function navItems(base: string, t: TFor<"nav">, reports: boolean, help: boolean,
   ];
 }
 
-export function AppShell({ base, workspaceName, memberName, roleName, signOut, footer, banner, ai = null, reports = false, help = false, campaigns = false, notifications = null, now = 0, noticesLive, children }: Props) {
+export function AppShell({ base, workspaceName, memberName, roleName, signOut, footer, banner, ai = null, reports = false, help = false, campaigns = false, notifications = null, now = 0, noticesLive, feedbackHref, children }: Props) {
   const path = usePathname();
   const t = useT("nav");
   const common = useT("common");
@@ -164,6 +166,7 @@ export function AppShell({ base, workspaceName, memberName, roleName, signOut, f
               <p className="truncate text-sm text-muted">{roleName}</p>
             </div>
             <ThemeSwitch compact className="w-fit" />
+            {feedbackHref && <Link href={`${feedbackHref}?from=${encodeURIComponent(path)}`} className="flex min-h-11 items-center text-sm text-muted hover:text-text">{t("feedback")}</Link>}
             {footer}
             {signOut && (
               <form action={signOut}>

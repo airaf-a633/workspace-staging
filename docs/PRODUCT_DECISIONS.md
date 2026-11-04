@@ -753,3 +753,12 @@ Read end to end (no server): sign-up with a code, the confirmation email, `/auth
 - **Checked and fine:** the website-chat install code and every invitation link are built from the required `NEXT_PUBLIC_SITE_URL`; no other place builds a localhost address.
 - **Worth knowing, not changed:** a teammate invitation is not emailed. The owner copies the link (shown once) and sends it themselves; the checklist in the plan now says so. Anyone with an account can create more workspaces of their own.
 
+### Pilot feedback and the legal placeholders (2026-11-05)
+
+Found while looking at what a pilot has when something goes wrong: nothing. There was no way to report a problem, and the Terms, Privacy policy and DPA, which sign-up says people agree to, still showed `[COMPANY LEGAL NAME]`, `[LICENCE NUMBER]`, `[REGISTERED ADDRESS]` and `support@[YOUR-DOMAIN]` in square brackets.
+
+- **"Send feedback"** is in the sidebar and under Settings › You in a real workspace. Anyone in the workspace picks one of four (broken, confusing, missing, something else), writes a message, and sends it; the screen they came from is kept. It is stored by one database function (`send_feedback`, migration `20261108000001_pilot_feedback.sql`), at most 30 a day per person, up to 4,000 characters. **Nobody signed in can read it back, not even the sender**; the founder reads it in the Supabase table editor. It is deleted with the business, and kept without a name if the person is removed. It does not email anyone and cannot be replied to yet. The preview does not have it.
+- **Who we are is one file.** `apps/web/src/lib/company.ts` holds the legal name, free zone, licence number, address and email domain; the three legal pages read from it. Anything left empty still shows its square-bracket placeholder, so an unfinished page is obvious. These pages stay drafts until a lawyer has read them (two "to be confirmed by counsel" notes remain).
+
+Built: the table and function, pgTAP 032 (12 checks), the page, the menu links, `company.ts`, and `e2e/live.feedback.spec.ts`. Not verified: the page has been type-checked but not opened signed in; its browser test needs staging.
+

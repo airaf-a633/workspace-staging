@@ -39,7 +39,8 @@
 - [ ] A business owner can invite a teammate: the owner copies the invitation link (Relay does not email it) and sends it; the teammate opens it, signs up with the **same email address the invitation names**, confirms the sign-up email, and joins.
 - [ ] Backups are on and one restore has been tried.
 - [ ] Errors reach somewhere you will look (Vercel and Fly logs at least; Sentry if set up).
-- [ ] The pilot agreement is in front of every pilot.
+- [ ] The pilot agreement is in front of every pilot, and `apps/web/src/lib/company.ts` is filled in so no legal page shows a `[SQUARE BRACKET]` placeholder (check /terms, /privacy and /dpa).
+- [ ] "Send feedback" works for a pilot, and you can read what they sent (Supabase › `pilot_feedback`).
 - [ ] The real-person test found nothing that stops a person finishing the first task.
 
 ## What we drop first if time runs out

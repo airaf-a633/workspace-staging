@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { company } from "@/lib/company";
 
 /*
  * DRAFT terms of service, written 2026-09-28. Must be reviewed by a UAE lawyer before launch.
@@ -29,8 +30,8 @@ export default function Terms() {
         <h1 className="text-3xl font-semibold">Terms of service</h1>
         <p className="text-sm text-muted">Last updated: {UPDATED}</p>
         <p>
-          These terms are an agreement between <strong>[COMPANY LEGAL NAME]</strong> ([FREE ZONE], United Arab Emirates, licence{" "}
-          <strong>[LICENCE NUMBER]</strong>) (&ldquo;we&rdquo;) and the business that creates a Relay account (&ldquo;you&rdquo;). By creating an
+          These terms are an agreement between <strong>{company("legalName")}</strong> ({company("freeZone")}, United Arab Emirates, licence{" "}
+          <strong>{company("licenceNumber")}</strong>) (&ldquo;we&rdquo;) and the business that creates a Relay account (&ldquo;you&rdquo;). By creating an
           account or using Relay you agree to them on behalf of your business, and you confirm you are allowed to do so.
         </p>
       </header>
@@ -163,7 +164,7 @@ export default function Terms() {
 
       <Section n={15} title="Contact">
         <p>
-          <strong>[COMPANY LEGAL NAME]</strong>, <strong>[REGISTERED ADDRESS]</strong>. Email: <strong>support@[YOUR-DOMAIN]</strong>.
+          <strong>{company("legalName")}</strong>, <strong>{company("address")}</strong>. Email: <strong>support@{company("domain")}</strong>.
         </p>
       </Section>
     </main>

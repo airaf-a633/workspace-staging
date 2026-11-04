@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { company } from "@/lib/company";
 
 /*
  * DRAFT privacy policy, written 2026-09-28. Must be reviewed by a UAE lawyer before launch.
@@ -36,11 +37,11 @@ export default function PrivacyPolicy() {
         <h2 className="text-xl font-semibold">1. Who we are</h2>
         <p>
           Relay (&ldquo;we&rdquo;, &ldquo;us&rdquo;) is a business messaging and customer management service operated by{" "}
-          <strong>[COMPANY LEGAL NAME]</strong>, a company registered in <strong>[FREE ZONE], United Arab Emirates</strong>, licence number{" "}
-          <strong>[LICENCE NUMBER]</strong>, with its address at <strong>[REGISTERED ADDRESS]</strong>.
+          <strong>{company("legalName")}</strong>, a company registered in <strong>{company("freeZone")}, United Arab Emirates</strong>, licence number{" "}
+          <strong>{company("licenceNumber")}</strong>, with its address at <strong>{company("address")}</strong>.
         </p>
         <p>
-          Questions about this policy or your data: <strong>privacy@[YOUR-DOMAIN]</strong>.
+          Questions about this policy or your data: <strong>privacy@{company("domain")}</strong>.
         </p>
       </section>
 
@@ -174,7 +175,7 @@ export default function PrivacyPolicy() {
         <p>
           Depending on where you live (including under the UAE Personal Data Protection Law and, for people in the EU, the GDPR), you may have the right to
           access, correct, delete or export your personal data, to object to or restrict its use, and to withdraw consent. Email{" "}
-          <strong>privacy@[YOUR-DOMAIN]</strong>. If your request is about messages you sent to a business, we will pass it to that business and help it
+          <strong>privacy@{company("domain")}</strong>. If your request is about messages you sent to a business, we will pass it to that business and help it
           respond. You may also complain to your data protection authority.
         </p>
       </section>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { getT } from "@/i18n/server";
 
-export type SettingsSection = "members" | "teams" | "roles" | "channels" | "labels" | "contacts" | "sla" | "billing" | "ai" | "account" | "money";
+export type SettingsSection = "members" | "teams" | "roles" | "channels" | "labels" | "contacts" | "sla" | "billing" | "ai" | "account" | "money" | "feedback";
 
 /**
  * Settings as one page with a side sub-menu (decided 2026-09-30). The sections keep their own URLs
@@ -15,7 +15,7 @@ export async function SettingsFrame({ base, active, isOwner, children }: { base:
   const preview = base.startsWith("/preview");
   // Three plain groups instead of one long list (simplicity pass 2026-10-19): you, your team, your business.
   const groups: { key: "you" | "team" | "business"; items: Item[] }[] = [
-    { key: "you", items: [{ key: "account", label: t("account"), href: `${base}/account` }] },
+    { key: "you", items: [{ key: "account", label: t("account"), href: `${base}/account` }, ...(preview ? [] : [{ key: "feedback" as const, label: t("feedback"), href: `${base}/feedback` }])] },
     {
       key: "team",
       items: [

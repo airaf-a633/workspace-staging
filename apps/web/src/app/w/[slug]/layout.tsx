@@ -28,6 +28,7 @@ export default async function WorkspaceLayout(props: LayoutProps<"/w/[slug]">) {
       reports={reports}
       campaigns={campaignsManage !== "none" || campaignsApprove === "all"}
       help={cannedUse !== "none"}
+      feedbackHref={`/w/${slug}/feedback`}
       notifications={notices}
       now={requestNow()}
       noticesLive={{ workspaceId: workspace.id, memberId: me.id, read: markNoticesRead.bind(null, slug) }}
