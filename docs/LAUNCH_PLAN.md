@@ -43,6 +43,18 @@
 - [ ] "Send feedback" works for a pilot, and you can read what they sent (Supabase › `pilot_feedback`).
 - [ ] The real-person test found nothing that stops a person finishing the first task.
 
+## The fallback if staging is not back by 7 November: a demo launch
+
+This is the founder's call (delay, or demo); this is what the demo option is and what it is not. The repository already has a **password-protected preview mode** (`SITE_MODE=preview` plus `PREVIEW_PASSWORD`, see [DEPLOY_PREVIEW.md](DEPLOY_PREVIEW.md)). I ran it locally on 5 November from a production build and checked:
+
+- Every address, including the website, sign-in, the real app (`/w/...`) and every webhook, is redirected to a password page until the password is entered.
+- With the password: the public website (pricing included) and the full sample-data preview work, including all the screens built since October (Reports, reply targets, notifications, deals, tasks, Campaigns, Help Center, Billing).
+- The real app is switched off in this mode, and nothing reaches any database.
+
+What it is: a polished, safe thing to show investors and partners on 15 November. What it is not: nobody can use it with their own customers, there are no real messages, and no invite codes (they need a database). It needs only the Vercel project that already exists and a password you choose in Vercel's environment settings; it does not need staging, Fly.io or Postmark.
+
+Not verified: the hosted version (this was a local run), and the build I used was made before the last few changes.
+
 ## What we drop first if time runs out
 
 1. Discord (it needs the always-on Gateway process on Fly as well as the worker).
