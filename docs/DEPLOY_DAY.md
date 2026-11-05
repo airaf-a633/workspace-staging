@@ -26,7 +26,7 @@ node scripts/db-apply-remote.mjs
 This only reads and prints the list. Check it:
 
 - If it lists migrations from the start of the project (`20260927...`), the database was set up before migrations were recorded. Then run `node scripts/db-apply-remote.mjs --from 20261019`. (My notes say staging is missing everything from about `20261019000001` on, but they disagree with each other about exactly where it stops, so trust the dry run. A brand-new pilot project needs all of them: run it with no `--from`.)
-- The list should end with `20261107000002_close_anon_exposure.sql`.
+- The list should end with `20261108000002_review_fixes.sql`.
 
 Then apply (about 25 files on staging, one transaction each, oldest first):
 

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { adoptProfileLocale } from "@/i18n/profile";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { appOrigin } from "@/lib/app-origin";
 import { safeNext } from "@/lib/safe-next";
@@ -60,10 +61,14 @@ export async function signUp(form: FormData) {
 
   const supabase = await createClient();
   // Pilot access (decided 2026-11-03): an invite code, or a workspace invitation to this email, is needed to create an account. The
-  // database refuses anything else; this check only lets the page say so in words. If it cannot be asked, the database still decides.
-  const allowed = await supabase.rpc("signup_allowed", { p_email: parsed.data.email, p_code: parsed.data.invite });
-  // Someone coming from a workspace invitation who used another email address gets told that, not about an invite code.
-  if (!allowed.error && allowed.data !== true) back("/sign-up", next, next.startsWith("/invite/") ? "badInviteEmail" : "badInvite");
+  // database refuses anything else; this check only lets the page say so in words. It runs on the server with the service role, so
+  // nobody can use the public key to probe codes or invitations directly. If it cannot be asked, the database still decides.
+  const admin = createAdminClient();
+  const code = await admin.rpc("signup_allowed", { p_email: parsed.data.email, p_code: parsed.data.invite });
+  const token = next.startsWith("/invite/") ? decodeURIComponent(next.split("?")[0]!.split("/")[2] ?? "") : "";
+  const invited = token ? await admin.rpc("invite_email_matches", { p_token: token, p_email: parsed.data.email }) : null;
+  const asked = !code.error && (!invited || !invited.error);
+  if (asked && code.data !== true && invited?.data !== true) back("/sign-up", next, token ? "badInviteEmail" : "badInvite");
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,

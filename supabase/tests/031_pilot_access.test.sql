@@ -2,7 +2,7 @@
 -- end and can be revoked, and nobody signed in can make or read codes.
 -- Seed: khalid ...01 owner of qamar; noor ...07 owns the other business.
 begin;
-select plan(26);
+select plan(30);
 
 create function pg_temp.act_as(p_user uuid) returns void language plpgsql as $$
 begin
@@ -44,9 +44,12 @@ select throws_ok(format($$ select pg_temp.sign_up('revoked@example.com', %L) $$,
 
 -- A workspace invitation is enough on its own
 insert into public.invites (workspace_id, email, role_id, token_hash)
-select w.id, 'colleague@example.com', r.id, 'hash-031'
+select w.id, 'colleague@example.com', r.id, encode(sha256(convert_to('secret-token-031', 'UTF8')), 'hex')
   from public.workspaces w join public.roles r on r.workspace_id = w.id and r.key = 'agent' where w.slug = 'qamar';
-select is((select public.signup_allowed('Colleague@Example.com', null)), true, 'someone invited to a workspace may sign up without a code (any capitals)');
+select is((select public.signup_allowed('Colleague@Example.com', null)), false, 'the code check no longer says anything about workspace invitations');
+select is((select public.invite_email_matches('secret-token-031', 'Colleague@Example.com')), true, 'whoever holds the invitation link can ask whether their address is the invited one (any capitals)');
+select is((select public.invite_email_matches('secret-token-031', 'other@example.com')), false, 'and is told if it is not');
+select is((select public.invite_email_matches('wrong-token', 'colleague@example.com')), false, 'without the link nothing is revealed');
 select lives_ok($$ select pg_temp.sign_up('colleague@example.com') $$, 'and does');
 update public.invites set accepted_at = now() where email = 'colleague@example.com';
 select throws_ok($$ select pg_temp.sign_up('colleague@example.com') $$, 'P0001', 'invite_required', 'but an invitation already used does not open the door again');
@@ -55,10 +58,11 @@ select throws_ok($$ select pg_temp.sign_up('colleague@example.com') $$, 'P0001',
 select pg_temp.act_as('10000000-0000-0000-0000-000000000001');
 select throws_ok($$ select public.create_pilot_invite('Sneaky', 99, 30) $$, '42501', null, 'the owner of a workspace cannot make pilot codes');
 select throws_ok($$ select count(*) from public.pilot_invites $$, '42501', null, 'or read them');
-select is((select public.signup_allowed('x@example.com', 'nope')), false, 'but anyone can ask whether a code works');
+select throws_ok($$ select public.signup_allowed('x@example.com', 'nope') $$, '42501', null, 'nor ask the code check directly: only the server can');
+select throws_ok($$ select public.invite_email_matches('t', 'x@example.com') $$, '42501', null, 'or the invitation check');
 reset role;
 set local role anon;
-select is((select public.signup_allowed('x@example.com', 'nope')), false, 'including someone not signed in');
+select throws_ok($$ select public.signup_allowed('x@example.com', 'nope') $$, '42501', null, 'and the same for someone not signed in');
 reset role;
 
 -- What someone who is not signed in cannot do at all (no leftover sign-in from the steps above)

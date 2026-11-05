@@ -762,3 +762,16 @@ Found while looking at what a pilot has when something goes wrong: nothing. Ther
 
 Built: the table and function, pgTAP 032 (12 checks), the page, the menu links, `company.ts`, and `e2e/live.feedback.spec.ts`. Not verified: the page has been type-checked but not opened signed in; its browser test needs staging.
 
+### Correctness review of the 4-8 November migrations, and what changed (2026-11-05)
+
+A review of `reply_targets`, `notifications`, `pilot_access` and `pilot_feedback` (no real database; reading only) reported nine findings. Fixed in migration `20261108000002_review_fixes.sql`, with tests:
+
+- **The invite-code check leaked.** Anyone with the public key could ask whether an email had a pending workspace invitation, and probe codes without limit. Now the code check is for the server only (the sign-up page asks through the service role), it says nothing about workspace invitations, and a person holding an invitation link can ask whether their address is the invited one (`invite_email_matches`, which needs the link's secret token). Still not added: an attempt limit. Codes are 64 bits, so guessing is not practical, but the page itself can be called repeatedly.
+- **One failing reply-target sweep stopped the late-task notices and the cleanup.** It now runs in its own sub-transaction; a failure becomes a warning in the database log and the rest still runs.
+- **Spam:** a chat marked spam no longer starts a clock from its messages, and marking it "not spam" starts clean.
+- **A failed send could overwrite a message arriving at the same moment** (the rebuild now holds the chat first).
+- **Faster clocks:** the time a chat has waited is worked out once per chat instead of per target, and a person's clocks are worked out only for the chats they may see.
+- **A missing feedback kind** gets the plain refusal instead of a raw database error.
+
+Not changed: (a) a sign-up invite use is spent when the account row is created; if the confirmation email then fails the same person can retry with the same email (Supabase resends to an unconfirmed address without a new row), so the code is not lost for them. (b) The Reports "within target" and Home work still does per-chat clock arithmetic over the window; fine for a pilot, to be measured on a large workspace. (c) With the gate on, creating a user by hand in the Supabase dashboard is refused too: switch `invite_only` off for a moment (`update public.app_settings set value = 'off' where key = 'invite_only';`) and back on afterwards.
+

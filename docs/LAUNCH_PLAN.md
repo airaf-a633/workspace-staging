@@ -35,7 +35,7 @@
 - [ ] The web app and the worker are deployed and the worker is processing messages (a reply you send leaves "queued").
 - [ ] Each of the five channels has received and sent a real message end to end.
 - [ ] Someone without an invite code **cannot** create an account (try it), and someone with one can, including receiving the confirmation email.
-- [ ] `pnpm db:audit` lists only the four things an anonymous visitor is meant to reach (three harmless helpers and `signup_allowed`), no tables, no policies. (It runs on the local copy of the schema; against the real database, also check in the Supabase SQL editor that the migrations `20261107000001` and `20261107000002` are applied.)
+- [ ] `pnpm db:audit` lists only the three harmless lookup helpers an anonymous visitor may run, no tables, no policies (since the review fixes of 5 November the invite-code check is no longer open to visitors). (It runs on the local copy of the schema; against the real database, also check in the Supabase SQL editor that the migrations `20261107000001`, `20261107000002` and `20261108000002` are applied.)
 - [ ] A business owner can invite a teammate: the owner copies the invitation link (Relay does not email it) and sends it; the teammate opens it, signs up with the **same email address the invitation names**, confirms the sign-up email, and joins.
 - [ ] Backups are on and one restore has been tried.
 - [ ] Errors reach somewhere you will look (Vercel and Fly logs at least; Sentry if set up).

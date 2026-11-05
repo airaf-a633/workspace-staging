@@ -1,7 +1,7 @@
 -- Pilot feedback: members can send it, nobody signed in can read it, it is checked and limited, and erasing a business removes it.
 -- Seed: khalid ...01 owner of qamar; hana ...05 agent; noor ...07 owns the other business.
 begin;
-select plan(12);
+select plan(13);
 
 create function pg_temp.act_as(p_user uuid) returns void language plpgsql as $$
 begin
@@ -17,6 +17,7 @@ select pg_temp.act_as('10000000-0000-0000-0000-000000000005');
 select lives_ok($$ select public.send_feedback((select v from ids where k = 'ws'), 'broken', '  The inbox did not load  ', '/w/qamar/inbox') $$, 'an agent sends feedback');
 select throws_ok($$ select public.send_feedback((select v from ids where k = 'noor'), 'broken', 'Not my business', null) $$, '42501', null, 'but not into a business they do not belong to');
 select throws_ok($$ select public.send_feedback((select v from ids where k = 'ws'), 'angry', 'x', null) $$, '22023', null, 'the kind must be one of the four');
+select throws_ok($$ select public.send_feedback((select v from ids where k = 'ws'), null, 'x', null) $$, '22023', null, 'a missing kind is refused the same way');
 select throws_ok($$ select public.send_feedback((select v from ids where k = 'ws'), 'wish', '   ', null) $$, '22023', null, 'an empty message is refused');
 select throws_ok($$ select public.send_feedback((select v from ids where k = 'ws'), 'wish', repeat('x', 4001), null) $$, '22023', null, 'and so is a very long one');
 select throws_ok($$ select count(*) from public.pilot_feedback $$, '42501', null, 'nobody signed in can read feedback, not even the sender');

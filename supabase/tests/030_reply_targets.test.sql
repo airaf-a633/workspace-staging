@@ -3,7 +3,7 @@
 -- Seed: khalid ...01 owner (team General), sara ...02 sales manager (Deira, team scope), omar ...03 support manager (Mall),
 -- priya ...04 ops manager (Deira and Mall, team scope), hana ...05 agent (Deira), aisha ...06 viewer (Mall), noor ...07 another business.
 begin;
-select plan(74);
+select plan(77);
 
 create function pg_temp.act_as(p_user uuid) returns void language plpgsql as $$
 begin
@@ -197,6 +197,19 @@ select pg_temp.inbound('r-deira', 'a@example.com', now() - interval '2 minutes')
 select is(pg_temp.clock('a@example.com', 'first_reply'), 'ok 2.00/30', 'the customer writing again starts a new chat with a fresh first-reply clock');
 select is(pg_temp.clock('a@example.com', 'resolution'), 'ok 2.00/480', 'and a fresh resolution clock');
 select is((select sla_waited from public.conversations where id = pg_temp.conv('a@example.com')), 0::numeric, 'nothing carries over from the earlier chat');
+
+-- Spam: no clock while a chat is marked spam, and a fresh start when it is marked "not spam"
+select pg_temp.inbound('r-deira', 'spam@example.com', now() - interval '40 minutes');
+select is(pg_temp.clock('spam@example.com', 'first_reply'), 'breach 40.00/30', 'a chat starts with a clock');
+select pg_temp.act_as('10000000-0000-0000-0000-000000000001');
+select public.set_conversation_status(pg_temp.conv('spam@example.com'), 'spam');
+reset role;
+select pg_temp.inbound('r-deira', 'spam@example.com', now() - interval '30 minutes');
+select is(pg_temp.clock('spam@example.com', 'first_reply'), 'none', 'a message on a chat marked spam starts no clock');
+select pg_temp.act_as('10000000-0000-0000-0000-000000000001');
+select public.set_conversation_status(pg_temp.conv('spam@example.com'), 'not_spam');
+reset role;
+select is(pg_temp.clock('spam@example.com', 'first_reply'), 'none', 'marking it not spam starts clean: the time it spent as spam is not held against the team');
 
 -- What the signed-in person may see
 select pg_temp.act_as('10000000-0000-0000-0000-000000000003');
