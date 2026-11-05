@@ -2,7 +2,9 @@
 begin;
 select plan(31);
 
--- Test users (created as the database owner, before switching to app roles)
+-- Test users (created as the database owner, before switching to app roles). The pilot sign-up gate is switched off for this test only
+-- (this runs inside a transaction that is rolled back), so it also passes on a database where the gate is on.
+update public.app_settings set value = 'off' where key = 'invite_only';
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'khalid@unit.test'),
   ('00000000-0000-0000-0000-00000000000b', 'sara@unit.test'),
@@ -17,21 +19,21 @@ end $$;
 
 -- 1. Catalogue matches the approved table
 select is((select count(*)::int from public.permissions), 41, 'catalogue has 41 permissions');
-select is((select count(*)::int from public.role_template_permissions), 41 * 6, 'every template has every permission');
+select is((select count(*)::int from public.role_template_permissions), 41 * 7, 'every template has every permission');
 select is((select scope::text from public.role_template_permissions where template_key = 'support_manager' and permission = 'deals.values'), 'none', 'support managers cannot see deal values');
 select is((select scope::text from public.role_template_permissions where template_key = 'agent' and permission = 'deals.values'), 'own', 'agents see their own deal values');
 select is((select scope::text from public.role_template_permissions where template_key = 'agent' and permission = 'contacts.view'), 'all', 'agents can look up all contacts');
 select is((select scope::text from public.role_template_permissions where template_key = 'viewer' and permission = 'conversations.reply'), 'none', 'viewers cannot reply');
 select ok(not exists (
   select 1 from public.role_template_permissions t join public.permissions p on p.key = t.permission
-  where p.owner_only and t.template_key <> 'owner' and t.scope <> 'none'
-), 'no owner-only permission is granted to a non-owner template');
+  where p.owner_only and t.template_key not in ('owner', 'admin') and t.scope <> 'none'
+), 'no owner-only permission is granted to a template other than owner and admin');
 
 -- 2. Owner creates a workspace
 reset role;
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'khalid@unit.test');
 select lives_ok($$ select public.create_workspace('Qamar Electronics', 'qamar-test', 'Khalid') $$, 'owner creates a workspace');
-select is((select count(*)::int from public.roles), 6, 'workspace gets six role templates');
+select is((select count(*)::int from public.roles), 7, 'workspace gets seven role templates');
 select is((select count(*)::int from public.teams where is_default), 1, 'workspace gets a default team');
 select ok(public.has_permission((select id from public.workspaces where slug = 'qamar-test'), 'audit.read'), 'owner can read the audit log');
 select ok((select count(*) from public.audit_log) > 0, 'setup was written to the audit log');

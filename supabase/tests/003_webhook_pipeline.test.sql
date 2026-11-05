@@ -2,11 +2,13 @@
 begin;
 select plan(13);
 
--- As the database owner (stands in for the service role, which the server uses)
+-- As the database owner (stands in for the service role, which the server uses).
+-- Counts are taken against a baseline, so the file also passes on staging, where earlier jobs exist.
+create temp table baseline on commit drop as select count(*)::int as n from public.jobs where queue = 'whatsapp_event';
 select ok(public.record_webhook('whatsapp', '{"object":"whatsapp_business_account"}', true) > 0, 'a verified webhook is stored');
 select is((select count(*)::int from public.jobs where queue = 'whatsapp_event' and status = 'queued'), 1, 'and queued for the worker');
 select lives_ok($$ select public.record_webhook('whatsapp', '{"forged":true}', false) $$, 'an unverified webhook is stored for audit');
-select is((select count(*)::int from public.jobs where queue = 'whatsapp_event'), 1, 'but never queued');
+select is((select count(*)::int from public.jobs where queue = 'whatsapp_event') - (select n from baseline), 1, 'but never queued');
 
 create temp table claimed on commit drop as select * from public.claim_jobs('whatsapp_event', 10, '60 seconds');
 select is((select count(*)::int from claimed), 1, 'the worker claims the job');

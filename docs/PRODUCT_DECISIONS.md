@@ -63,7 +63,7 @@ _Decided with the founder in question rounds starting 2026-09-27. Each line is a
 
 ## 7. Onboarding and billing
 - **Number admin:** only the Owner can connect, reconnect or remove WhatsApp numbers and see Meta billing. Disconnecting needs a confirmation step.
-- **Trial:** 14 days with no card. Onboarding guides the owner to add a card on Meta's side, which is needed to send messages from 1 Oct 2026.
+- **Trial:** 14 days with no card, **starting when the business connects its first WhatsApp number** (decided 2026-09-29), not at sign-up. Until then the account is free and unlimited in time, so early sign-ups during Meta's review lose nothing. Onboarding guides the owner to add a card on Meta's side, which is needed to send messages from 1 Oct 2026.
 - **Seats:** a paid seat is any member who can reply or edit. Read-only viewers are free, up to 5 per workspace.
 
 ## 8. Data, privacy, audit
@@ -205,3 +205,573 @@ _Decided with the founder in question rounds starting 2026-09-27. Each line is a
 - Re-plan the engineering plan by milestones for the founder + Claude, with the private beta at the core milestone.
 - Set final prices (placeholders now) after talking to the deposit-paying leads.
 - Choose the inbound email provider for the Gmail capture address.
+
+## Relay pivot (2026-10-07)
+
+The product is now **Relay**. It is for a global market and is omnichannel, with 18 channels; see `apps/web/src/components/channels/catalog.ts`. The new identity is Geist type, a flat Petrol accent and the "arcs" mark.
+
+The omnichannel inbox (step 2) is built on these decisions:
+
+- **Demo business:** Northwind Home, a global online consumer brand selling home goods and small electronics, priced in USD.
+- **Sidebar:** Chatwoot style. Conversations come first, then one entry per connected inbox (each number or address), then teams and labels.
+- **Per-channel rules are real, not cosmetic:**
+  - Email has a subject, CC and quoted threads.
+  - WhatsApp has the 24-hour window and templates.
+  - Instagram shows story replies.
+  - Voice shows call logs and recordings.
+  - Slack and Discord have threads.
+- **Conversation side panel:** contact details with all their channels, previous conversations across channels, linked deals, orders and tasks, and the AI summary and copilot.
+- **Same person on two channels:** Relay suggests "looks like the same person" and an agent confirms the merge. There is never a silent auto-merge.
+- **Reply via:** an agent can answer on another of the contact's known channels from the composer. This starts a linked conversation, which is useful when the WhatsApp 24-hour window has closed.
+- **Broken channel** (expired token, bounced domain, flagged number), shown in three places:
+  - a banner in that inbox with Reconnect;
+  - an item on the owner's home under "Needs you now";
+  - a composer that says it can't send there and offers another channel.
+
+### Time zones and channels (2026-10-07)
+
+- **Time zones:** each person sees times in their own zone. It's set in their profile and detected from the browser at sign-up. Reports, business hours and SLAs use the workspace's zone.
+- **Channels page:**
+  - Connected inboxes come first, with health and quick settings.
+  - Below them, the catalogue of all 18 channels, grouped into Messaging, Social, Web, Work and Developer.
+- **Connect flows:**
+  - WhatsApp, website chat, email, Instagram and Messenger each get their own step-by-step flow.
+  - Website chat's flow includes a live widget preview and the install code.
+  - Email's flow covers forwarding and SMTP.
+  - The other 13 channels share one "connect with your account" flow.
+
+### Contacts (2026-10-07, step 4)
+
+**Areas:**
+- **One person, every channel:** all of a contact's identities in one place, with merged history and merge suggestions.
+- Segments and CSV import.
+- Companies.
+- Privacy tools.
+- Activity and notes.
+- Custom fields and tags.
+- Ownership and lifecycle.
+- Bulk actions.
+
+**Companies:** each contact belongs to at most one company. The company page lists its people, plus all their conversations, deals and orders. Matching by email domain is suggested, and a person confirms it.
+
+**Import:** a review step. Exact matches on email or phone update the existing contact. Likely matches are listed so a person can merge them or keep them apart. Nothing is overwritten silently.
+
+**Privacy, at production level:**
+- Marketing consent per channel, with date and source. Campaigns respect it.
+- A global "do not contact" flag.
+- One-click export of everything held about a person.
+- Erase on request (owner or admin, with a typed confirmation). The audit log records that it happened, without the data.
+- Workspace retention rules that auto-delete conversations after N months.
+
+### Reports and SLAs (2026-10-07, step 5)
+
+**Build order:** Reports, then SLAs, then Help Center, then Campaigns.
+
+**Reports cover four areas:**
+- **Conversations:** volume by channel, team and hour; first reply and resolution times; open backlog.
+- **Team and agents:** workload, reply times, ratings and handovers for each person.
+- **Satisfaction (CSAT):** ratings and comments by channel, team and agent.
+- **Sales and campaigns:** pipeline, won value, and campaign delivery, replies and conversions.
+
+**SLAs are policies, matched by team, channel and VIP:**
+- Examples: VIP first reply within 15 minutes; email within 4 hours.
+- The clock only counts business hours.
+- A warning shows at 80% of the target. Breaches are flagged in the inbox and in reports.
+
+**SLA details (2026-10-07):**
+- **Targets in each policy:** first reply, next reply and resolution.
+- **When the clock stops:**
+  - While the team is waiting on the customer, meaning the last message was ours.
+  - Outside business hours, measured in the workspace's zone.
+- **Who hears about it:**
+  - The person holding the chat: a warning at 80%, then an alert at breach.
+  - The team's manager: an alert at breach, which also appears under "Needs you now" on their home.
+  - Unclaimed chats that breach are reassigned to the next available teammate.
+- **When several policies match:** the strictest target wins, separately for each of the three targets.
+
+### Help Center (2026-10-07)
+
+**What's included:**
+- A public, branded help site with categories, search and articles. No login is needed.
+- An article editor with drafts and published articles, categories, and who wrote what and when.
+- Articles in several languages. AI drafts the translations and a person reviews them.
+- Feedback and gaps:
+  - "Was this helpful?" votes.
+  - Searches that found nothing.
+  - Questions the team keeps answering in chat.
+
+**How AI uses it:** in the reply box and in the widget, AI suggests relevant articles. It drafts answers only from published articles, and links the article it used.
+
+**Who publishes:** anyone on the team can draft. Owners, admins and managers publish.
+
+### Accent colour: Petrol → Relay blue (2026-10-07)
+
+The accent changed from Petrol #0A5670 to **Relay blue #006ACC** (dark mode #5AABFF with a near-black label).
+
+**Why:** blue feels familiar to Chatwoot users. We use Chatwoot's hue (209°), deepened, rather than their exact #1F93FF, for two reasons:
+- The exact blue fails our contrast rule: white text on it reaches only 3.15:1, and as text on the page only 2.93:1.
+- Copying their exact brand colour is not what we want.
+
+**Contrast:**
+
+| Check | Light | Dark |
+|---|---|---|
+| Label on the primary button | 5.34:1 (white) | 7.31:1 |
+| Blue as text on the surface | 5.34:1 (4.98:1 on the page background) | 7.33:1 |
+| Text on soft chips | 4.63:1 | 5.36:1 |
+
+**Related rules:**
+- **AI** uses the same blue, always with the sparkle icon and the "AI" label. There is no second tint and no violet.
+- **The hero band** is flat #0058AA in light and #0A4078 in dark. White text on it reaches 7.06:1, and 80%-white body text 5.12:1.
+- **The "in transit" deal badge** is now neutral grey, so blue only ever means action or selected.
+- **The sample "Wholesale" label** moved to teal #0E7490, so a label never looks like a selection.
+
+### English-only product (2026-10-07)
+
+Relay is a global product, not Arabic-centric. The founders will pitch Arabic-speaking customers themselves.
+
+**What changed:**
+- The interface is English only.
+- Removed:
+  - the Arabic text file;
+  - the language switch;
+  - right-to-left layout for the interface;
+  - the Arabic font;
+  - the Arabic notice on the legal pages.
+- The translation system (`i18n/`) stays, so a language can be added later: add its code to `LOCALES` and a messages file.
+
+**Customers still write in any language:**
+- Their messages keep `dir="auto"` and come with Translate.
+- The demo mixes languages: Aiko writes Japanese, Lucía Spanish (she replaces Lina's Arabic chat), Chloé French.
+- AI drafts replies in the customer's language, with an English gloss.
+
+**Help Center:**
+- The demo site is English only.
+- Languages remain a feature: a business adds one in Site settings, AI drafts the translations, and a person reviews them before they go live.
+
+### Campaigns (2026-10-07)
+
+**Channels:**
+- **WhatsApp:** approved templates only, with the cost per country shown before sending.
+- **Email:** subject, preview text and an unsubscribe link.
+- **SMS:** STOP opt-out, with the part count and cost shown.
+- **Messenger and Instagram:** only people who wrote within Meta's messaging window (shown as a limit).
+
+**Audience:** saved segments, with consent enforced. Relay leaves out:
+- anyone without opt-in on that channel;
+- anyone marked do-not-contact;
+- anyone with no handle on that channel.
+
+It shows how many people are left out, and why, before sending.
+
+**Replies:** go into the inbox as normal conversations. Each is labelled with its campaign and routed to the campaign's team. A STOP reply opts the person out automatically.
+
+**Sending controls:**
+- **Timing:** send now, at a set time, or at the same local time in each customer's time zone.
+- **Test send** to yourself first.
+- **A/B test:** two versions go to a slice of the audience, and the better one goes to the rest.
+- **Approval:** owners and admins approve sends over 1,000 recipients.
+
+### Onboarding, billing and admin console (2026-10-07, step 6)
+
+**Onboarding:** a short three-step wizard (business name and size, first channel, invite the team), then a checklist on Home: install the widget, import contacts, set reply targets, try AI.
+
+**Pricing:** per seat, three plans, with unlimited channels and AI credits included per plan. The sample prices are Starter $19, Growth $39 and Pro $79 per user per month. They stay sample until the founders set real prices.
+
+**Billing in Settings:**
+- Plan and seats: change plan and add or remove seats, prorated.
+- Usage: AI credits, plus WhatsApp and SMS message costs passed through at cost, with limits.
+- Invoices: card on file, invoice history, billing email, and VAT or tax ID.
+- Trial and cancel: a trial countdown, and cancel from Settings with no call needed. Access continues to the end of the period, and data can be exported.
+
+**Relay staff admin console:**
+- Workspaces and health: plan, seats, MRR, broken channels and last activity.
+- Support access: only after the workspace owner grants time-limited access, and every action is logged.
+- Plans and credits: extend trials, comp credits and change plans, each with a written reason.
+- Platform status: queue backlog, webhook failures and channel provider status.
+
+## Backend build order (decided 2026-10-09)
+
+Each preview feature gets real data in its own step (migration, tests, live page). The preview keeps running on sample data for partner demos.
+
+Order:
+1. Channels foundation.
+2. Customers and companies, assignment, and notes.
+3. SLAs and Reports.
+4. Help Center.
+5. Campaigns.
+6. Deals and Tasks.
+
+**Channels foundation (step 1):**
+- Every connection is a row in `channels`. WhatsApp keeps its own details table, which shares the channel's id. Team routing and connection status live on the channel.
+- One customer has many identities (WhatsApp number, email, handle) in `contact_identities`, so the same person on two channels is one customer card.
+- Threading: chat channels keep one thread per customer per channel. Email gets one thread per email thread, stored as `conversations.thread_key`.
+- Messages use provider-neutral names: `external_id`, `reply_to_external_id` and `sent_at`. The worker calls `ingest_inbound` for every channel.
+
+**Inbox actions (step 2a):**
+- Claim, hand over, resolve, reopen, spam and not-spam each go through a checked database function. Internal notes and "ask to collaborate" do too.
+- Taking a chat that someone else holds needs `conversations.override`.
+- A handoff needs a note of at least 10 characters, and it clears the collaborators.
+- Handover, spam and override are written to the audit log. Every action is recorded in the conversation's own trail (`conversation_events`).
+- Notes store the @mentions of active members. Notifications come in a later step.
+- Collaborators count as "own" for visibility.
+- Labels exist and show in the inbox. A screen for adding them comes later.
+
+## Frontend day (decided 2026-10-19)
+
+- **Labels:** Settings › Labels lets owners and admins (`crm.settings`) create, rename, recolour and delete labels. Anyone who can write notes on a chat can label it, from the customer panel's "This chat" section.
+- **Collaborators:** people with `conversations.collaborators` add or remove teammates who can reply. When someone asks to collaborate, the holder sees a banner and chooses Add or Not now.
+- **Notifications bell:** shows only things that need you: a chat handed to you, an @mention, a collaboration request on your chat, a missed reply target on your chat, and broken channels (owners and admins only). Items older than a day start as read. The preview builds them from sample data; the real app stores them later.
+- **Pricing (provisional):** $19 / $39 / $79 per user per month, with yearly billing at two months free. Every channel is on every plan. WhatsApp and SMS fees are passed through at cost. The trial is 14 days with no card. Plans live in `lib/plans.ts`, shared by the site and Billing.
+- **Public site:** new Features and Pricing pages, and comparison pages for Zendesk, Intercom, Front and Chatwoot. Comparisons use only the competitor's official list prices, with a "checked on" date and a link (`lib/competitors.ts`), and each says honestly when the competitor is a good fit. Chatwoot Cloud charges the same as our Starter and Growth, so that page competes on handovers, manager homes and hosting, not price.
+
+## Sending replies, M2.4 step 1 (decided 2026-10-19)
+
+- **One outbound path for every channel.**
+  - `send_reply()` checks who may reply: the holder or a helper with reply rights, or a manager whose override reaches the chat. Untaken chats must be taken first.
+  - It refuses empty or overlong text (4,096 characters), a disconnected channel, and WhatsApp replies more than 24 hours after the customer's last message.
+  - It stores the message as `queued` and adds a `send_message` job.
+- **A repeated click never sends twice:** each send carries a client id, and the same id returns the same message.
+- **The worker sends through a per-channel adapter**, starting with WhatsApp.
+  - Temporary problems (rate limits, Meta outages, network) retry with backoff.
+  - Permanent ones fail the message at once with a reason in plain words, shown under it.
+  - Channels without an adapter fail with "Sending on this channel isn't available yet."
+- **Queued messages show no tick** until WhatsApp accepts them. Delivery and read ticks come from the existing status webhooks.
+- **Next:** media, reactions, approved templates outside the 24-hour window, the 20-messages-per-second limit per number, and replying on a customer's other channel.
+
+## Website chat (decided 2026-10-19)
+
+- **The first channel that needs no outside approval.** Owners and admins add it in Settings › Channels (name, website, greeting, colour, button side), then paste one `<script>` line on their site.
+- **The widget is public.** It knows only its key. The chat panel runs in a Relay page inside a frame, so it never touches the site's own code.
+- **Visitors don't sign in.** Their browser keeps a random secret, sent in a header and never in the URL. Relay stores only its SHA-256 fingerprint as the contact identity, so a leaked row can't be used to pose as a visitor. They show in the inbox as "Website visitor" until they give a name or email.
+- **The email is optional.** It's offered after the first message, kept on the contact, and never takes over another contact's address.
+- **Messages and replies use the shared paths:** `ingest_inbound` for incoming and `send_reply` for outgoing. The worker's website-chat sender just marks a reply sent; the widget checks every 4 seconds while it's open and marks replies read when the visitor sees them.
+- **Guard rails:** 10 messages a minute per visitor, 4,000 characters per message, retried sends stored once, and unknown keys refused. The widget is switched off on the password-protected partner preview, which never touches the database.
+- **Later:** file uploads, typing indicators, a live connection instead of checking every few seconds, checking which site the widget runs on, and showing a reply by email when the visitor has left.
+
+## Email, part 1: receiving (decided 2026-10-19)
+
+- **Forwarding first.** Each email channel gets a forwarding address `{token}@{INBOUND_EMAIL_DOMAIN}` (e.g. `northwind-3fa9c2@in.…`), and the business forwards its own support address there. "Continue with Outlook" and "Continue with Google" come as separate steps.
+- **Postmark posts each email to `/api/webhooks/postmark`,** protected by Basic auth from the webhook URL. The email is stored and queued like Meta's webhooks; unauthorised calls are refused and not stored.
+- **The worker files each email into a conversation.**
+  - It finds the channel by token, and threads by References / In-Reply-To.
+  - It keeps only the new reply (Postmark's stripped reply, otherwise our own trim of the quoted "On … wrote:" history).
+  - It stores attachments up to 10 MB each in the private media bucket.
+  - A repeated email is ignored, because its Message-ID is the dedupe key.
+- **Replies come from the business's own address once its domain is verified.** Until then they come from a Relay address with Reply-To set to the business's. Each channel has one signature, plus the sender's name.
+
+## Email, part 2: sending (decided 2026-10-19)
+
+- **Replies go out through Postmark,** and threading headers come from the conversation:
+  - `In-Reply-To` names the customer's latest email.
+  - `References` carries the thread, oldest first.
+  - Our own `Message-ID` (`<relay-{message}@{EMAIL_SEND_DOMAIN}>`) is stored, so the customer's answer threads back. If a provider rewrote it, the thread's first email in References still matches.
+- **From line:** "Leo · Northwind Support". The address is the business's own once its domain is verified. Until then it's `{token}@{EMAIL_SEND_DOMAIN}`, with Reply-To set to the business's address, so answers still arrive through forwarding.
+- **Format:** plain text with the signature after the standard "-- " separator, plus a simple HTML version with everything escaped.
+- **Failures:**
+  - Postmark's permanent failures (bounced or spam-flagged address, invalid address, unconfirmed sender, account still awaiting approval) fail the reply at once in plain words. Outages retry.
+  - A server without email set up fails replies with "Email sending isn't set up on this Relay server yet."
+- **Domain verification from Settings:**
+  - "Verify {domain}" asks Postmark (account token) for a DKIM TXT and a Return-Path CNAME, and shows them. "Check again" re-checks, and once DKIM passes, replies come from the business's address.
+  - A changed address must be verified again.
+  - Free-mail addresses (gmail.com, outlook.com and so on) can't be verified, so the page explains that instead of offering a button that would always fail.
+
+## "Continue with Outlook" (decided 2026-10-20)
+
+- **Connecting:**
+  - Settings › Channels › Email offers "Use Outlook or Microsoft 365?". Microsoft sign-in uses the authorization code flow with PKCE and a state cookie. It works for work, school and personal accounts.
+  - The person then picks their own mailbox or a shared one (like support@). One channel per mailbox, across all of Relay.
+  - Microsoft's refresh token goes straight into Vault. The sign-in is held for 15 minutes for the person who signed in only.
+- **Receiving:**
+  - A push subscription on the inbox sends notifications to `/api/webhooks/microsoft`. A notification only queues a check when its per-mailbox secret matches.
+  - The worker reads new mail with a delta query, starting at the moment of connecting, so older mail stays where it is. It uses Microsoft's "unique body", so quoted history is left out, and files mail through the same threading and attachment path as forwarded email.
+  - Every minute the worker renews subscriptions with 12 hours to spare, and checks any mailbox it hasn't heard from in 5 minutes.
+- **Sending:**
+  - Replies go out as Outlook's own reply to the customer's latest email, threaded by Microsoft and saved in the mailbox's Sent folder.
+  - No domain verification is needed: the mailbox itself sends.
+- **When it breaks:**
+  - A revoked sign-in (for example after a password change) or a mailbox the sign-in can't open marks the channel "disconnected", with a plain reason and a "Reconnect Outlook" button.
+  - Everything already in Relay stays.
+
+## "Continue with Google" (decided 2026-10-20)
+
+- **Connecting:**
+  - Settings › Channels › Email offers "Use Gmail or Google Workspace?". Google sign-in uses PKCE, a state cookie and offline access. Scopes: openid, email, `gmail.modify`, `gmail.send`.
+  - If someone unticks Gmail access on Google's screen, we say so plainly instead of failing quietly.
+  - Only the signed-in mailbox is connected. Teams sign in as support@ itself; Workspace admin-wide delegation can come later.
+  - The refresh token lives in Vault. One channel per mailbox.
+- **Receiving:**
+  - Every minute the worker reads the mailbox's history feed (messages added to the inbox), starting from the moment of connecting.
+  - Quoted history is trimmed by our own rules, since Gmail has no "unique body". Mail is filed through the same threading and attachment path as other email.
+  - If the worker was off for over a week (Gmail keeps about a week of history), it starts again from now and logs it.
+  - Push through Google Pub/Sub can replace the minute-by-minute check later without other changes.
+- **Sending:**
+  - The reply is built as a standard email (text and HTML, names encoded for any language, threading headers) and sent through Gmail inside the customer's Gmail thread, so it shows in Sent.
+- **When it breaks:** a revoked sign-in marks the channel disconnected, with "Reconnect Gmail"; history stays.
+- **Until Google verifies the app** (restricted Gmail scopes need a CASA security assessment), only test users listed in Google Cloud can connect.
+
+## Customers and companies on real data, step 2b (decided 2026-10-20)
+
+- **Who can edit:** anyone who can see a customer can edit them, except Viewers. The Agent role's "edit contacts" widened from their own customers to all they can see. Template, existing roles and the shared role list all changed, and the drift test now follows later template changes.
+- **Customer details:**
+  - Stage, owner, company (one per person), tags (trimmed, de-duplicated), language, area, custom fields (only defined, non-empty fields are kept) and one pinned note.
+  - A new email or phone also becomes a way to reach them, never taken from another customer.
+  - Customers added by hand are owned by whoever added them, so an Agent sees them before any chat exists.
+- **Companies:** one per domain, kept as a bare domain whatever was typed. A customer whose email domain matches a company is offered the link.
+- **Custom fields:** owners and admins (`crm.settings`) define them in Settings › Contacts. Keys are letters, digits and underscores.
+- **Labels and helpers save for real:**
+  - Labelling follows `conversations.notes`.
+  - Adding a helper needs `conversations.collaborators` (or holding the chat), and a teammate who can reply.
+  - Add, remove and "not now" go into the trail.
+- **The real Contacts screens are the preview's components, with save hooks.**
+  - The customer timeline shows only what's real: chats, notes, handovers.
+  - Deals, tasks, orders, consent, do-not-contact, merging, export, erasing and bulk delete stay preview-only until their steps (2c and later).
+
+## Step 2c: privacy on real data (2026-10-20)
+
+- Erasing a customer removes their details, identities, consent, notes, message text and files; the contact stays as an anonymous "Erased customer" so reports keep counts. Owners and admins only (contacts.erase).
+- Bulk delete is the same as erasing, with a typed confirmation (the number of people).
+- Marketing consent per channel and do-not-contact are real and audited. "Unknown" removes the record.
+- Merge: the person picks which values to keep; same-channel threads are joined, identities, consent, tags and fields move over.
+- Import fills blanks only and never overwrites. Consent is recorded only when the column clearly says yes (source "Imported file"). Up to 2,000 rows per batch; larger files go in batches.
+
+## The other 13 channels (2026-11-01)
+
+Research: docs/CHANNELS_RESEARCH.md. Plan: docs/CHANNELS_PLAN.md. Decided:
+- Order: shared groundwork (step 0), then API, Telegram, LINE; then SMS and Voice, Slack, Discord, Teams; the gated five last.
+- SMS and Voice: the customer connects their own Twilio account and pays Twilio directly. Managed numbers come later, if ever.
+- Slack: customers in Slack Connect channels (the customer-support use). Internal help desk is not in scope.
+- TikTok, X, Viber, WeChat and Apple Messages show as "Request access" until each one's approval, contract or cost is settled; built after that.
+- Teams: internal help desk only, installed by a company's admin; customer-facing Teams is not promised.
+
+## Telegram (2026-11-01)
+
+Facts read from Telegram's own documentation are in docs/CHANNELS_RESEARCH.md ("Telegram: verified facts"). Decided:
+- A normal bot first. Connecting a business's own Telegram account (Telegram Business) comes later.
+- The owner may set a greeting. It is sent once when someone presses Start, and a bare Start is not filed as a conversation.
+- Private chats only. Group messages are ignored silently (the bot does not reply in groups, to avoid noise).
+- Replies are plain text; files from customers are downloaded up to Telegram's 20 MB bot limit and a bigger file says so in the thread.
+- People are told apart by Telegram's chat id. Name is first and last name, else the @username, else blank; nothing is invented.
+
+## LINE (2026-11-01)
+
+Facts read from LINE's own documentation are in docs/CHANNELS_RESEARCH.md ("LINE: verified facts"). Decided:
+- Replies are sent automatically: a free reply while the customer's message is fresh (under about 50 seconds), otherwise a push message that counts against the business's own LINE plan. The connect screen and the channel page explain this. If the plan's allowance is used up, the reply fails with a plain message.
+- Adding the account as a friend is not a conversation; it sends the optional greeting (free, uses the reply token). A block, and a re-add, are written into the chat as a small line, because sending to a blocked person looks like success but never arrives.
+- Private chats only. Group and room messages are ignored.
+- The customer pastes the long-lived channel access token and the channel secret. The expiring-token option LINE recommends is not built; its issuing steps were not readable and need research first.
+- The owner pastes Relay's webhook address into the LINE console and presses Verify (the documented path); Relay does not set it through an API.
+- Customer names come from LINE's profile endpoint, asked once per new customer; if LINE won't say, the name stays blank.
+
+## SMS (2026-11-01)
+
+Facts read from Twilio's own documentation are in docs/CHANNELS_RESEARCH.md ("SMS and Voice on Twilio: verified facts"). Decided:
+- The customer connects their own Twilio account (Account SID and Auth Token) and one phone number per inbox. Twilio bills them directly. Messaging Services and managed numbers are not built.
+- A customer's STOP (as Twilio reports it, never read from the words) marks them opted out of SMS marketing (source "Customer replied STOP") and writes a line in the chat. START lifts only an opt-out that came from their own STOP, and does not mark them as opted in: marketing consent still needs a separate, explicit yes.
+- Texts show delivered and failed ticks from Twilio's delivery reports. Twilio's error codes are shown but never relied on, because Twilio says they may change.
+- Replies are plain text up to 1,600 characters (Twilio's limit). Pictures from customers are downloaded; sending pictures is not built.
+- SMS is built before Voice. Voice needs its own decisions (what a caller hears, voicemail, the recording notice) and will be asked when it starts.
+
+## Voice (2026-11-02)
+
+Facts read from Twilio's own documentation are in docs/CHANNELS_RESEARCH.md ("Voice on Twilio: verified facts"). Decided:
+- The customer connects their own Twilio account and one phone number per inbox, the same way as SMS. The same number can also be connected as an SMS inbox; the two are separate inboxes and the customer is one person.
+- A call rings a phone the owner chooses (Twilio Dial), for a number of seconds the owner sets (5 to 60, default 20). If nobody answers, or no phone is set, the caller hears the owner's greeting, then the recording notice, then records a voicemail (up to 2 minutes).
+- Recording notice: a spoken sentence, written by the owner, with the default "This call may be recorded." It is read just before the beep. The owner can clear it; Relay says plainly that the law is theirs to check, and does not decide it for them.
+- Calls are filed as chat cards: an answered call (with its length) or a missed call. A voicemail is a second card with a player. Relay downloads the file into its own storage so the team can play it. No transcript for now (Twilio's is paid, American English only, and limited to 2 to 120 seconds).
+- Inbound only. Agents cannot call customers back from Relay; the chat offers a "Call +number" link that opens the person's own phone. A text reply to a voice inbox is refused by the database as well as hidden by the screen.
+- Gaps accepted for now: a caller who withholds their number is not filed; a voicemail-only inbox files a missed call on every call, even if the caller hangs up at once; the greeting is read in the default voice and language of the owner's Twilio account (a language picker needs Twilio's voice names, which I have not verified).
+
+## Slack (2026-11-02)
+
+Facts read from Slack's own documentation are in docs/CHANNELS_RESEARCH.md ("Slack and Slack Connect: verified facts"). Decided:
+- One Relay Slack app, which each customer adds to their workspace with "Add to Slack" (OAuth). Relay keeps one bot token per workspace in Vault. This needs the Relay Slack app's keys on the server (SLACK_CLIENT_ID, SLACK_CLIENT_SECRET, SLACK_SIGNING_SECRET). I could not confirm from Slack's pages that a distributed app can be installed by other workspaces without a Marketplace listing; that is the first thing to check when the app is created.
+- One Slack workspace is one Relay channel. Every Slack channel the app has been added to is listened to (Slack Connect or not); there is no per-channel switch. Only public and private channels are read, never direct messages.
+- A person from another workspace is a customer. One chat per person per Slack channel (the Slack channel id is the chat's thread key). Replies are posted by the Relay app into the thread of the customer's latest message.
+- The customer's own staff typing in Slack show in the chat as the team's, marked "sent outside Relay". They go to the chat of the message they replied to in a thread, or the only chat in that Slack channel. When several customers share a channel and the message is not in a thread, nothing is filed rather than guessing.
+- Customers are told from staff by their workspace (users.info team_id against the installed workspace, and is_stranger). Slack says no single property confirms this; a person Slack will not describe is treated as a customer so no outside message is hidden.
+- Not built: Slack's own app home, slash commands, reactions, edits and deletes, text formatting (Relay sends plain text), per-channel switches, Enterprise Grid org-wide installs.
+
+## Discord (2026-11-02)
+
+Facts read from Discord's own documentation are in docs/CHANNELS_RESEARCH.md ("Discord: verified facts"). Decided:
+- Each business uses its own Discord bot (made in Discord's Developer Portal, its token pasted into Relay), like Telegram. It carries their own name and picture, and Relay needs no Discord approval or verification.
+- What reaches the inbox: direct messages to the bot, and messages in a server channel that mention the bot. Nothing else in a server is read. This needs no privileged "Message Content" permission, because Discord still gives a bot the content of direct messages and of messages that mention it. Reading every message in a channel is not built.
+- A direct message is one chat. A mention in a server is one chat per person per channel. A reply to a mention is a normal Discord reply under their message (everyone in that channel can read it); a reply in a direct message stays private. Agent text never pings anyone (mentions are switched off in what Relay sends).
+- Discord delivers messages only over a long-lived Gateway connection; there is no HTTP alternative. So a separate always-on process (`pnpm --filter @app/worker gateway`, apps/worker/src/gateway) holds one connection per connected bot and queues each relevant message like a webhook. Exactly one copy must run, and it cannot run on a serverless host. The worker's hosting place is still an open decision, and this adds a requirement to it.
+- The channel page shows whether the connection is up, from health the Gateway process records. It also shows the link that adds the bot to a server, which appears once Discord has told the Gateway the bot's application id.
+- Safety rails: identifies are rationed to 100 a day per bot (Discord's limit is 1,000, and going over resets the token); the bot's token is only ever sent to Discord's host; attachment links are fetched only if they are public https addresses, and without credentials.
+- Not built: sharding (needed only past 2,500 servers per bot), threads and forum channels, reactions, edits and deletes, slash commands, sending files, a language other than the bot's.
+
+## Microsoft Teams (2026-11-02)
+
+Facts read from Microsoft's own documentation are in docs/CHANNELS_RESEARCH.md ("Microsoft Teams: verified facts"). Decided:
+- Teams is an internal help desk: a company's own colleagues message a bot in Teams, and the team answers from the inbox. It is not for customers outside the company.
+- Each company registers its own bot in its own Azure account (an Azure Bot, an Application (client) ID, a client secret and its Directory (tenant) ID) and pastes the three values into Relay. Relay checks them by asking Microsoft for a bot token. A shared Relay-wide bot is not possible: new bots are single-company (reported by third-party pages; the cross-company workaround is only a proof of concept).
+- Relay generates the Teams app file (manifest and icons, pre-filled with the company's bot) for download; the company's admin uploads it to Teams and allows colleagues to use it. The app's own id is the channel's id, so downloading again updates the same app. Needs someone with admin rights, about half an hour, once.
+- Only private (one to one) chats with the bot reach the inbox, one chat per person. Messages in team channels and group chats are not read (they would need an @mention and the reply would be public).
+- Optional welcome message, off by default: sent once when a colleague first opens the bot. No empty chat appears in the inbox until they write.
+- The messaging endpoint checks Microsoft's JWT on every call (issuer, audience = the bot's App ID, validity period, signature against Microsoft's published keys, serviceUrl, and the key's endorsement for the channel) and ignores anything from another tenant. Replies go to the serviceUrl of the colleague's latest message. The bot's token is requested from the company's own tenant and kept for under an hour.
+- Files sent in a chat are downloaded (they arrive as pre-authorised links). Pictures pasted into a chat are not downloaded yet and show as an unsupported message so nothing is silently lost.
+- Not built: channels and group chats, proactive messages to people who have not written first, message edits and deletes, cards, sending files, a Teams Store listing, other tenants (cross-company).
+
+## The gated five: TikTok, X, Viber, WeChat, Apple Messages (2026-11-02)
+
+Facts re-read from each platform's own pages are in docs/CHANNELS_RESEARCH.md ("The gated five, re-checked against official pages"), including what could not be read. The re-check changed the plan: two of the five need no approval from anyone, so they are built, not gated. Decided:
+- **X** is built, through the business's **own X developer app** (Web App type, a client secret). They pay X directly: X's pricing page lists about $0.010 per message received and $0.015 per reply, as credits bought in their Developer Console. Relay carries no cost and adds no charge. Relay does not run one X app for everyone, because that would put X's per-message bill on Relay with no price for it in the plans.
+- **Viber** is built for a business that **already has a Viber bot** (pasted token). Viber gives bots only under a contract with Viber or a partner (a monthly fee of EUR 100 or 115: Viber's own pages disagree). Relay never sells Viber and explains this plainly. Relay stops blocking Viber replies after 24 hours, because Viber's developer page does not publish such a rule (it only bills messages outside a 24-hour session); the screen says outside-session messages may be charged.
+- **TikTok, WeChat and Apple Messages** stay unconnectable. Their page explains the gate in plain words and has a **Request access** button that only saves the request (who asked, which channel, an optional note of up to 500 characters). The owner then sees "You asked for access on <date>"; the Relay team reads the requests in the database to decide what to build next. Nothing is sent to anyone.
+  - TikTok: Relay's own app must pass TikTok's data security and privacy reviews. TikTok's pages could not be read in full, so the region and reply-window limits shown come from other tools and are labelled that way.
+  - WeChat: the English documentation is mostly untranslated, so account rules are unconfirmed. A reviewer who reads Chinese is needed before it is built.
+  - Apple: only through an Apple-approved Messaging Service Provider. Relay is not one, and Apple's pages do not say how to become one or whether a business can connect without one. The note asks which provider the business uses.
+- X: only regular (unencrypted) direct messages arrive; attachments appear as an unsupported message; there is no remote webhook removal when disconnecting (the business removes it in their console).
+- Not built for X: encrypted chats (X Chat API), media, groups, proactive messages. Not built for Viber: stickers, contacts, links and rich media from customers (shown as unsupported), broadcast and proactive messages.
+
+## Where the worker and the Discord Gateway run (2026-11-02)
+
+Details, costs and what could not be verified are in docs/DEPLOY_WORKER.md. Decided:
+- **Fly.io, Frankfurt**, one app with two process groups from one image: `worker` (the job queue) and `gateway` (Discord). Chosen because the engineering plan already named it; Fly's own pages were checked for regions, process groups, restart policy, scaling, secrets and pricing. Other hosts (Render, Railway) were not researched.
+- **Exactly one machine per group, no standby.** The Gateway must never run twice (Discord's limit of 1,000 connections a day, going over resets the token).
+- **Accepted for now:** Discord messages sent while the Gateway restarts (about a minute on a deploy or crash) are lost. Saving the session to resume across restarts is deferred until it can be tested on a real bot.
+- **Cost:** about $7.40 a month (two 512 MB machines), no free tier.
+- **Starts with staging**, once it is restored. Until then the worker can still run on the laptop (`pnpm worker`).
+- Not built or run: the image (no Docker on this machine) and the deploy itself (no Fly account yet).
+
+
+## Deals and tasks on real data (2026-11-03)
+
+Decided with the founder (answers to questions asked before building):
+
+- **One pipeline, fixed stages** New / Quoted / Negotiating. Stored as rows (`pipelines`, `pipeline_stages`) so editing stages or adding pipelines later is additive, not a rewrite. Won and Lost are outcomes, not stages. Won needs a final value; Lost needs a reason (Price, Stock, Went silent, Competitor, Other).
+- **One currency per workspace.** The owner picks it in Settings › Currency (new workspaces start in USD). Changing it relabels existing amounts; it does not convert them (the screen says so). Only currencies with two decimal places are offered, because money is stored in cents.
+- **Discount approvals are built now.** An agent asks for a percent off; a manager (owner or sales manager of the deal's team) approves or declines; they cannot decide their own request. Approving lowers the deal value by that percent. Approvals and the deal's history store the percent only, never an amount.
+- **Task extras built now:** Repeat (daily / weekly / monthly, next one created when finished, in the workspace's time zone), Snooze (later today / tomorrow / next week), Notes on a task. Undo of "done" also removes the repeat it created.
+- **Who sees money.** Deal values live in their own table (`deal_values`) with their own row-level security, so a role without `deals.values` cannot read the amount even by asking the database directly. Deal events and approvals contain no amounts for the same reason.
+- **Privacy.** Erasing a customer deletes their deals and tasks. Merging customers moves deals and tasks to the one that stays. Export includes both.
+- **Where the rules live.** Everything is a database function (create / update / win / lose / reopen / note / discount ask and decide; create / update / complete / undo / snooze / note / delete task), so the screens cannot skip a rule.
+
+Not built yet (on purpose): calendar sync for tasks (own step), editing stages or adding pipelines, deleting or archiving deals, converting amounts between currencies. Notifications and the real Home for approvals and late tasks came next (see "Notifications and the real Home" below).
+
+Not verified yet: none of this has run on a real server. The database rules are tested (pgTAP, 56 checks across deals and tasks) and the mapping code has unit tests; the preview screens pass browser tests; the live browser tests are written but can only run once staging is awake and the new migrations are applied.
+
+## Notifications and the real Home (2026-11-04)
+
+Decided with the founder (answers to questions asked before building):
+
+- **Stored in a table.** Notifications are rows (`notifications`), each for one person, with a read state. The same database tables the actions already write to (chat events, notes, channels, discount approvals, tasks) have triggers that write the notice, so no action function was rewritten. Time-based notices (a task that has passed its time) come from a sweep the worker runs every five minutes; the sweep also drops notices older than 30 days.
+- **What notifies:** a chat handed to you, an @mention, a request to help on a chat you hold, a channel that can't send (everyone who manages numbers), a discount waiting for your approval, the answer to a discount you asked for, a task someone else gave you, and your task that has passed its time. Reply-target misses are not included, because reply targets (SLA) are not built on real data yet; the bell kind exists for the preview.
+- **Never to the person who did it**, and never to someone who may not see what it is about: an @mention of someone who cannot see that chat tells them nothing, because the notice quotes the note. Discount notices carry the percent, never an amount (money stays in its own table).
+- **One notice per thing:** a snoozed task can be late again at its new time, but a task is late only once per due time. Finishing a task marks its notices read; an answered discount stops waiting on the other approvers. A repeating task made by finishing the last one is not "a task given to you".
+- **Privacy:** every notice that names or quotes a customer is deleted when that customer is erased.
+- **The bell** in a real workspace saves what you read (one, or "Mark all as read") and a new notice appears without a reload (Supabase Realtime). In the preview it works from sample data as before.
+- **Home on real data.** A brand-new workspace (no chats, deals or tasks) still gets the setup checklist (§14). From the first chat, deal or task, Home becomes the manager home: "Needs you now", then numbers for the role. "Needs you now" now also lists discounts waiting for you, your quotes to follow up, and your tasks that are late or due today, next to the chat rows. Setup shrinks to a chip for owners and admins, counting only the steps that can be done in a real workspace today.
+- **Only real numbers.** The preview's made-up figures never show on a real Home. Each role keeps a set of numbers that are really computed: owner/admin (pipeline, won this month, open chats, unassigned), sales manager (pipeline, won, follow-ups today, late tasks), support manager (open chats, waiting for customer, unassigned), ops manager (tasks today, late tasks), agent (your chats, your open deals, follow-ups today, late tasks), viewer (open chats, waiting for customer). Money totals show only to roles that may see every deal value. Revenue, median reply time, orders, meetings and reply-target numbers come with Reports and those features.
+- **Late tasks:** a task with a time is late once that time passes; a task with only a day is late once that day is over.
+
+Not built yet (on purpose): browser notifications, installable-app (PWA) push, the daily email digest for managers, WhatsApp alerts to a staff member's own number (all four are in §9 and were left for their own steps, each needing research first), notification preferences per person, reply-target (SLA) notices, "From your agents" briefings on the real Home (AI is not live).
+
+Not verified yet: none of this has run on a real server. The database rules are tested (pgTAP, 29 checks for notifications), the number and "Needs you now" logic has unit tests, and the preview screens pass browser tests. The real bell and real Home have only been type-checked and unit-tested; the live browser test is written but can only run once staging is awake and migration 20261104000001 is applied. Realtime delivery of a new notice has not been tried.
+
+## Reports on real data (2026-11-05)
+
+Decided with the founder (answers to questions asked before building):
+
+- **What is a chat.** A customer's message that comes first, or after the conversation was resolved, starts a chat; it ends when someone resolves it. Writing again after a resolve starts a new chat, so repeat customers count each time and each chat has its own reply and resolution time. (A conversation in Relay is one long-running thread per customer per channel, and a customer writing into a resolved one reopens it silently, so counting conversation creation dates would count a long-time customer once ever.)
+- **Reply time** is the median first reply by a person, in clock time: from the customer's first message of the chat to the first message a team member sent in it (from the inbox or from the business's phone app). Automatic, AI and failed messages don't count. The screen says "Times are clock time, nights and weekends included" until working hours exist; reply targets (SLA) now add "within reply target", which counts opening hours only (see "Reply targets (SLA) on real data").
+- **Resolution time** is the chat's start to its resolve, median. "Resolved" is the share of the period's chats resolved so far. "Open now" is the number of conversations open at this moment.
+- **Left out of every number:** chats brought in by "import history" (they are history, not activity in Relay) and spam.
+- **Parts that are real now:** Conversations (per day with the previous period for comparison, by channel, busy times by weekday and two-hour block), Team (chats each person replied in, their median first reply, chats they resolved, chats handed over and received), Sales (open pipeline by stage, won in the period, win rate, why deals were lost). Hidden in a real workspace until something measures them: Satisfaction (nothing asks customers to rate yet), Campaigns (not built) and "within reply target" (reply targets not built). The preview still shows all of them with sample numbers.
+- **Who sees what.** `reports.view` decides: "all" sees every team's chats; "team" sees chats of teams they belong to or that they hold themselves, and deals the same way. The database function checks it, so the screen cannot ask for more. Deal amounts show only to roles that may see every deal value (`deals.values` all or team); otherwise the bars show counts. Agents have no Reports. Export is CSV of the open tab, for roles with `reports.export`; PDF and scheduled email are not built.
+- **How it works.** Two database functions (`report_conversations`, `report_sales`) work the numbers out in one call each and return only totals, so the screen never loads chats or messages. Days and times of day use the workspace's time zone; a chat belongs to the day it started and to the team the conversation is in now (not where it was then). The filters (7, 30 or 90 days, team, channel) live in the address.
+
+Not built yet (on purpose): satisfaction ratings, campaign reports, reply-target numbers, business-hours timing, PDF and scheduled-email sharing, the daily WhatsApp summary, a custom date range, per-person ratings, the Home numbers that need Reports (revenue, median reply time, resolved this week) are still left out of the real Home.
+
+Not verified yet: none of this has run on a real server. The database functions are tested (pgTAP, 21 checks with controlled timestamps: what counts as a chat, reply and resolution times, imports left out, team scope, sales), the mapping to the screen has unit tests, and the real-data shape of the screen was checked in a browser with made-up inputs. The real page, with real chats and a 90-day window on a large workspace, has not been tried, so speed on big workspaces is unknown.
+
+## Reply targets (SLA) on real data (2026-11-03)
+
+Decided with the founder (answers to questions asked before building). Two earlier decisions disagreed (per-team hours with holidays in §9, and one workspace-wide schedule in the preview), and the rest of the 2026-10-07 design had gaps on real data; these answers settle them.
+
+- **Hours are per team.** Each team has its own weekly opening hours (for example Sales Saturday to Thursday 9-21, Support 24/7). A chat uses the hours of the team it is in now. A new team starts Monday to Friday 9-17 until its manager changes it. The owner edits every team's hours; a team manager edits their own team's (the `teams.manage` permission, "Teams, hours, routing rules"). The preview's single workspace schedule is replaced.
+- **Closed days are a list you add to.** A team can add a date or a date range that is either closed or has different hours (holidays, Ramadan, the shop's own closures), in any country. Nothing is preloaded: Relay is global and there is no verified holiday list per country, so none is shipped. Ranges for one team cannot overlap.
+- **Rules (policies)** are as decided on 2026-10-07: matched by team, channel and VIP, each setting a first-reply, next-reply and resolution target; when several match, the strictest target wins, separately for each target. **VIP means the customer is tagged "VIP"** (matched ignoring capital letters); there is no customer-type field. A rule that names teams can be edited by a manager of those teams only; a rule for every team is the owner's.
+- **What stops the reply clock** is a message from a person: sent from the inbox, typed on the business's phone app, or typed by staff in the channel's own app (Slack, Discord, Teams). Automatic, AI and failed messages do not stop it, and a send that fails starts the clock again. This is the same rule as Reports. (Writing it down found that Reports left out replies typed in a channel's own app; that is fixed in the same migration.)
+- **The clock only runs inside the team's opening hours** (workspace time zone) and only while a reply is owed. First reply runs until a person answers the customer's first message; next reply runs from each later customer message until a person answers it. **Resolution** adds up the time the customer has been waiting on the team, over the whole chat, and is paused while the team is waiting on the customer.
+- **Resolution misses are flagged live, like replies:** the same warning at the chosen share of the target (50%, 80% or 90%, default 80%) and a breach at 100%, shown on the chat, the bell and the manager's Home, and the chat stays flagged until it is resolved.
+- **Who hears about it.** The person holding the chat: a warning, then an alert at breach. The team's managers (the owner and anyone who can manage that team): an alert at breach, which also shows under "Needs you now" on their Home. A chat nobody holds that breaches alerts the people on that team and its managers. **Nothing is ever moved automatically:** the 2026-10-07 decision to reassign an unclaimed breached chat to "the next available teammate" is not built, because there is no Available status or routing rule to say who is available. The preview's "reassign" switch is removed.
+- **When a chat ends.** A resolve, or marking spam, resets the chat's clocks; the customer writing again starts a new chat with its own first-reply clock, the same chat boundary as Reports. Chats brought in by "import history" have no clocks.
+- **Reports** gain "answered within target": the share of the period's chats whose first reply came inside the first-reply target, counting business time. Chats with no matching target are left out of that share. Clock-time medians stay as they are. Which rule applies to a past chat is decided by today's rules, team and tags.
+
+Not built yet (on purpose): automatic reassign, an Available status, routing rules, UAE or any public-holiday lists, per-plan switching (reply targets are a Growth feature on the pricing page, but nothing enforces plans until billing is real), SLA by customer type, escalation chains, a daily summary of misses.
+
+Built: migration `20261106000001_reply_targets.sql` (hours per team with a Monday-to-Friday 9-17 start, closed days and special hours, rules, two workspace settings, the clock facts kept on each chat by triggers, `sla_state` / `sla_clocks`, the alert sweep, the editing functions, "answered within target" in `report_conversations`); the real Settings › Reply targets screen (rules, each team's hours with an All day tick, closed days, alerts) for every member to read and the right people to change; real clocks on the inbox list, the chat header, Home ("over target" for support managers and viewers, "Needs you now" for holders and managers) and the bell (warning and late notices); "Within reply target" on Reports beside "Open now". The worker needed no change: its five-minute notice sweep now also runs the reply-target sweep. While the preview stays as the sample, its screen now works per team.
+
+Not verified yet: none of this has run on a real server. The database rules are tested (pgTAP, 74 checks with controlled timestamps: hours, closed days, special hours, who may change what, which rule wins, every way a clock starts, stops, restarts and resets, what is stored matching a replay of the chat, who is alerted and who is not, Reports), the mapping and preview clock maths have unit tests, and the preview screen passes browser tests. The real screen, the real inbox chips and the real alerts have only been type-checked and unit-tested; their browser test is written but can only run once staging is awake and the migration is applied. Clocks on screen are as of the last page load (the inbox refreshes on every change and every two minutes while open), and the alert sweep runs every five minutes, so a warning can arrive up to five minutes late. Speed on a workspace with thousands of open chats is unknown.
+
+## Private pilot launch (2026-11-03)
+
+Decided with the founder (answers to questions asked before building). The founder set a launch date of **15 November 2026**; the plan is in [LAUNCH_PLAN.md](LAUNCH_PLAN.md).
+
+- **What launches:** a private pilot for invited businesses, free, no card, no billing. Not a public launch with paid plans (billing is not built, Stripe needs a bank account, and the legal documents have not been reviewed) and not only a demo.
+- **WhatsApp, Instagram and Messenger are not in the launch.** Meta Business verification has not started and takes weeks, with App Review after it. They show "coming soon".
+- **Channels on day one:** Website chat, Email, Telegram, LINE and Discord, because they need no platform review. Everything else shows "coming soon" in a real workspace (`LIVE_CHANNELS` in `components/channels/channels-page.tsx`). Slack and Microsoft Teams are off: the answer ticked both them and "none of these", so it stays unresolved until the founder says.
+- **Access is by invite code.** Creating an account needs a code the founder hands out (`create_pilot_invite`, run in the SQL editor), or a pending invitation from a workspace owner to that email. The check is in the database, on the table that stores accounts, so calling the sign-up service directly with the public key cannot skip it. Codes are 16 characters, have a number of uses and an end date, and can be revoked. The migration ships with the gate **on**; the local seed turns it off so test accounts can be made. Anyone can ask the sign-up page whether a code works without using it up (so the page can say so in words); the codes are long enough that guessing them is not practical, but there is no attempt limit yet.
+- **The public website becomes a pilot page.** No prices, plans or trial are shown (`PILOT` in `lib/plans.ts`, set to false once billing exists); the Pricing page says what works today and what is coming; the Features page marks Help Center and Campaigns "coming soon"; the comparison pages hide Relay's own price table. The copy pass is not finished: some pages still describe WhatsApp and Instagram as part of the product.
+- **Legal:** pilots sign a short pilot agreement instead of waiting for the full documents ([PILOT_AGREEMENT_DRAFT.md](PILOT_AGREEMENT_DRAFT.md)). It is a starting point, written by Claude, and needs a lawyer.
+- **One finding that changes the plan:** Supabase's built-in email service sends 2 messages an hour and only to addresses on the project's own team, and is "not meant for production use", so custom SMTP (Postmark) must be set up before any pilot can confirm an account.
+
+Built: migration `20261107000001_pilot_access.sql` (gate, codes, `signup_allowed`, `create_pilot_invite`), pgTAP 031 (22 checks), the invite field on sign-up, the day-one channel list, the pilot website changes, and `scripts/db-apply-remote.mjs` (applies the migrations staging does not have; dry run by default; not yet run against a real database).
+
+Not verified yet: the invite gate has been tested in the local database only; on a real Supabase project it depends on a trigger on `auth.users`, which the hosted auth service must accept, and the confirmation email depends on custom SMTP. The production build of the web app succeeds. Nothing else about launch has been tried on a real server.
+
+Also changed on 3 November, found while writing [ENVIRONMENT.md](ENVIRONMENT.md): the app's public address (`NEXT_PUBLIC_SITE_URL`) used to fall back silently to `http://127.0.0.1:3000`, so a deployment without it would have sent sign-up emails and invitation links pointing at localhost. It is now required in production (the request stops with a clear error) and is used for sign-in emails and invitation links through one helper (`appOrigin`). The website copy pass also now marks WhatsApp, Instagram and Messenger as "on the way" in the Features page, the FAQ and the comparison pages, and the Ask AI panel says AI is not switched on in the pilot. The preview and sample screens still show WhatsApp and Instagram conversations, because they are labelled sample data.
+
+### Showcase, not hide (2026-11-03, same day, later)
+
+The founder reversed part of the pilot decision above: "we wanna showcase it, not hide the pages". Chosen from the options offered: **show everything and label what is not live.**
+
+- **Website:** the full Pricing page with all plans and prices is back, the price tables on the comparison pages, and the landing price cards. A note says Relay is in a private pilot, free, and that the prices are the planned ones and may change. The pricing page gets a section "Where Relay is today" (works today / coming soon). The 14-day trial wording is not brought back (there is no trial or billing yet): the FAQ says nothing is charged during the pilot. The sign-up button says "Join the pilot" (an invite code is still needed). `PILOT` in `lib/plans.ts` now only switches this note and section on.
+- **App:** Campaigns, the Help Center and Billing are in a real workspace's menu again, for the people whose role has them (`campaigns.manage` or approving imported-list sends; `canned.use`; `billing.manage`). They are the designed screens with sample data, with a "Preview" tag in the menu and a note at the top of each: "this screen shows sample data and is not live yet. Nothing you do here is saved or sent." Nothing on them touches real data except Billing's member count.
+- **Channels:** unchanged. Every channel tile is visible; the five that work can be connected, the rest say "Soon". Their connect pages were never removed.
+- **What stays:** the invite code, the pilot agreement, and the "on the way" wording for WhatsApp, Instagram and Messenger.
+
+Built: five real routes (`/w/[slug]/campaigns`, `campaigns/[id]`, `help`, `help/[id]`, `billing`), a permission helper (`scopeOf`), a `PreviewNotice`, menu tags, and the restored website sections. Not verified: the new real-app screens compile and type-check but have not been opened in a browser (they need a signed-in session on a real database); their browser test (`e2e/live.showcase.spec.ts`) is written but can only run once staging is awake.
+
+### Security pass on what a visitor can reach (2026-11-03)
+
+`scripts/db-audit-exposure.mjs` (`pnpm db:audit`) lists, from the real migrations, what the anonymous role can run or touch. It found 14 functions and one table open to someone who is not signed in. The sensitive ones (create a workspace, invite, accept an invitation, create a role) already refused a caller with no account, and the table's row-level security returned nothing, so nothing could be read or changed. But the right to try should not be there either. Migration `20261107000002_close_anon_exposure.sql` takes it back (from the public and the anonymous role; signed-in people and the server keep theirs). Now only four things remain open to a visitor: three harmless lookup helpers and `signup_allowed` (which only says whether a code works). New checks in pgTAP 031 confirm a visitor cannot create a workspace, accept an invitation, ask who belongs to a workspace or read the requests table.
+
+Reviewed at the route level only: the public API routes use a signature, a secret in the address, Basic auth or an API key (website chat has a send limit in the database); I did not test any of them with real provider traffic. Not done: a test of the whole app against a real Supabase project, rate limits on the sign-up code check, and a penetration test.
+
+### First-run path review for the pilot (2026-11-04)
+
+Read end to end (no server): sign-up with a code, the confirmation email, `/auth/callback`, "Create your business", the first Home screen, the website-chat install code, and inviting a teammate. Found and fixed:
+
+- **The setup checklist on a new workspace's Home pointed at screens that were preview-only when it was written.** "Add the chat to your website", "Import your contacts" and "Set reply targets" showed as "coming soon", though all three are real now; they link to their screens. "Try AI" stays "coming soon". The checklist now ticks what the workspace has actually done (a channel connected, the website chat added, a reply-target rule on); it used to treat every new workspace as having connected nothing. Contact import and AI are not tracked, so they stay unticked.
+- **"Connect a channel" promised WhatsApp and Instagram.** It now names the five channels that work and says more are on the way.
+- **A teammate who signs up with a different email address than the invitation went to** was told "That invite code doesn't work", which means nothing to them. They are now told to use the address the invitation was sent to.
+- **Checked and fine:** the website-chat install code and every invitation link are built from the required `NEXT_PUBLIC_SITE_URL`; no other place builds a localhost address.
+- **Worth knowing, not changed:** a teammate invitation is not emailed. The owner copies the link (shown once) and sends it themselves; the checklist in the plan now says so. Anyone with an account can create more workspaces of their own.
+
+### Pilot feedback and the legal placeholders (2026-11-05)
+
+Found while looking at what a pilot has when something goes wrong: nothing. There was no way to report a problem, and the Terms, Privacy policy and DPA, which sign-up says people agree to, still showed `[COMPANY LEGAL NAME]`, `[LICENCE NUMBER]`, `[REGISTERED ADDRESS]` and `support@[YOUR-DOMAIN]` in square brackets.
+
+- **"Send feedback"** is in the sidebar and under Settings › You in a real workspace. Anyone in the workspace picks one of four (broken, confusing, missing, something else), writes a message, and sends it; the screen they came from is kept. It is stored by one database function (`send_feedback`, migration `20261108000001_pilot_feedback.sql`), at most 30 a day per person, up to 4,000 characters. **Nobody signed in can read it back, not even the sender**; the founder reads it in the Supabase table editor. It is deleted with the business, and kept without a name if the person is removed. It does not email anyone and cannot be replied to yet. The preview does not have it.
+- **Who we are is one file.** `apps/web/src/lib/company.ts` holds the legal name, free zone, licence number, address and email domain; the three legal pages read from it. Anything left empty still shows its square-bracket placeholder, so an unfinished page is obvious. These pages stay drafts until a lawyer has read them (two "to be confirmed by counsel" notes remain).
+
+Built: the table and function, pgTAP 032 (12 checks), the page, the menu links, `company.ts`, and `e2e/live.feedback.spec.ts`. Not verified: the page has been type-checked but not opened signed in; its browser test needs staging.
+
+### Correctness review of the 4-8 November migrations, and what changed (2026-11-05)
+
+A review of `reply_targets`, `notifications`, `pilot_access` and `pilot_feedback` (no real database; reading only) reported nine findings. Fixed in migration `20261108000002_review_fixes.sql`, with tests:
+
+- **The invite-code check leaked.** Anyone with the public key could ask whether an email had a pending workspace invitation, and probe codes without limit. Now the code check is for the server only (the sign-up page asks through the service role), it says nothing about workspace invitations, and a person holding an invitation link can ask whether their address is the invited one (`invite_email_matches`, which needs the link's secret token). Still not added: an attempt limit. Codes are 64 bits, so guessing is not practical, but the page itself can be called repeatedly.
+- **One failing reply-target sweep stopped the late-task notices and the cleanup.** It now runs in its own sub-transaction; a failure becomes a warning in the database log and the rest still runs.
+- **Spam:** a chat marked spam no longer starts a clock from its messages, and marking it "not spam" starts clean.
+- **A failed send could overwrite a message arriving at the same moment** (the rebuild now holds the chat first).
+- **Faster clocks:** the time a chat has waited is worked out once per chat instead of per target, and a person's clocks are worked out only for the chats they may see.
+- **A missing feedback kind** gets the plain refusal instead of a raw database error.
+
+Not changed: (a) a sign-up invite use is spent when the account row is created; if the confirmation email then fails the same person can retry with the same email (Supabase resends to an unconfirmed address without a new row), so the code is not lost for them. (b) The Reports "within target" and Home work still does per-chat clock arithmetic over the window; fine for a pilot, to be measured on a large workspace. (c) With the gate on, creating a user by hand in the Supabase dashboard is refused too: switch `invite_only` off for a moment (`update public.app_settings set value = 'off' where key = 'invite_only';`) and back on afterwards.
+
