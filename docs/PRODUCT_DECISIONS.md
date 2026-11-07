@@ -775,3 +775,14 @@ A review of `reply_targets`, `notifications`, `pilot_access` and `pilot_feedback
 
 Not changed: (a) a sign-up invite use is spent when the account row is created; if the confirmation email then fails the same person can retry with the same email (Supabase resends to an unconfirmed address without a new row), so the code is not lost for them. (b) The Reports "within target" and Home work still does per-chat clock arithmetic over the window; fine for a pilot, to be measured on a large workspace. (c) With the gate on, creating a user by hand in the Supabase dashboard is refused too: switch `invite_only` off for a moment (`update public.app_settings set value = 'off' where key = 'invite_only';`) and back on afterwards.
 
+### Decisions locked on 5 November 2026 (owner configuration day is 6 November)
+
+Answers to the last open questions, before the owner is asked for the platform connections:
+
+- **What "connections" means:** the founder meant the whole list of platforms (Meta and every other), what each needs, and how to configure it in Relay, including the ones that connect directly with no special setup. That list is [PLATFORM_CONNECTIONS.md](PLATFORM_CONNECTIONS.md): our own platform pieces, the six pilot channels, Meta (what is built: WhatsApp yes; Instagram and Messenger no; Embedded Signup no), and the channels built but shown "coming soon". It also lists exactly what to send back (never secrets). The founder starts the configurations on 6 November.
+- **Slack: ON for the pilot** (final answer; the earlier answer had contradicted itself). Pilot channels are now Website chat, Email, Telegram, LINE, Discord and Slack. The unknown to test first is whether a second Slack workspace can install the Relay app without a Marketplace listing; if not, Slack comes off.
+- **Database: one project.** The staging project becomes the pilot's. Order: live tests first, then purge the seed accounts with `supabase/ops/purge_seed_data.sql`, then verify, then the first real invite. This replaces my recommendation of two projects; the cost is on record in DEPLOY_DAY.md section 0.
+- **Date:** the owner has said it will be done on time, so no demo launch is planned. The password-protected demo mode remains available as an emergency option only.
+
+Built for this: the Slack channel now offered in a real workspace, the purge script and a test of it (`pnpm db:test:purge`: seed businesses and the seven `*.test` accounts gone, a real-looking pilot left untouched, every guard switched back on), the platform guide, and updated environment, plan and runbook. Not verified: the purge on hosted Supabase; Slack installation by other workspaces; everything else about the platforms has only been read from their documents, not tried.
+

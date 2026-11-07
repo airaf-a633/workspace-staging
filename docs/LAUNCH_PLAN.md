@@ -5,9 +5,11 @@
 ## What "launch" means (decided 3 November)
 
 - **A private pilot.** A handful of invited businesses use Relay for real, **free**, with no card and no billing. Anyone creating an account needs an **invite code** (or a teammate's invitation).
-- **Channels on day one:** Website chat, Email, Telegram, LINE and Discord. They need no platform review. Every other channel shows "coming soon".
+- **Channels on day one:** Website chat, Email, Telegram, LINE, Discord and **Slack** (Slack added 5 November). They need no platform review, but Slack carries one unknown: I could not confirm that other businesses can install the Relay Slack app without a Marketplace listing, so a second Slack workspace must try the install early; if it fails, Slack comes off. Every other channel shows "coming soon".
 - **Shown, but not live (labelled "Preview" or "Coming soon", never hidden):** WhatsApp, Instagram and Messenger (Meta verification has not started; it takes weeks), SMS and Voice, TikTok, WeChat, Apple, X, Viber, and the Help Center, Campaigns and Billing screens (designed screens with sample data, marked "Preview" in the menu and by a note on each screen). The public website shows every plan and price, with a note that the pilot is free.
-- **Slack and Microsoft Teams:** the 3 November answer ticked both "Slack, Teams" and "None of these", so they are **off** until you say otherwise. They would each need another account and test.
+- **Teams:** off. **Slack:** on (see above). The full list of platforms, their requirements and how to configure each is [PLATFORM_CONNECTIONS.md](PLATFORM_CONNECTIONS.md).
+- **Database:** one project; the staging project becomes the pilot's after the live tests and a purge of the seed accounts ([DEPLOY_DAY.md](DEPLOY_DAY.md) section 0).
+- **If the date is at risk:** the owner has said it will be done on time, so there is no demo launch planned; the demo mode below stays as an emergency option only.
 - **Legal:** pilots sign a short pilot agreement ([PILOT_AGREEMENT_DRAFT.md](PILOT_AGREEMENT_DRAFT.md)). It is a starting point and needs a lawyer's eyes before you rely on it.
 
 ## Where we start (3 November)
@@ -35,6 +37,7 @@
 - [ ] The web app and the worker are deployed and the worker is processing messages (a reply you send leaves "queued").
 - [ ] Each of the five channels has received and sent a real message end to end.
 - [ ] Someone without an invite code **cannot** create an account (try it), and someone with one can, including receiving the confirmation email.
+- [ ] The seed test accounts are gone from the pilot database (`select count(*) from auth.users where email like '%.test';` says 0) and the two seed businesses too.
 - [ ] `pnpm db:audit` lists only the three harmless lookup helpers an anonymous visitor may run, no tables, no policies (since the review fixes of 5 November the invite-code check is no longer open to visitors). (It runs on the local copy of the schema; against the real database, also check in the Supabase SQL editor that the migrations `20261107000001`, `20261107000002` and `20261108000002` are applied.)
 - [ ] A business owner can invite a teammate: the owner copies the invitation link (Relay does not email it) and sends it; the teammate opens it, signs up with the **same email address the invitation names**, confirms the sign-up email, and joins.
 - [ ] Backups are on and one restore has been tried.
@@ -60,7 +63,8 @@ Not verified: the hosted version (this was a local run), and the build I used wa
 1. Discord (it needs the always-on Gateway process on Fly as well as the worker).
 2. LINE.
 3. The reply-target alerts (the inbox flags still work without the five-minute sweep).
-4. Telegram.
+4. Slack, if a second workspace cannot install the app.
+5. Telegram.
 
 Website chat and Email stay: without them there is nothing to show a pilot.
 

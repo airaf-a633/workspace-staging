@@ -17,6 +17,7 @@
     "db:test": "supabase test db",
     "db:test:fast": "node scripts/db-test-fast.mjs",
     "db:audit": "node scripts/db-audit-exposure.mjs",
+    "db:test:purge": "node scripts/db-test-purge.mjs",
     "db:test:staging": "node scripts/db-test-remote.mjs",
     "webhook:replay": "node scripts/replay-webhook.mjs",
     "worker": "pnpm --filter @app/worker dev"

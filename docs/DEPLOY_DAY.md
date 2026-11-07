@@ -2,14 +2,17 @@
 
 *Written 4 November 2026 for 6 and 7 November, or whenever staging is back. Nothing here has been run: staging is paused and there is no Docker on the development machine. Every command prints what it will do before it changes anything unless it says otherwise. If a step fails, stop and send me the full output of that step (never your keys).*
 
-## 0. Decide before you start: one Supabase project or two
+## 0. Decided (5 November): one project. Staging becomes the pilot's database
 
-The seed in `supabase/seed.sql` creates test people with a **known password** (`khalid@qamar.test`, `hana@qamar.test` and others, password `Password1234`) and a test business. The live browser suite signs in as them. Staging already has them.
+The seed in `supabase/seed.sql` creates test people with a **known password** (`khalid@qamar.test`, `hana@qamar.test` and others, password `Password1234`) and two test businesses. Staging already has them, and the live browser suite signs in as them. The decision is to use this one project for the pilot too, so the order matters:
 
-- **Recommended: two projects.** `workspace-staging` stays for testing, with the seed people. A second, clean project (for example `relay-pilot`, on the Pro plan) is the one pilots use. Nothing with a known password ever sits next to real customers' messages. Cost: a second project.
-- **Alternative: pilots on staging.** You would first delete every `@qamar.test` and `@noor.test` account and their workspaces, and the live suite could no longer be run there. I would not recommend it.
+1. Apply migrations, run the database tests, deploy, run the live browser suite (steps 2 to 7 below) **with the seed people still there**.
+2. **Then purge them,** once, in the Supabase SQL editor: paste and run [`supabase/ops/purge_seed_data.sql`](../supabase/ops/purge_seed_data.sql). It is one transaction: it deletes the two test businesses and the seven `*.test` accounts, switches off the guards that would block it (a business must keep an owner, the append-only audit log, and the triggers that write audit rows) only for that transaction, switches them back on, and **rolls everything back if anything of the seed is left or a guard stayed off**. I tested it on a copy of the schema with a real-looking pilot present: the pilot was untouched. Not tested on hosted Supabase (it needs the SQL editor's role to own the tables, which it should).
+3. **Verify** in the SQL editor: `select count(*) from auth.users where email like '%.test';` must say 0, and `select count(*) from public.workspaces where slug in ('qamar','noor');` must say 0.
+4. After the purge, the live browser suite can no longer run there (its people are gone). Do not purge until you are done with it.
+5. Only then step 8 (the invite gate from outside) and the first real invite code.
 
-Everything below says "the database" for whichever one you are working on. Do steps 1 to 6 on **staging first** (it is where the tests run), then repeat steps 1, 3, 4, 5 and 8 on the pilot project.
+Cost of this choice, so it is on record: no separate place to test risky changes against realistic data without touching pilots; a missed seed account would be a login anyone could guess (hence the verify step, and it is on the go/no-go list).
 
 ## 1. Get ready (you, about 20 minutes)
 

@@ -13,6 +13,7 @@
 | `INBOUND_EMAIL_DOMAIN` | Email channel | The domain you point at Postmark's inbound (e.g. `in.yourdomain.com`) |
 | `POSTMARK_INBOUND_USER`, `POSTMARK_INBOUND_PASSWORD` | Email channel | You choose them: 16 or more random characters each. They go in Postmark's inbound webhook URL. |
 | `POSTMARK_ACCOUNT_TOKEN` | Optional: businesses verify their own sending domain | Postmark › Account API tokens |
+| `SLACK_CLIENT_ID`, `SLACK_CLIENT_SECRET`, `SLACK_SIGNING_SECRET` | Slack (on for the pilot, decided 5 November) | The one Relay Slack app at api.slack.com/apps, Basic Information. **Secrets.** Web app only. Steps: [PLATFORM_CONNECTIONS.md](PLATFORM_CONNECTIONS.md) |
 | `SENTRY_DSN` | Optional | Not used by the code yet (error monitoring is not wired). |
 
 **Must not be set** on the pilot deployment: `SITE_MODE` and `PREVIEW_PASSWORD`. With `SITE_MODE=preview` the real app, sign-in and webhooks are switched off.
@@ -40,7 +41,7 @@ Telegram bot tokens, LINE channel secrets and tokens, and Discord bot tokens are
 
 ## Not needed until after the pilot launch
 
-`META_*` (WhatsApp, Instagram, Messenger), `MICROSOFT_*` (Outlook), `GOOGLE_*` (Gmail), `SLACK_*`, `STRIPE_*`, `NANGO_SECRET_KEY`, and `ANTHROPIC_API_KEY` (nothing in the code reads it yet).
+`META_*` (WhatsApp, Instagram, Messenger), `MICROSOFT_*` (Outlook), `GOOGLE_*` (Gmail), `STRIPE_*`, `NANGO_SECRET_KEY`, and `ANTHROPIC_API_KEY` (nothing in the code reads it yet).
 
 ## Supabase settings that are not variables
 
