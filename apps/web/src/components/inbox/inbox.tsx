@@ -136,7 +136,13 @@ export function Inbox({
   const params = useSearchParams();
   const selectedId = params.get("c");
   const [source, setSource] = useState<Source>({ kind: "all" });
-  const [tab, setTab] = useState<Tab>("mine");
+  // Open on what needs a person: if nothing is yours yet but chats are waiting, start on "Waiting for someone" so a new workspace
+  // does not open on an empty list while its first customers are writing (found by the live suite, 2026-11-07).
+  const [tab, setTab] = useState<Tab>(() => {
+    const open = data.conversations.filter((c) => c.status === "open" && replyAccess(viewer, c) !== "hidden");
+    const mine = open.some((c) => c.holderId === me || c.collaboratorIds.includes(me));
+    return !mine && open.some((c) => !c.holderId) ? "unassigned" : "mine";
+  });
   const [showResolved, setShowResolved] = useState(false);
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);

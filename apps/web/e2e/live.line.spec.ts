@@ -1,6 +1,6 @@
 import { createHmac, randomBytes } from "node:crypto";
 import { expect, test } from "@playwright/test";
-import { clientAs, live, signIn, SLUG, unique } from "./live.helpers";
+import { clientAs, live, signIn, SLUG, unique, openInbox } from "./live.helpers";
 
 test.skip(!live, "Live suite: set E2E_LIVE=1 with staging awake");
 
@@ -50,20 +50,20 @@ test("a LINE message reaches the inbox, a block shows in the chat, and a failed 
 
   test.skip(process.env.E2E_WORKER !== "1", "Filing a message needs the worker running (E2E_WORKER=1)");
   await signIn(page, "owner");
-  await page.goto(`/w/${SLUG}/inbox`);
+  await openInbox(page);
   await expect(page.getByText(text).first()).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText("hi group")).toHaveCount(0);
 
   // The person blocks the account: the chat says so
   expect((await send({ destination: bot, events: [event("unfollow")] })).status()).toBe(200);
   await page.waitForTimeout(5_000);
-  await page.reload();
+  await openInbox(page);
   await page.getByText(text).first().click();
   await expect(page.getByText(/blocked your account/i)).toBeVisible({ timeout: 30_000 });
 
   // The reply goes to the real LINE with a made-up token, which LINE refuses; the inbox says what to do
   await page.getByRole("button", { name: "Take this chat" }).click();
   await page.getByRole("textbox").last().fill("Yes, we do!");
-  await page.keyboard.press("Enter");
+  await page.getByRole("button", { name: "Send", exact: true }).click();
   await expect(page.getByText(/rejected this channel's access token/i)).toBeVisible({ timeout: 45_000 });
 });

@@ -21,15 +21,20 @@ test("an agent's discount request reaches the owner's bell and Home, and reading
 
   await signIn(page, "owner");
   await page.goto(`/w/${SLUG}`);
-  await expect(page.getByText(title).first()).toBeVisible({ timeout: 30_000 });
+  // Home says who asks for how much (it names the customer, not the deal), so look for the request itself.
+  // Waiting chats come first and the list shows five; open the rest if there are more.
+  const seeAll = page.getByText(/^See all/).first();
+  if (await seeAll.isVisible()) await seeAll.click();
+  await expect(page.getByText(/asks you to approve 12% off/).first()).toBeVisible({ timeout: 30_000 });
   await page.getByRole("button", { name: /Notifications/ }).first().click();
-  await expect(page.getByRole("dialog", { name: "Notifications" }).getByText(/asks for 12% off/)).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Notifications" }).getByText(/asks for \W*12\W*% off/).first()).toBeVisible();
   await page.getByRole("button", { name: "Mark all as read" }).click();
 
-  // Still read after a reload: it was saved, not just hidden.
+  // Still read after a reload: it was saved, not just hidden. (Other tests, and the worker's reply-target sweep, may add notices of
+  // their own to the same owner meanwhile, so look at this deal's notice, not at every unread one.)
   await page.reload();
-  await expect(page.getByRole("button", { name: "Notifications", exact: true }).first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("button", { name: /^Notifications/ }).first()).toBeVisible({ timeout: 30_000 });
   const owner = await clientAs("owner");
-  const { data: unread } = await owner.from("notifications").select("id").is("read_at", null);
+  const { data: unread } = await owner.from("notifications").select("id").eq("deal_id", deal as string).is("read_at", null);
   expect(unread).toEqual([]);
 });

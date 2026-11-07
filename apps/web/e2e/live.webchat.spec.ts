@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { expect, test } from "@playwright/test";
-import { clientAs, live, signIn, SLUG, unique } from "./live.helpers";
+import { clientAs, live, signIn, SLUG, unique, openInbox } from "./live.helpers";
 
 test.skip(!live, "Live suite: set E2E_LIVE=1 with staging awake");
 
@@ -38,15 +38,16 @@ test("a visitor message reaches the inbox and the reply gets back", async ({ pag
 
   // The team sees it
   await signIn(page, "owner");
-  await page.goto(`/w/${SLUG}/inbox`);
+  await openInbox(page);
   await expect(page.getByText(text).first()).toBeVisible();
 
   // The team replies, and the worker delivers it
   test.skip(process.env.E2E_WORKER !== "1", "Reply delivery needs the worker running (E2E_WORKER=1)");
   await page.getByText(text).first().click();
+  await page.getByRole("button", { name: "Take this chat" }).click();
   const reply = unique("Yes, we do");
   await page.getByRole("textbox").last().fill(reply);
-  await page.keyboard.press("Enter");
+  await page.getByRole("button", { name: "Send", exact: true }).click();
   await expect
     .poll(async () => JSON.stringify(await (await request.get(`/api/widget/${key}/messages`, { headers })).json()), { timeout: 30_000 })
     .toContain(reply);

@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { expect, test } from "@playwright/test";
-import { clientAs, live, signIn, SLUG, unique } from "./live.helpers";
+import { clientAs, live, signIn, SLUG, unique, openInbox } from "./live.helpers";
 
 test.skip(!live, "Live suite: set E2E_LIVE=1 with staging awake");
 
@@ -43,7 +43,7 @@ test("a Telegram message reaches the inbox, and a failed reply explains itself",
 
   test.skip(process.env.E2E_WORKER !== "1", "Filing a message needs the worker running (E2E_WORKER=1)");
   await signIn(page, "owner");
-  await page.goto(`/w/${SLUG}/inbox`);
+  await openInbox(page);
   await expect(page.getByText(text).first()).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText("Ana E2E").first()).toBeVisible();
   await expect(page.getByText("hi group")).toHaveCount(0);
@@ -54,6 +54,6 @@ test("a Telegram message reaches the inbox, and a failed reply explains itself",
   // A chat nobody has taken must be taken before replying
   await page.getByRole("button", { name: "Take this chat" }).click();
   await page.getByRole("textbox").last().fill("Yes, in stock!");
-  await page.keyboard.press("Enter");
+  await page.getByRole("button", { name: "Send", exact: true }).click();
   await expect(page.getByText(/rejected this bot's token/i)).toBeVisible({ timeout: 45_000 });
 });

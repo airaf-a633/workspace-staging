@@ -25,7 +25,10 @@ test("the owner changes a team's hours and adds a closed day, and the database k
   await expect(page.getByRole("heading", { name: "Opening hours" })).toBeVisible({ timeout: 30_000 });
   await page.getByRole("button", { name: "Deira shop", exact: true }).click();
   const sunday = page.getByRole("listitem").filter({ hasText: /^Sun/ });
-  await sunday.getByRole("checkbox", { name: "Open", exact: true }).check();
+  // Flip Sunday whatever it was, so the test can be run again and again.
+  const open = sunday.getByRole("checkbox", { name: "Open", exact: true });
+  if (await open.isChecked()) await open.uncheck();
+  else await open.check();
   await page.getByRole("button", { name: "Save hours" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Hours saved." })).toBeVisible();
   await page.getByRole("button", { name: "Add a closed day" }).click();

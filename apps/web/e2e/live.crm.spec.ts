@@ -32,7 +32,12 @@ test("a deal is created, seen without its money by a role that can't see money, 
 
   // The sales manager approves, and the value drops by ten percent
   const manager = await clientAs("owner");
-  const { data: approval } = await manager.from("deal_approvals").select("id").eq("deal_id", id as string).eq("status", "pending").single();
+  // The board shows "waiting" at once and saves a moment later, so wait for the saved request before the manager answers it.
+  let approval: { id: string } | null = null;
+  await expect.poll(async () => {
+    approval = (await manager.from("deal_approvals").select("id").eq("deal_id", id as string).eq("status", "pending").maybeSingle()).data;
+    return approval !== null;
+  }, { timeout: 20_000 }).toBe(true);
   const decided = await manager.rpc("decide_discount", { p_approval: approval!.id, p_approve: true, p_note: "Fine" });
   expect(decided.error).toBeNull();
   const { data: after } = await agent.from("deal_values").select("value_minor").eq("deal_id", id as string).single();

@@ -14,7 +14,8 @@ test("add, export and erase a customer", async ({ page }) => {
   // Add
   await page.getByRole("button", { name: "Add", exact: true }).click();
   await page.getByLabel("Name").fill(name);
-  await page.getByLabel("Email").fill(email);
+  // (A channel icon in the list is also labelled "Email", so find the field by its type.)
+  await page.locator('input[type="email"]').fill(email);
   await page.getByRole("button", { name: "Add contact" }).click();
   await expect(page.getByText(name).first()).toBeVisible();
 
@@ -32,6 +33,8 @@ test("add, export and erase a customer", async ({ page }) => {
 
   // Export their full record from their page
   await page.getByRole("link", { name }).first().click();
+  // Export and Erase live in the "More actions" menu on the customer page.
+  await page.getByLabel("More actions").click();
   const jsonDownload = page.waitForEvent("download");
   await page.getByRole("button", { name: /export/i }).first().click();
   expect(readFileSync((await (await jsonDownload).path())!, "utf8")).toContain(email);
@@ -39,7 +42,7 @@ test("add, export and erase a customer", async ({ page }) => {
   // Erase: asks for the name first, then the customer is gone from the list
   await page.getByRole("button", { name: /^Erase /i }).first().click();
   await page.getByLabel(new RegExp(`type .*${name}`, "i")).fill(name);
-  await page.getByRole("button", { name: new RegExp(`^Erase ${name.split(" ")[0]}`, "i") }).last().click();
+  await page.getByRole("button", { name: new RegExp(`^Erase\\W*${name.split(" ")[0]}`, "i") }).last().click();
   await expect(page.getByText("Erased.")).toBeVisible();
   await page.goto(`/w/${SLUG}/customers`);
   await expect(page.getByText(name)).toHaveCount(0);

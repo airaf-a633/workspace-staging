@@ -22,8 +22,10 @@ export const live = process.env.E2E_LIVE === "1";
 
 export async function signIn(page: Page, who: keyof typeof PEOPLE) {
   await page.goto(`/sign-in?next=${encodeURIComponent(`/w/${SLUG}`)}`);
-  await page.getByLabel("Email").fill(PEOPLE[who]);
-  await page.getByLabel("Password").fill(PASSWORD);
+  // The page has two forms with an Email field (password sign-in, and "email me a link"): use the one with the password.
+  const form = page.locator("form").filter({ has: page.getByLabel("Password") });
+  await form.getByLabel("Email").fill(PEOPLE[who]);
+  await form.getByLabel("Password").fill(PASSWORD);
   await page.getByRole("button", { name: /sign in|log in/i }).click();
   await page.waitForURL(/\/w\//);
 }
@@ -37,3 +39,10 @@ export async function clientAs(who: keyof typeof PEOPLE) {
 }
 
 export const unique = (p: string) => `${p} ${Date.now().toString(36)}`;
+
+/** Opens the inbox on its "All" tab. The inbox starts on "Mine" (or "Waiting for someone" when nothing is yours), so a test that is
+ *  looking for a brand-new customer's message asks for every chat. */
+export async function openInbox(page: Page) {
+  await page.goto(`/w/${SLUG}/inbox`);
+  await page.getByRole("button", { name: /^All \d+$/ }).click();
+}

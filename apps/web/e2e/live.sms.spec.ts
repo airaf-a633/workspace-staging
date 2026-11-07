@@ -1,6 +1,6 @@
 import { createHmac, randomBytes } from "node:crypto";
 import { expect, test } from "@playwright/test";
-import { clientAs, live, signIn, SLUG, unique } from "./live.helpers";
+import { clientAs, live, signIn, SLUG, unique, openInbox } from "./live.helpers";
 
 test.skip(!live, "Live suite: set E2E_LIVE=1 with staging awake");
 
@@ -47,19 +47,20 @@ test("a text reaches the inbox, STOP is recorded, and a failed reply explains it
 
   test.skip(process.env.E2E_WORKER !== "1", "Filing a text needs the worker running (E2E_WORKER=1)");
   await signIn(page, "owner");
-  await page.goto(`/w/${SLUG}/inbox`);
+  await openInbox(page);
   await expect(page.getByText(text).first()).toBeVisible({ timeout: 30_000 });
 
   // The customer texts STOP: Twilio reports OptOutType, Relay shows it in the chat
   expect((await post(inboundPath, { MessageSid: `SM${randomBytes(16).toString("hex")}`, From: from, To: number, Body: "STOP", NumMedia: "0", OptOutType: "STOP" })).status()).toBe(200);
   await page.waitForTimeout(5_000);
-  await page.reload();
-  await page.getByText(text).first().click();
+  await openInbox(page);
+  // The list now shows the customer's latest message (STOP), not the first one.
+  await page.getByText("STOP", { exact: true }).first().click();
   await expect(page.getByText(/replied STOP/i)).toBeVisible({ timeout: 30_000 });
 
   // The reply goes to the real Twilio with made-up credentials, which Twilio refuses; the inbox says what to do
   await page.getByRole("button", { name: "Take this chat" }).click();
   await page.getByRole("textbox").last().fill("Yes, it's ready!");
-  await page.keyboard.press("Enter");
+  await page.getByRole("button", { name: "Send", exact: true }).click();
   await expect(page.getByText(/rejected this account's credentials/i)).toBeVisible({ timeout: 45_000 });
 });

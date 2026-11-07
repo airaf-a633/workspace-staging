@@ -1,6 +1,6 @@
 import { createHmac, randomBytes } from "node:crypto";
 import { expect, test } from "@playwright/test";
-import { clientAs, live, signIn, SLUG, unique } from "./live.helpers";
+import { clientAs, live, signIn, SLUG, unique, openInbox } from "./live.helpers";
 
 test.skip(!live, "Live suite: set E2E_LIVE=1 with staging awake");
 
@@ -69,12 +69,13 @@ test("a call rings the owner's phone, a missed call and voicemail reach the inbo
 
   test.skip(process.env.E2E_WORKER !== "1", "Filing a call needs the worker running (E2E_WORKER=1)");
   await signIn(page, "owner");
-  await page.goto(`/w/${SLUG}/inbox`);
+  await openInbox(page);
   await expect(page.getByText("Voicemail").first()).toBeVisible({ timeout: 30_000 });
   await page.getByText("Voicemail").first().click();
   await expect(page.getByText("Missed call").first()).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText(/couldn't save this voicemail/i)).toBeVisible({ timeout: 45_000 });
 
   // A phone line can't send text: the box offers a call instead
+  await page.getByRole("button", { name: "Take this chat" }).click();
   await expect(page.getByRole("link", { name: /^Call \+/ })).toBeVisible();
 });

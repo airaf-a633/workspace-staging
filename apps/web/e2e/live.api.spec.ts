@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { expect, test } from "@playwright/test";
-import { clientAs, live, signIn, SLUG, unique } from "./live.helpers";
+import { clientAs, live, signIn, SLUG, unique, openInbox } from "./live.helpers";
 
 test.skip(!live, "Live suite: set E2E_LIVE=1 with staging awake");
 
@@ -40,7 +40,7 @@ test("an API message reaches the inbox, and retries and bad calls are handled", 
   // The worker files it; the team sees it once
   test.skip(process.env.E2E_WORKER !== "1", "Filing a message needs the worker running (E2E_WORKER=1)");
   await signIn(page, "owner");
-  await page.goto(`/w/${SLUG}/inbox`);
+  await openInbox(page);
   await expect(page.getByText(text).first()).toBeVisible({ timeout: 30_000 });
   await page.getByText(text).first().click();
 
@@ -48,6 +48,6 @@ test("an API message reaches the inbox, and retries and bad calls are handled", 
   // A chat nobody has taken must be taken before replying
   await page.getByRole("button", { name: "Take this chat" }).click();
   await page.getByRole("textbox").last().fill("On its way!");
-  await page.keyboard.press("Enter");
+  await page.getByRole("button", { name: "Send", exact: true }).click();
   await expect(page.getByText(/no webhook address/i)).toBeVisible({ timeout: 30_000 });
 });

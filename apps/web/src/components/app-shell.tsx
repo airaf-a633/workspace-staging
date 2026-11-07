@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { BookOpenText, ChartBar, Megaphone, ChatsCircle, CheckSquare, Gear, House, Handshake, SignOut, Sparkle, UsersThree } from "@phosphor-icons/react";
+import { BookOpenText, ChartBar, ChatCenteredText, Megaphone, ChatsCircle, CheckSquare, Gear, House, Handshake, SignOut, Sparkle, UsersThree } from "@phosphor-icons/react";
 import { AskAi } from "@/components/ai/ask-ai";
 import type { AiWorld } from "@/lib/ai-sample";
 import { useT } from "@/i18n/client";
@@ -147,6 +147,11 @@ export function AppShell({ base, workspaceName, memberName, roleName, signOut, f
         </nav>
         {rail ? (
           <div className="mt-auto grid justify-items-center gap-2 pb-4">
+            {feedbackHref && (
+              <Link href={`${feedbackHref}?from=${encodeURIComponent(path)}`} className="grid size-11 place-items-center rounded-full text-muted hover:bg-surface-2 hover:text-text" aria-label={t("feedback")} title={t("feedback")}>
+                <ChatCenteredText size={20} aria-hidden="true" />
+              </Link>
+            )}
             <span className="grid size-9 place-items-center rounded-full bg-primary-soft text-sm font-semibold text-primary" title={common("nameRole", { name: memberName, role: roleName })}>
               {memberName.trim().charAt(0).toUpperCase()}
               <span className="sr-only">{common("nameRole", { name: memberName, role: roleName })}</span>
