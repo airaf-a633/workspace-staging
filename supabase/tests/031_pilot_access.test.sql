@@ -15,7 +15,9 @@ create function pg_temp.sign_up(p_email text, p_code text default null) returns 
   values (gen_random_uuid(), p_email, case when p_code is null then '{}'::jsonb else jsonb_build_object('invite_code', p_code) end)
 $$;
 
--- The switch: off lets anyone in (the local seed turns it off), on is how the migration ships
+-- The switch: off lets anyone in (the local seed turns it off), on is how the migration ships. Set here, inside this test's
+-- transaction, so it also passes on a database where the gate is on (staging).
+update public.app_settings set value = 'off' where key = 'invite_only';
 select lives_ok($$ select pg_temp.sign_up('anyone@example.com') $$, 'with the gate off anybody can create an account');
 update public.app_settings set value = 'on' where key = 'invite_only';
 select throws_ok($$ select pg_temp.sign_up('stranger@example.com') $$, 'P0001', 'invite_required', 'with the gate on, no code means no account');
