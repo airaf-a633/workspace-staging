@@ -3,7 +3,8 @@ import { z } from "zod";
 const schema = z.object({
   supabaseUrl: z.url(),
   supabaseAnonKey: z.string().min(1),
-  siteUrl: z.url().default("http://127.0.0.1:3000"),
+  /** The app's public address. Required in production (see appOrigin); in development the address of the request is used. */
+  siteUrl: z.url().optional(),
 });
 
 /** Values that are safe in the browser. Validated so a missing .env fails loudly. */

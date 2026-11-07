@@ -1,0 +1,26 @@
+# Keep the worker's image small and keep secrets out of it.
+.git
+.github
+.claude
+.env
+.env.*
+!.env.example
+node_modules
+**/node_modules
+**/.next
+**/dist
+**/coverage
+
+# Not part of the worker
+apps/web/src
+apps/web/public
+apps/web/e2e
+apps/web/test-results
+apps/web/playwright-report
+supabase
+docs
+research
+design-system
+fonts
+brag-output
+scripts

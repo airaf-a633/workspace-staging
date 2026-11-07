@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "node --import tsx src/index.ts",
+    "gateway": "node --import tsx src/gateway.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
@@ -14,6 +15,7 @@
     "@app/whatsapp": "workspace:*",
     "@supabase/supabase-js": "^2.117.2",
     "dotenv": "^16.6.1",
+    "undici": "^8.12.3",
     "zod": "^4.6.5"
   },
   "devDependencies": {

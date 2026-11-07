@@ -1,35 +1,45 @@
-import Link from "next/link";
-import { Field, Notice, Page, Submit } from "@/components/plain";
+import { AuthFrame } from "@/components/auth-frame";
+import { ButtonLink } from "@/components/ui/button";
+import { Submit } from "@/components/ui/submit";
+import { TextInput } from "@/components/ui/field";
+import { Notice } from "@/components/ui/surface";
+import { getT } from "@/i18n/server";
 import { getUser } from "@/lib/supabase/server";
 import { acceptInvite } from "./actions";
+
+export async function generateMetadata() {
+  return { title: (await getT("invite"))("joinTitle") };
+}
+
+const ERRORS = ["needName", "wrongEmail", "alreadyMember", "invalid"] as const;
 
 export default async function Invite(props: PageProps<"/invite/[token]">) {
   const { token } = await props.params;
   const sp = await props.searchParams;
   const user = await getUser();
   const here = `/invite/${token}`;
+  const t = await getT("invite");
 
   if (!user) {
     return (
-      <Page title="You've been invited">
-        <p>Create an account or sign in with the email address the invite was sent to.</p>
-        <div className="flex gap-4">
-          <Link className="underline" href={`/sign-up?next=${encodeURIComponent(here)}`}>Create an account</Link>
-          <Link className="underline" href={`/sign-in?next=${encodeURIComponent(here)}`}>Sign in</Link>
+      <AuthFrame title={t("invitedTitle")} description={t("invitedBody")}>
+        <div className="grid gap-3">
+          <ButtonLink variant="primary" href={`/sign-up?next=${encodeURIComponent(here)}`}>{t("createAccount")}</ButtonLink>
+          <ButtonLink href={`/sign-in?next=${encodeURIComponent(here)}`}>{t("haveAccount")}</ButtonLink>
         </div>
-      </Page>
+      </AuthFrame>
     );
   }
 
+  const code = ERRORS.find((e) => e === sp.error);
   return (
-    <Page title="Join the workspace">
-      {typeof sp.error === "string" && <Notice tone="error">{sp.error}</Notice>}
-      <p>You&apos;re signed in as {user.email}.</p>
+    <AuthFrame title={t("joinTitle")} description={t.rich("signedInAs", { email: <strong dir="ltr">{user.email}</strong> })}>
+      {code && <Notice tone="error" title={t(`errors.${code}`, { email: user.email ?? "" })} />}
       <form action={acceptInvite} className="grid gap-4">
         <input type="hidden" name="token" value={token} />
-        <Field label="Your name, as your team will see it" name="name" defaultValue={(user.user_metadata?.name as string) ?? ""} required />
-        <Submit>Join</Submit>
+        <TextInput label={t("nameLabel")} name="name" defaultValue={(user.user_metadata?.name as string) ?? ""} autoComplete="name" required />
+        <Submit pending={t("pending")}>{t("submit")}</Submit>
       </form>
-    </Page>
+    </AuthFrame>
   );
 }

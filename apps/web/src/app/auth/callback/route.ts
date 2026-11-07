@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { adoptProfileLocale } from "@/i18n/profile";
 import { createClient } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/safe-next";
 
@@ -8,11 +9,14 @@ export async function GET(request: NextRequest) {
   const next = safeNext(request.nextUrl.searchParams.get("next"));
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) return NextResponse.redirect(new URL(next, request.url));
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) {
+      await adoptProfileLocale(supabase, data.user.id);
+      return NextResponse.redirect(new URL(next, request.url));
+    }
   }
   const failed = new URL("/sign-in", request.url);
-  failed.searchParams.set("error", "That sign-in link has expired or was already used. Send yourself a new one.");
+  failed.searchParams.set("error", "linkExpired");
   failed.searchParams.set("next", next);
   return NextResponse.redirect(failed);
 }

@@ -17,6 +17,23 @@ const serverSchema = z.object({
   META_WEBHOOK_VERIFY_TOKEN: z.string().min(1).optional(),
   WHATSAPP_API_VERSION: z.string().default("v25.0"),
   SENTRY_DSN: z.url().optional(),
+  /** Email channel (decided 2026-10-19): forwarding addresses live on this domain; Postmark posts inbound mail
+      with these Basic-auth credentials in the webhook URL. */
+  INBOUND_EMAIL_DOMAIN: z.string().optional(),
+  POSTMARK_INBOUND_USER: z.string().min(16).optional(),
+  POSTMARK_INBOUND_PASSWORD: z.string().min(16).optional(),
+  /** Postmark account-level token: verifying businesses' sending domains. */
+  POSTMARK_ACCOUNT_TOKEN: z.string().optional(),
+  /** "Continue with Outlook": the Microsoft Entra app (multi-tenant). */
+  MICROSOFT_CLIENT_ID: z.string().optional(),
+  MICROSOFT_CLIENT_SECRET: z.string().optional(),
+  /** "Continue with Google": the Google Cloud OAuth client. */
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  /** Slack: the one Relay Slack app customers add to their workspace. */
+  SLACK_CLIENT_ID: z.string().optional(),
+  SLACK_CLIENT_SECRET: z.string().optional(),
+  SLACK_SIGNING_SECRET: z.string().optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;

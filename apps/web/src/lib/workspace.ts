@@ -11,17 +11,24 @@ export async function loadWorkspace(slug: string) {
   const user = await getUser();
   if (!user) redirect(`/sign-in?next=${encodeURIComponent(`/w/${slug}`)}`);
   const supabase = await createClient();
-  const { data: workspace } = await supabase.from("workspaces").select("id, name, slug, timezone").eq("slug", slug).maybeSingle();
+  const { data: workspace } = await supabase.from("workspaces").select("id, name, slug, timezone, currency").eq("slug", slug).maybeSingle();
   if (!workspace) notFound();
   const { data: me } = await supabase
     .from("members")
-    .select("id, display_name, role_id, roles(key, name, is_owner)")
+    .select("id, display_name, role_id, roles(key, name, is_owner, template_key)")
     .eq("workspace_id", workspace.id)
     .eq("user_id", user.id)
     .eq("status", "active")
     .single();
   if (!me) notFound();
   return { supabase, user, workspace, me };
+}
+
+/** How far a permission reaches for the signed-in person: none, own, team or all (the same answer the database uses). */
+export async function scopeOf(workspaceId: string, permission: string): Promise<"none" | "own" | "team" | "all"> {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("permission_scope", { p_workspace: workspaceId, p_permission: permission });
+  return data === "all" || data === "team" || data === "own" ? data : "none";
 }
 
 export async function can(workspaceId: string, permission: string): Promise<boolean> {
