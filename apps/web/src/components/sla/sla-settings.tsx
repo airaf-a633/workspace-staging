@@ -280,7 +280,7 @@ export function SlaSettingsPage({ initial, teams, editable, actions }: { initial
                 <PolicyForm initial={p} teams={pickable} mustPickTeam={!editable.all} onCancel={() => setEditing(null)} onSave={(np) => { savePolicy(np, false); setEditing(null); }} />
               </li>
             ) : (
-              <li key={p.id} className={`flex flex-wrap items-center gap-3 rounded-[var(--radius-control)] border border-border px-4 py-3 ${p.active ? "" : "opacity-60"}`}>
+              <li key={p.id} className={`flex flex-wrap items-center gap-3 rounded-[var(--radius-control)] border border-border px-4 py-3 ${p.active ? "" : "bg-surface-2"}`}>
                 <span className="grid min-w-0 flex-1 gap-0.5">
                   <span className="font-medium">{p.name}</span>
                   <span className="truncate text-xs text-muted">{describe(p)}</span>

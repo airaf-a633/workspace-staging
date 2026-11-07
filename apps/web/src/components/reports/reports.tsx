@@ -141,11 +141,13 @@ function Heatmap({ heat }: { heat: number[][] }) {
   const step = (v: number) => STEPS[Math.min(4, Math.floor((v / max) * 4.999))];
   const peak = busiest(heat);
   return (
-    <div className="grid gap-2 overflow-x-auto">
+    <div className="grid gap-2 overflow-x-auto" tabIndex={0} role="region" aria-label={t("busyLabel")}>
       <p className="font-medium">{t(peak.weekdays ? "busiestWeekdays" : "busiestEveryDay", { from: peak.from, to: peak.to })}</p>
       <div className="grid min-w-[30rem] grid-cols-[3rem_repeat(12,1fr)] gap-0.5 text-xs" role="table" aria-label={t("busyLabel")}>
-        <span role="columnheader" />
-        {Array.from({ length: 12 }, (_, h) => <span key={h} role="columnheader" className="text-center text-muted tabular-nums">{h % 2 === 0 ? `${String(h * 2).padStart(2, "0")}` : ""}</span>)}
+        <div role="row" className="contents">
+          <span role="columnheader" />
+          {Array.from({ length: 12 }, (_, h) => <span key={h} role="columnheader" className="text-center text-muted tabular-nums">{h % 2 === 0 ? `${String(h * 2).padStart(2, "0")}` : ""}</span>)}
+        </div>
         {heat.map((row, d) => (
           <div key={d} role="row" className="contents">
             <span role="rowheader" className="self-center text-muted">{t(`days.${days[d]}`)}</span>

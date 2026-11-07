@@ -48,7 +48,7 @@ export default async function Compare(props: PageProps<"/compare/[rival]">) {
       <section className="border-y border-border bg-surface">
         <div className="mx-auto grid max-w-5xl gap-6 px-4 py-16">
           <h2 className="display text-3xl">{t("pricesTitle")}</h2>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={t("pricesTitle")}>
             <table className="w-full min-w-[32rem] border-collapse text-sm">
               <caption className="sr-only">{t("pricesTitle")}</caption>
               <thead>
